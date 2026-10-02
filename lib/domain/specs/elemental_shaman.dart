@@ -1,6 +1,38 @@
 import '../models/combat_state.dart';
 import '../models/spec_definition.dart';
+import '../talents/generated/shaman_talent_tree.g.dart';
+import '../talents/talent_string_codec.dart';
+import '../talents/talent_tree.dart';
 import 'rotation_spec.dart';
+
+/// Builds from SimulationCraft's `profiles/MID2` directory.
+const _simcFarseer =
+    'CYQAAAAAAAAAAAAAAAAAAAAAAAAAAAzMbbzMmZmZZbZMMjBAAAAsYmNYADY2YCZWAgZbmZGjtF'
+    'TYmxYxMzMmZWsMjFzMMzyAAGGAzMGGGA';
+const _simcStormbringer =
+    'CYQAAAAAAAAAAAAAAAAAAAAAAAAAAAzMbbzMmZmZZbZgxMDAAAAAWMjhNYBmRDN2AgZbmZGjtF'
+    'TYmxYxMzMmZWsMjFzMjZWAAGGYmBGGGA';
+
+final _defaultLoadouts = [
+  TalentLoadout(
+    id: 'simc_farseer',
+    name: 'Farseer',
+    description: 'SimulationCraft MID2 Farseer profile.',
+    exportString: _simcFarseer,
+    talents: const TalentStringCodec(shamanTalentTree)
+        .decode(_simcFarseer)
+        .tokens,
+  ),
+  TalentLoadout(
+    id: 'simc_stormbringer',
+    name: 'Stormbringer',
+    description: 'SimulationCraft MID2 Stormbringer profile.',
+    exportString: _simcStormbringer,
+    talents: const TalentStringCodec(shamanTalentTree)
+        .decode(_simcStormbringer)
+        .tokens,
+  ),
+];
 
 /// Elemental Shaman, modelled for the single-target sandbox.
 ///
@@ -16,16 +48,20 @@ class ElementalShaman extends RotationSpec {
   static const masterOfTheElements = 'master_of_the_elements';
   static const eyeOfTheStorm = 'eye_of_the_storm';
   static const elementalBlastTalent = 'elemental_blast';
+  static const earthShockTalent = 'earth_shock';
   static const stormkeeperTalent = 'stormkeeper';
   static const ascendanceTalent = 'ascendance';
-  static const fireElemental = 'fire_elemental';
   static const stormElemental = 'storm_elemental';
+  static const infernoArc = 'inferno_arc';
+  static const flametongueWeapon = 'flametongue_weapon';
   static const voltaicBlazeTalent = 'voltaic_blaze';
   static const purgingFlames = 'purging_flames';
   static const moltenWrath = 'molten_wrath';
   static const cracklingFury = 'crackling_fury';
   static const ancestralSwiftnessTalent = 'ancestral_swiftness';
   static const naturesSwiftnessTalent = 'natures_swiftness';
+
+  static const swellingMaelstrom = 'swelling_maelstrom';
 
   static const flameShockDuration = 18.0;
 
@@ -34,6 +70,19 @@ class ElementalShaman extends RotationSpec {
 
   @override
   String get name => 'Elemental Shaman';
+
+  @override
+  int get specId => 262;
+
+  @override
+  TalentTree get talentTree => shamanTalentTree;
+
+  @override
+  Map<int, String> get heroTreeNames => const {
+    54: 'Totemic',
+    55: 'Stormbringer',
+    56: 'Farseer',
+  };
 
   @override
   String get resourceName => 'maelstrom';
@@ -110,7 +159,7 @@ class ElementalShaman extends RotationSpec {
       abbreviation: 'ES',
       school: SpellSchool.earth,
       cost: 60,
-      replacedByTalent: elementalBlastTalent,
+      requiredTalent: earthShockTalent,
     ),
     'elemental_blast': SpellDefinition(
       id: 'elemental_blast',
@@ -243,12 +292,7 @@ class ElementalShaman extends RotationSpec {
       name: 'Ascendance',
       requiredTalent: ascendanceTalent,
     ),
-    AuraDefinition(
-      id: 'fire_elemental',
-      name: 'Fire Elemental',
-      duration: 30,
-      requiredTalent: fireElemental,
-    ),
+    AuraDefinition(id: 'fire_elemental', name: 'Fire Elemental', duration: 30),
     AuraDefinition(
       id: 'storm_elemental',
       name: 'Storm Elemental',
@@ -352,6 +396,8 @@ class ElementalShaman extends RotationSpec {
     ),
   ];
 
+  /// Talents the APL (or spell availability) cares about. Imported builds
+  /// may contain many more; those are kept but not shown as toggles.
   @override
   List<TalentDefinition> get talents => const [
     TalentDefinition(
@@ -367,10 +413,24 @@ class ElementalShaman extends RotationSpec {
       exclusiveWith: [callOfTheAncestors],
     ),
     TalentDefinition(
+      id: ancestralSwiftnessTalent,
+      name: 'Ancestral Swiftness (Farseer)',
+      group: 'Hero tree',
+      description: "Replaces Nature's Swiftness.",
+    ),
+    TalentDefinition(
+      id: earthShockTalent,
+      name: 'Earth Shock',
+      group: 'Spec',
+      exclusiveWith: [elementalBlastTalent],
+      description: 'Choice node with Elemental Blast.',
+    ),
+    TalentDefinition(
       id: elementalBlastTalent,
       name: 'Elemental Blast',
       group: 'Spec',
-      description: 'Replaces Earth Shock.',
+      exclusiveWith: [earthShockTalent],
+      description: 'Choice node with Earth Shock.',
     ),
     TalentDefinition(
       id: masterOfTheElements,
@@ -385,18 +445,6 @@ class ElementalShaman extends RotationSpec {
     TalentDefinition(id: stormkeeperTalent, name: 'Stormkeeper', group: 'Spec'),
     TalentDefinition(id: ascendanceTalent, name: 'Ascendance', group: 'Spec'),
     TalentDefinition(
-      id: fireElemental,
-      name: 'Fire Elemental',
-      group: 'Spec',
-      exclusiveWith: [stormElemental],
-    ),
-    TalentDefinition(
-      id: stormElemental,
-      name: 'Storm Elemental',
-      group: 'Spec',
-      exclusiveWith: [fireElemental],
-    ),
-    TalentDefinition(
       id: voltaicBlazeTalent,
       name: 'Voltaic Blaze',
       group: 'Spec',
@@ -404,54 +452,21 @@ class ElementalShaman extends RotationSpec {
     TalentDefinition(id: purgingFlames, name: 'Purging Flames', group: 'Spec'),
     TalentDefinition(id: moltenWrath, name: 'Molten Wrath', group: 'Spec'),
     TalentDefinition(id: cracklingFury, name: 'Crackling Fury', group: 'Spec'),
-    TalentDefinition(
-      id: ancestralSwiftnessTalent,
-      name: 'Ancestral Swiftness',
-      group: 'Class',
-      exclusiveWith: [naturesSwiftnessTalent],
-    ),
+    TalentDefinition(id: infernoArc, name: 'Inferno Arc', group: 'Spec'),
     TalentDefinition(
       id: naturesSwiftnessTalent,
       name: "Nature's Swiftness",
       group: 'Class',
-      exclusiveWith: [ancestralSwiftnessTalent],
+    ),
+    TalentDefinition(
+      id: flametongueWeapon,
+      name: 'Flametongue Weapon',
+      group: 'Class',
     ),
   ];
 
   @override
-  List<TalentLoadout> get loadouts => const [
-    TalentLoadout(
-      name: 'Farseer',
-      description:
-          'Call of the Ancestors, Earth Shock, Master of the Elements.',
-      talents: {
-        callOfTheAncestors,
-        masterOfTheElements,
-        eyeOfTheStorm,
-        stormkeeperTalent,
-        ascendanceTalent,
-        fireElemental,
-        voltaicBlazeTalent,
-        purgingFlames,
-        ancestralSwiftnessTalent,
-      },
-    ),
-    TalentLoadout(
-      name: 'Stormbringer',
-      description: 'Tempest, Elemental Blast, Master of the Elements.',
-      talents: {
-        tempestTalent,
-        elementalBlastTalent,
-        masterOfTheElements,
-        eyeOfTheStorm,
-        stormkeeperTalent,
-        ascendanceTalent,
-        fireElemental,
-        voltaicBlazeTalent,
-        naturesSwiftnessTalent,
-      },
-    ),
-  ];
+  List<TalentLoadout> get loadouts => _defaultLoadouts;
 
   @override
   List<SetBonusDefinition> get setBonuses => const [
@@ -472,11 +487,17 @@ class ElementalShaman extends RotationSpec {
     'invoke_external_buff',
   };
 
+  /// Swelling Maelstrom adds 50 (in-game tooltip; SimC reads it from spell
+  /// data).
+  @override
+  double maxResource(Set<String> talents) =>
+      talents.contains(swellingMaelstrom) ? 150 : 100;
+
   @override
   CombatState defaultState(TalentLoadout loadout) {
     return CombatState(
       resource: 40,
-      maxResource: 100,
+      maxResource: maxResource(loadout.talents),
       talents: loadout.talents,
       buffs: const {'lightning_shield': AuraState.up(remains: 3600)},
       dots: const {'flame_shock': AuraState.up(remains: 12)},

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../../data/repositories/apl_repository.dart';
+import '../../../../data/repositories/talent_build_repository.dart';
 import '../../../../domain/apl/apl_evaluator.dart';
 import '../../../../domain/models/combat_state.dart';
 import '../../../../domain/models/spec_definition.dart';
@@ -9,22 +10,30 @@ import '../../../../domain/specs/rotation_spec.dart';
 /// Holds the scenario being edited in the sandbox and re-evaluates the APL
 /// whenever it changes.
 class SandboxViewModel extends ChangeNotifier {
-  SandboxViewModel({required AplRepository repository})
-    : _repository = repository,
-      _evaluator = AplEvaluator(repository.spec) {
-    _loadout = spec.loadouts.first;
-    _state = spec.defaultState(_loadout);
+  SandboxViewModel({
+    required AplRepository repository,
+    required this._talentBuilds,
+  }) : _repository = repository,
+       _evaluator = AplEvaluator(repository.spec) {
+    _loadoutId = _talentBuilds.active.id;
+    _state = spec.defaultState(_talentBuilds.active);
     _repository.addListener(_evaluate);
+    _talentBuilds.addListener(_onBuildChanged);
     _evaluate();
   }
 
   final AplRepository _repository;
+  final TalentBuildRepository _talentBuilds;
   final AplEvaluator _evaluator;
 
   RotationSpec get spec => _repository.spec;
 
-  late TalentLoadout _loadout;
-  TalentLoadout get loadout => _loadout;
+  late String _loadoutId;
+  TalentLoadout get loadout => _talentBuilds.active;
+  List<TalentLoadout> get loadouts => _talentBuilds.loadouts;
+
+  /// Whether the talents were edited by hand since picking [loadout].
+  bool get talentsEdited => !setEquals(_state.talents, loadout.talents);
 
   late CombatState _state;
   CombatState get state => _state;
@@ -42,13 +51,24 @@ class SandboxViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Switches talents to [loadout], keeping the rest of the scenario.
-  void selectLoadout(TalentLoadout loadout) {
-    _loadout = loadout;
-    _update(_state.copyWith(talents: loadout.talents));
-  }
+  /// Switches talents to [loadout], keeping the rest of the scenario. This
+  /// also becomes the build used by the quiz.
+  void selectLoadout(TalentLoadout loadout) => _talentBuilds.setActive(loadout);
 
-  void reset() => _update(spec.defaultState(_loadout));
+  /// Saves the current (hand-edited) talents as a new build.
+  Future<void> saveTalentsAs(String name) =>
+      _talentBuilds.saveTalents(name: name, talents: _state.talents);
+
+  void reset() => _update(spec.defaultState(loadout));
+
+  void _onBuildChanged() {
+    if (_talentBuilds.active.id == _loadoutId) {
+      notifyListeners();
+      return;
+    }
+    _loadoutId = _talentBuilds.active.id;
+    _update(spec.withTalents(_state, loadout.talents));
+  }
 
   /// Replaces the whole scenario, e.g. when opening a quiz question.
   void loadState(CombatState state) => _update(state);
@@ -84,13 +104,14 @@ class SandboxViewModel extends ChangeNotifier {
 
   /// Toggles a talent, deselecting talents it is exclusive with.
   void setTalent(TalentDefinition talent, bool enabled) {
-    var next = _state.withTalent(talent.id, enabled);
+    final talents = {..._state.talents};
     if (enabled) {
-      for (final other in talent.exclusiveWith) {
-        next = next.withTalent(other, false);
-      }
+      talents.add(talent.id);
+      talents.removeAll(talent.exclusiveWith);
+    } else {
+      talents.remove(talent.id);
     }
-    _update(next);
+    _update(spec.withTalents(_state, talents));
   }
 
   void setSetBonus(String id, bool enabled) =>
@@ -112,6 +133,7 @@ class SandboxViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _repository.removeListener(_evaluate);
+    _talentBuilds.removeListener(_onBuildChanged);
     super.dispose();
   }
 }

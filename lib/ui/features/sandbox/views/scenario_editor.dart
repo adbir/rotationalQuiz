@@ -41,6 +41,7 @@ class ScenarioEditor extends StatelessWidget {
           children: [
             Expanded(
               child: DropdownButtonFormField<TalentLoadout>(
+                key: ValueKey(vm.loadout.id),
                 initialValue: vm.loadout,
                 decoration: const InputDecoration(
                   labelText: 'Talent loadout',
@@ -48,7 +49,7 @@ class ScenarioEditor extends StatelessWidget {
                   isDense: true,
                 ),
                 items: [
-                  for (final loadout in spec.loadouts)
+                  for (final loadout in vm.loadouts)
                     DropdownMenuItem(value: loadout, child: Text(loadout.name)),
                 ],
                 onChanged: (loadout) {
@@ -134,7 +135,22 @@ class ScenarioEditor extends StatelessWidget {
                   onChanged: (v) =>
                       vm.setCooldown(cd.id, CooldownState(remains: v)),
                 ),
-        _Header('Talents'),
+        Row(
+          children: [
+            Expanded(child: _Header('Talents')),
+            if (vm.talentsEdited)
+              TextButton.icon(
+                onPressed: () => _saveTalents(context),
+                icon: const Icon(Icons.save_outlined, size: 18),
+                label: const Text('Save as build'),
+              ),
+          ],
+        ),
+        Text(
+          'Only talents the APL checks are shown. Import your full build in '
+          'Setup.',
+          style: theme.textTheme.bodySmall,
+        ),
         for (final MapEntry(key: group, value: talents)
             in talentGroups.entries) ...[
           Padding(
@@ -157,6 +173,36 @@ class ScenarioEditor extends StatelessWidget {
         ],
       ],
     );
+  }
+}
+
+extension on ScenarioEditor {
+  Future<void> _saveTalents(BuildContext context) async {
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Save talents as a build'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Build name'),
+          onSubmitted: (v) => Navigator.pop(context, v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name != null) await viewModel.saveTalentsAs(name);
   }
 }
 

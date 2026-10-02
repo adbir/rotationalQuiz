@@ -1,5 +1,6 @@
 import '../models/combat_state.dart';
 import '../models/spec_definition.dart';
+import '../talents/talent_tree.dart';
 
 /// Whether an ability can be pressed right now, and if not, why.
 class SpellAvailability {
@@ -24,6 +25,16 @@ abstract class RotationSpec {
 
   /// Display name, e.g. `Elemental Shaman`.
   String get name;
+
+  /// Blizzard specialization id (e.g. `262` for Elemental), used to check
+  /// imported talent strings.
+  int get specId;
+
+  /// The class talent tree, for decoding talent export strings.
+  TalentTree get talentTree;
+
+  /// Display names of hero trees by SimC sub-tree id.
+  Map<int, String> get heroTreeNames;
 
   /// SimC name of the primary resource, e.g. `maelstrom`.
   String get resourceName;
@@ -54,6 +65,20 @@ abstract class RotationSpec {
   /// Actions the sandbox deliberately does not model (racials, trinkets,
   /// potions...). They are shown as skipped in the trace.
   Set<String> get unmodelledActions;
+
+  /// Maximum primary resource with [talents].
+  double maxResource(Set<String> talents);
+
+  /// Returns [state] with [talents], keeping derived values such as the
+  /// resource cap consistent.
+  CombatState withTalents(CombatState state, Set<String> talents) {
+    final max = maxResource(talents);
+    return state.copyWith(
+      talents: talents,
+      maxResource: max,
+      resource: state.resource > max ? max : state.resource,
+    );
+  }
 
   /// A sensible starting state for [loadout].
   CombatState defaultState(TalentLoadout loadout);

@@ -16,6 +16,7 @@ class SpellButton extends StatelessWidget {
     this.size = 56,
     this.showName = true,
     this.tooltip,
+    this.keybindLabel,
   });
 
   final SpellDefinition spell;
@@ -24,6 +25,9 @@ class SpellButton extends StatelessWidget {
   final double size;
   final bool showName;
   final String? tooltip;
+
+  /// Shown in the top corner like a WoW action bar hotkey.
+  final String? keybindLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -52,15 +56,36 @@ class SpellButton extends StatelessWidget {
         onTap: onPressed,
         child: SizedBox.square(
           dimension: size,
-          child: Center(
-            child: Text(
-              spell.abbreviation,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: Colors.white.withValues(alpha: dimmed ? 0.5 : 1),
-                fontWeight: FontWeight.w800,
-                fontSize: size * 0.3,
+          child: Stack(
+            children: [
+              Center(
+                child: Text(
+                  spell.abbreviation,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: dimmed ? 0.5 : 1),
+                    fontWeight: FontWeight.w800,
+                    fontSize: size * 0.3,
+                  ),
+                ),
               ),
-            ),
+              if (keybindLabel != null)
+                Positioned(
+                  top: 2,
+                  right: 4,
+                  child: Text(
+                    keybindLabel!,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: (size * 0.2).clamp(9, 14),
+                      shadows: const [
+                        Shadow(blurRadius: 2),
+                        Shadow(blurRadius: 2),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),

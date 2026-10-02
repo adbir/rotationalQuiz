@@ -83,8 +83,23 @@ void main() {
       expect(pick(state), 'flame_shock');
     });
 
+    /// The SimC builds take Elemental Blast; this swaps in Earth Shock.
+    CombatState earthShockBuild() => base()
+        .withTalent(ElementalShaman.elementalBlastTalent, false)
+        .withTalent(ElementalShaman.earthShockTalent, true);
+
     test('Lava Burst to proc Master of the Elements with enough Maelstrom', () {
-      expect(pick(base().copyWith(resource: 50)), 'lava_burst');
+      // Elemental Blast needs more Maelstrom banked than Earth Shock.
+      expect(pick(base().copyWith(resource: 80)), 'lightning_bolt');
+      expect(pick(base().copyWith(resource: 84)), 'lava_burst');
+      expect(pick(earthShockBuild().copyWith(resource: 55)), 'lava_burst');
+    });
+
+    test('Elemental Blast with Master of the Elements up', () {
+      final state = base()
+          .copyWith(resource: 95)
+          .withBuff('master_of_the_elements', const AuraState.up());
+      expect(pick(state), 'elemental_blast');
     });
 
     test('Lava Burst before capping charges', () {
@@ -96,14 +111,14 @@ void main() {
     });
 
     test('Earth Shock with Master of the Elements up', () {
-      final state = base()
+      final state = earthShockBuild()
           .copyWith(resource: 70)
           .withBuff('master_of_the_elements', const AuraState.up());
       expect(pick(state), 'earth_shock');
     });
 
     test('Earth Shock is not pressable without the Maelstrom', () {
-      final state = base()
+      final state = earthShockBuild()
           .copyWith(resource: 30)
           .withBuff('master_of_the_elements', const AuraState.up());
       expect(pick(state), isNot('earth_shock'));

@@ -6,17 +6,19 @@ import 'package:rotational_quiz/app.dart';
 import '../test_helpers.dart';
 
 void main() {
-  testWidgets('sandbox shows the next button and the quiz is reachable', (
-    tester,
-  ) async {
-    final repository = await tester.runAsync(loadedRepository);
+  testWidgets('navigates between sandbox, quiz and setup', (tester) async {
+    final repos = await tester.runAsync(TestRepositories.create);
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      ChangeNotifierProvider.value(
-        value: repository!,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: repos!.apl),
+          ChangeNotifierProvider.value(value: repos.talentBuilds),
+          ChangeNotifierProvider.value(value: repos.keybinds),
+        ],
         child: const RotationalQuizApp(),
       ),
     );
@@ -28,5 +30,14 @@ void main() {
     await tester.tap(find.text('Quiz'));
     await tester.pumpAndSettle();
     expect(find.text('Single target. What do you press next?'), findsOneWidget);
+
+    await tester.tap(find.text('Multiple choice'));
+    await tester.pumpAndSettle();
+    expect(find.text('1'), findsWidgets);
+
+    await tester.tap(find.text('Setup'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your talent build'), findsOneWidget);
+    expect(find.text('Keybinds'), findsOneWidget);
   });
 }

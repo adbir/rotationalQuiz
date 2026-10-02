@@ -153,14 +153,33 @@ class TalentDefinition {
 @immutable
 class TalentLoadout {
   const TalentLoadout({
+    required this.id,
     required this.name,
     required this.talents,
     this.description,
+    this.exportString,
+    this.isCustom = false,
   });
 
+  /// Stable id used for persistence and selection.
+  final String id;
   final String name;
+
+  /// SimC talent tokens, as used by `talent.<token>`.
   final Set<String> talents;
   final String? description;
+
+  /// The in-game export string the build came from, if any.
+  final String? exportString;
+
+  /// Whether the user created this build.
+  final bool isCustom;
+
+  @override
+  bool operator ==(Object other) => other is TalentLoadout && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 /// A tier set bonus the APL checks with `set_bonus.<id>`.

@@ -27,15 +27,17 @@ lib/
 │   │   ├── apl_expression.dart   # Expression AST + Pratt parser for `if=`
 │   │   ├── apl_document.dart     # `actions.<list>+=/...` line parser
 │   │   └── apl_evaluator.dart    # Walks lists like SimC; produces a trace
-│   ├── models/             # CombatState (scenario) + spec metadata types
+│   ├── models/             # CombatState (scenario), Keybind, spec metadata types
 │   ├── specs/              # One RotationSpec per spec (spell book, costs…)
+│   ├── talents/            # Talent tree data + in-game export string decoder
+│   │   └── generated/      # *.g.dart from tool/generate_talent_tree.py
 │   └── use_cases/          # GenerateScenario (random quiz states)
 ├── data/
-│   ├── services/           # Asset loading, SimC GitHub download
-│   └── repositories/       # AplRepository: the APL currently in use
+│   ├── services/           # Asset loading, SimC download, LocalStore (prefs)
+│   └── repositories/       # AplRepository, TalentBuildRepository, KeybindRepository
 ├── ui/
 │   ├── core/               # Theme + shared widgets (SpellButton, TraceList…)
-│   └── features/<feature>/{view_models,views}/   # sandbox, quiz, apl_viewer, home
+│   └── features/<feature>/{view_models,views}/   # sandbox, quiz, apl_viewer, setup, home
 └── utils/result.dart
 ```
 
@@ -52,12 +54,26 @@ Key ideas:
 - Off-GCD abilities (Ancestral Swiftness, Wind Shear, Spiritwalker's Grace…)
   are collected and evaluation continues, so the app can suggest "press X
   *and* Y".
+- **Talent builds** come from in-game export strings, decoded by
+  `TalentStringCodec` (a port of SimC's `parse_traits_hash`). Talent tokens
+  are SimC's (`talent.<token>`). Regenerate the tree after a game patch:
+  `tool/generate_talent_tree.py --class-id 7 --name shaman >
+  lib/domain/talents/generated/shaman_talent_tree.g.dart`, then run the
+  codec tests (they decode real SimC profile strings).
+- **Keybinds** are stored per spec by physical key (layout independent) with
+  modifiers; middle/side mouse buttons are supported.
+- **Quiz modes:** action bar, multiple choice (distractors come from APL lines
+  that were considered before the winner) and hot keys (timed, uses the
+  user's keybinds, off-GCD presses are allowed before the GCD ability).
+- User data (builds, binds, active build) is persisted through `LocalStore`
+  (`shared_preferences`); tests use `InMemoryStore`.
 - `assets/apl/*.simc` are verbatim upstream copies; see `assets/apl/README.md`
   to refresh them. Don't edit them by hand.
 
 ## Adding a spec
 
-1. Copy the upstream `.simc` into `assets/apl/`.
+1. Copy the upstream `.simc` into `assets/apl/`, and generate the class
+   talent tree if it doesn't exist yet.
 2. Implement a `RotationSpec` in `lib/domain/specs/` (spells, auras,
    cooldowns, talents, loadouts, `resolveScalar`, `availability`).
 3. Add an APL test like `test/domain/elemental_apl_test.dart`: every

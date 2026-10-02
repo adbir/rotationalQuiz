@@ -13,9 +13,19 @@ First spec: **Elemental Shaman — single target** (Midnight APL).
   tier set, and see which button(s) the APL presses next. Every APL line is
   shown with its condition colour-coded clause by clause, so you can see
   *why* a line won or lost.
-- **Quiz** – random combat situations for the Farseer or Stormbringer build.
-  Pick a button, then compare with the APL and its reasoning. Jump into the
-  sandbox to explore a question further.
+- **Quiz** – random combat situations for your build, in three modes:
+  - *Action bar*: click the button you would press.
+  - *Multiple choice*: four options (keys 1–4) for a snapshot of the fight;
+    the wrong options are abilities the APL considered just before.
+  - *Hot keys*: press your real keybind before the timer runs out. Tracks
+    reaction time; weaving an off-GCD ability first counts.
+
+  Every answer shows the APL line and its reasoning; jump into the sandbox
+  to explore a question further.
+- **Setup** – paste your in-game talent export string (or a Wowhead /
+  Raidbots / SimC one) to use your own build, and record your keybinds
+  (keys with Shift/Ctrl/Alt, middle and side mouse buttons). Saved on the
+  device.
 - **APL viewer** – read the APL, download the latest from SimulationCraft, or
   paste your own.
 
@@ -34,7 +44,9 @@ The app contains a small SimC expression engine (`lib/domain/apl/`):
    records a trace of every line it looked at.
 
 Spec knowledge that isn't in the APL (spell costs, cooldowns, which talents
-replace which spells) lives in `lib/domain/specs/`.
+replace which spells) lives in `lib/domain/specs/`. Talent export strings are
+decoded with the class talent tree generated from SimulationCraft's trait
+data (`tool/generate_talent_tree.py`).
 
 ## Development
 
