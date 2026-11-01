@@ -924,8 +924,9 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 - **In this repo:** `talent.master_of_the_elements`,
   `buff.master_of_the_elements.up`. The APL also spends it on Tempest and on
   Lightning Bolt with Stormkeeper.
-- **To check:** The APL has a line to "buff Flame Shock" with it, but Flame Shock
-  is a Fire spell, which this buff doesn't cover.
+- **Note:** Flame Shock doesn't consume it. The APL comment "Consume spare MotE to
+  buff Flame Shock" doesn't match the game, so don't read that line as a use of
+  the buff.
 
 ### Stormbringer
 
