@@ -1014,6 +1014,8 @@ honesty. Don't blend them into a score.
   Stream Totem casts per minute, Stormstream included; Ascendance, Spirit Link
   Totem and Nature's Swiftness against possible; casts per minute by phase,
   with gaps shown beside the mechanics on the player.
+  Unleash Life, which Method and Icy Veins name, is left out: no top log
+  takes it. Guide sources are in [restoration-shaman.md](restoration-shaman.md).
 - **Ranked, no gap here:** mana left at the end (unspent mana is healing not
   done; the owner ended at 19%, rank 1 at 13%), Earth Shield and Earthliving
   uptime.

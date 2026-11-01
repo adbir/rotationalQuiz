@@ -16,24 +16,45 @@ raid pages are per boss. The Coiled Altar sheet
 (`questionablyepic.com/venomous-abyss/coiled-altar`, PDF) tells healers:
 "CDs when globules are destroyed. Dispel Venomfang poison."
 
-The must-dos below are therefore from Method's guide (Radio, patch 12.1.5,
-updated 16 Oct 2026,
-`method.gg/guides/restoration-shaman/playstyle-and-rotation`). Wowhead's guide
-(Harreks, 12.1.5) and Icy Veins' guide didn't load from a script. Ask the owner
-whether QE's Discord has a Restoration Shaman resource before treating this
-list as final.
+The owner's written sources are **Wowhead** (Harreks, 12.1.5, updated
+2026-10-13) and **Icy Veins**, with **Method** (Radio, 12.1.5, updated 16 Oct
+2026) as a third. What was read, on 2026-11-01, with WebFetch and WebSearch:
 
-| Must-do (Method) | How a log measures it |
-| --- | --- |
-| Surging Totem first, kept up | Healing Rain buff 1307888 uptime; Surging Totem casts against possible (25 s cooldown, lasts 25 s) |
-| Healing Stream Totem on cooldown | Casts of 5394 plus 1267068 (Stormstream replaces one). Possible needs the real cooldown; see below |
-| Riptide on cooldown, on targets without it | Riptide casts per minute; Riptide out (61295 in the `targetID` Buffs table) |
-| Earth Shield on a tank | 974 uptime in the `targetID` Buffs table. Who held it needs events |
-| Ascendance, Spirit Link Totem for heavy damage, not overlapping other healers | Casts against possible. Whether the damage was heavy, or overlapped, is raid-dependent |
-| Chain Heal or Healing Wave by how many are hurt | Cast counts only. The log can't show how many were hurt when cast |
-| Lava Burst on Lava Surge when a GCD is spare | Damage casts. Whether a GCD was spare: not measurable |
-| Unleash Life on cooldown | No top-40 log takes it (tree, rankings), so not a must-do |
-| Mana | Not covered by Method. Mana from `classResources` type 0 on every cast |
+- **Method** `method.gg/guides/restoration-shaman/playstyle-and-rotation` and
+  `/talents`: loaded in full.
+- **Wowhead** `guide/classes/shaman/restoration/overview-pve-healer` and
+  `/rotation-cooldowns-pve-healer`: the pages load, but the guide body is
+  rendered by script and came back empty (title and metadata only).
+- **Icy Veins** `restoration-shaman-pve-healing-guide`,
+  `-rotation-cooldowns-abilities` and `-spell-summary`: HTTP 403. The Wayback
+  Machine can't be fetched. Icy Veins rows below come from search-result
+  excerpts of those pages, not the page itself, so treat them as unconfirmed.
+
+Wowhead adds nothing until someone reads it in a browser.
+
+| Must-do | Named by | How a log measures it |
+| --- | --- | --- |
+| Keep Surging Totem (its Healing Rain) up | Method (first); Icy Veins (Healing Rain only where several allies will stay in it) | Healing Rain buff 1307888 uptime; Surging Totem casts against possible (25 s cooldown, lasts 25 s) |
+| Healing Stream Totem on cooldown | Method, Icy Veins | Casts of 5394 plus 1267068 (Stormstream replaces one). Possible needs the real cooldown; see below |
+| Riptide on cooldown, on targets without it | Method, Icy Veins | Riptide casts per minute; Riptide out (61295 in the `targetID` Buffs table) |
+| Unleash Life on cooldown | Method, Icy Veins | **Disagrees with the logs:** no top-40 log takes it (tree, rankings), so not ranked |
+| Earth Shield on a tank | Method | 974 uptime in the `targetID` Buffs table. Who held it needs events |
+| Ascendance, Spirit Link Totem (Icy Veins adds Healing Tide Totem) for heavy damage, not overlapping other healers | Method, Icy Veins | Casts against possible. Whether the damage was heavy, or overlapped, is raid-dependent. Healing Tide is untaken |
+| Nature's Swiftness on a Chain Heal | Icy Veins | Casts against possible (1 min). Which spell it was spent on needs the next cast |
+| Chain Heal or Healing Wave by how many are hurt, as filler | Method, Icy Veins | Cast counts only. The log can't show how many were hurt when cast |
+| Lava Burst on Lava Surge when a GCD is spare | Method | Damage casts. Whether a GCD was spare: not measurable |
+| Mana | none: Method has no mana advice, and no 12.1.5 mana advice from Icy Veins turned up | Mana from `classResources` type 0 on every cast |
+
+**Where the guides disagree:**
+
+- **Hero tree:** a search excerpt says Icy Veins recommends Farseer for raid
+  and Totemic for Mythic+. Method recommends Totemic for raid, and so do all 40
+  top logs. Unconfirmed until the page is read.
+- **Order:** Method puts Surging Totem first; Icy Veins lists Unleash Life,
+  Riptide, Healing Stream Totem and Healing Rain as the short-cooldown core.
+- **Riptide cooldown:** Icy Veins' 12.1.5 notes say Offering from Beyond now
+  takes 2 s off Riptide's cooldown. That is a Farseer talent (sub-tree 56), so it
+  doesn't explain the Totemic top logs' Riptide counts.
 
 ## Hero trees and the top-log build
 
@@ -105,5 +126,7 @@ Cost is the `classResources` `cost` in the logs (max mana 250,000 for the owner,
 
 ## Open questions
 
+- Wowhead's and Icy Veins' guide text: read them in a browser and confirm the
+  Icy Veins rows and its hero tree advice.
 - Heroic against Mythic: top-20 Mythic kills last 502 to 627 s, Heroic 250 to
   489 s, so pair Heroic with Heroic until someone checks.
