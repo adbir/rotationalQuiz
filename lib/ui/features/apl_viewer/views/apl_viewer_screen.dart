@@ -68,6 +68,8 @@ class AplViewerScreen extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ExpansionTile(
                   initiallyExpanded: list.name == focus,
+                  expandedAlignment: Alignment.centerLeft,
+                  expandedCrossAxisAlignment: CrossAxisAlignment.start,
                   title: Text('actions.${list.name}'),
                   subtitle: Text('${list.actions.length} lines'),
                   childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

@@ -588,18 +588,11 @@ class ElementalShaman extends RotationSpec {
 
   @override
   double? resolveScalar(String identifier, CombatState state) {
-    if (identifier.startsWith('spell_targets.')) {
-      return state.targets.toDouble();
-    }
     return switch (identifier) {
       'maelstrom' => state.resource,
       'maelstrom.deficit' => state.resourceDeficit,
       'maelstrom.max' => state.maxResource,
       'maelstrom.pct' => state.resource / state.maxResource * 100,
-      'active_enemies' => state.targets.toDouble(),
-      'fight_remains' || 'target.time_to_die' => state.fightRemains,
-      'gcd' || 'gcd.max' => state.gcd,
-      'movement.distance' => state.moving ? 10 : 0,
       'lightning_rod' => state.debuff('lightning_rod').isUp ? 1 : 0,
       _ => null,
     };

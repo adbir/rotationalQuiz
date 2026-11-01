@@ -50,13 +50,17 @@ data (`tool/generate_talent_tree.py`).
 
 ## Development
 
-Requires Flutter (stable). See [`CLAUDE.md`](CLAUDE.md) for architecture and
+Requires Flutter stable ≥ 3.47 (Dart ≥ 3.13.5). See [`CLAUDE.md`](CLAUDE.md)
+for architecture, recipes (adding auras, abilities, specs), testing and
 conventions.
 
 ```bash
 flutter pub get
-flutter test
+flutter analyze && dart format lib test && flutter test
 flutter run -d chrome
+
+# Render screenshots without a browser (e.g. in CI or a cloud container):
+SCREENSHOT_DIR=/tmp/shots flutter test test/screenshots --update-goldens
 ```
 
 The repo is set up for Claude Code with the official Flutter agent plugin

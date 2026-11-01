@@ -23,8 +23,10 @@ print(next(r["archive"] for r in d["releases"] if r["hash"] == h))')
 fi
 
 export PATH="$FLUTTER_HOME/bin:$PATH"
-if [[ -n "${CLAUDE_ENV_FILE:-}" ]]; then
-  echo "export PATH=\"$FLUTTER_HOME/bin:\$PATH\"" >> "$CLAUDE_ENV_FILE"
+path_line="export PATH=\"$FLUTTER_HOME/bin:\$PATH\""
+if [[ -n "${CLAUDE_ENV_FILE:-}" ]] &&
+  ! grep -qsxF "$path_line" "$CLAUDE_ENV_FILE"; then
+  echo "$path_line" >> "$CLAUDE_ENV_FILE"
 fi
 
 flutter config --no-analytics >/dev/null 2>&1 || true
