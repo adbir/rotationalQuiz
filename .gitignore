@@ -1,3 +1,7 @@
+# Local secrets (API keys). Never commit these; the repo is public.
+.env
+.env.*
+
 # Miscellaneous
 *.class
 *.log

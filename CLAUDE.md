@@ -332,7 +332,8 @@ Fix what it flags; don't `// ignore:` it without a comment explaining why.
   fail.
 - Spell numbers (costs, cooldowns, durations) in spec files are
   approximations; note the source when you change them. Known assumptions:
-  - Swelling Maelstrom is +50 Maelstrom (in-game tooltip).
+  - Maximum Maelstrom is 100, +50 with Swelling Maelstrom and +25 with
+    Primordial Capacity (in-game tooltips; a rank-1 Farseer log shows 125).
   - Fire Elemental is treated as baseline.
   - Storm Elemental and Wind Gust stay hidden: they're not talents in
     Midnight.

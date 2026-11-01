@@ -27,6 +27,7 @@ abstract final class ElementalTalents {
   static const naturesSwiftnessTalent = 'natures_swiftness';
 
   static const swellingMaelstrom = 'swelling_maelstrom';
+  static const primordialCapacity = 'primordial_capacity';
 }
 
 const elementalSpells = <String, SpellDefinition>{

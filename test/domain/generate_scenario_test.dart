@@ -26,4 +26,15 @@ void main() {
       }
     }
   });
+
+  test('generated Maelstrom spans the whole range up to the cap', () {
+    final generate = GenerateScenario(spec, random: Random(7));
+    for (final loadout in spec.loadouts) {
+      final cap = spec.maxResource(loadout.talents);
+      final seen = {for (var i = 0; i < 2000; i++) generate(loadout).resource};
+      expect(seen, contains(cap), reason: loadout.name);
+      expect(seen, contains(0), reason: loadout.name);
+      expect(seen.every((r) => r % 5 == 0), isTrue);
+    }
+  });
 }
