@@ -117,27 +117,26 @@ class ScenarioEditor extends StatelessWidget {
           ),
         SectionHeader('Cooldowns'),
         for (final cd in cooldowns)
-          cd.maxCharges != null
-              ? LabeledSlider(
-                  label: '${cd.name} charges',
-                  value:
-                      state.cooldown(cd.id).charges ??
-                      cd.maxCharges!.toDouble(),
-                  max: cd.maxCharges!.toDouble(),
-                  divisions: cd.maxCharges! * 10,
-                  format: (v) => v.toStringAsFixed(1),
-                  onChanged: (v) =>
-                      vm.setCooldown(cd.id, CooldownState(charges: v)),
-                )
-              : LabeledSlider(
-                  label: cd.name,
-                  value: state.cooldown(cd.id).remains,
-                  max: cd.duration,
-                  divisions: cd.duration.round(),
-                  format: (v) => v <= 0 ? 'Ready' : '${v.round()}s',
-                  onChanged: (v) =>
-                      vm.setCooldown(cd.id, CooldownState(remains: v)),
-                ),
+          if (spec.maxCharges(cd, state.talents) case final maxCharges?)
+            LabeledSlider(
+              label: '${cd.name} charges',
+              value: state.cooldown(cd.id).charges ?? maxCharges.toDouble(),
+              max: maxCharges.toDouble(),
+              divisions: maxCharges * 10,
+              format: (v) => v.toStringAsFixed(1),
+              onChanged: (v) =>
+                  vm.setCooldown(cd.id, CooldownState(charges: v)),
+            )
+          else
+            LabeledSlider(
+              label: cd.name,
+              value: state.cooldown(cd.id).remains,
+              max: cd.duration,
+              divisions: cd.duration.round(),
+              format: (v) => v <= 0 ? 'Ready' : '${v.round()}s',
+              onChanged: (v) =>
+                  vm.setCooldown(cd.id, CooldownState(remains: v)),
+            ),
         Row(
           children: [
             Expanded(child: SectionHeader('Talents')),

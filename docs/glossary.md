@@ -888,13 +888,14 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 
 ### Lava Burst (LvB)
 
-- **Meaning:** A cast-time attack on a two-charge [cooldown](#cooldown-cd). It
+- **Meaning:** A cast-time attack on a [cooldown](#cooldown-cd) with charges. It
   also sets up [Master of the Elements](#master-of-the-elements-mote).
-- **In a log:** Casts per minute, and casts made at or near two charges. Charge
+- **In a log:** Casts per minute, and casts made at or near maximum charges. Charge
   count isn't logged, so it would have to be estimated from cast times.
 - **Status:** `needs checking`
-- **In this repo:** `lava_burst`, `cooldown.lava_burst.charges_fractional`. Two
-  charges, 8-second recharge and 2-second cast in the app. The APL fires it at
+- **In this repo:** `lava_burst`, `cooldown.lava_burst.charges_fractional`. One
+  charge, plus one each from Echo of the Elements and Elemental Reverb, with an
+  8-second recharge and a 2-second cast. The APL fires it at
   `charges_fractional>1.8` to avoid wasting a charge.
 - **Not to be confused with:** [Lava Surge](#lava-surge).
 
@@ -949,8 +950,8 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 - **In this repo:** `stormkeeper`, `talent.stormkeeper`, `buff.stormkeeper.up`,
   `.stack`, `cooldown.stormkeeper.remains`. Cast 1.5 seconds, cooldown 60 seconds.
   It is also in `actions.precombat`, so a log may show it before the fight starts.
-- **To check:** Whether it does more than make those spells instant. The maximum
-  is 3 stacks, so the APL's `buff.stormkeeper.stack<4` passes at any stack count.
+- **To check:** Whether it does more than make those spells instant. It gives 2
+  stacks, so the APL's `buff.stormkeeper.stack<4` passes at any stack count.
 - **Not to be confused with:** [Stormbringer](#stormbringer).
 
 ### Tempest

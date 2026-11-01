@@ -70,7 +70,9 @@ class AplStateResolver {
     final definition = spec.cooldownDefinition(name);
     final cooldown = state.cooldown(name);
     final duration = definition?.duration ?? 0;
-    final maxCharges = definition?.maxCharges;
+    final maxCharges = definition == null
+        ? null
+        : spec.maxCharges(definition, state.talents);
 
     final double fractional;
     final double remains;

@@ -66,6 +66,11 @@ abstract class RotationSpec {
   /// potions...). They are shown as skipped in the trace.
   Set<String> get unmodelledActions;
 
+  /// Maximum charges of [cooldown] with [talents], or `null` if it doesn't
+  /// use charges. Override when talents add charges.
+  int? maxCharges(CooldownDefinition cooldown, Set<String> talents) =>
+      cooldown.maxCharges;
+
   /// Maximum primary resource with [talents].
   double maxResource(Set<String> talents);
 

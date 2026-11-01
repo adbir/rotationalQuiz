@@ -38,7 +38,7 @@ void main() {
       if (spec.availability('ancestral_swiftness', state).isAvailable) {
         swiftness++;
       }
-      if ((state.cooldown('spiritwalkers_grace').charges ?? 0) >= 1) grace++;
+      if (state.cooldown('spiritwalkers_grace').remains <= 0) grace++;
     }
     expect(swiftness / runs, greaterThan(0.7));
     expect(grace / runs, greaterThan(0.7));
@@ -65,6 +65,19 @@ void main() {
       }
     }
     expect(ready / runs, closeTo(0.5, 0.1));
+  });
+
+  test('Lava Burst charges use the build\'s own cap', () {
+    final generate = GenerateScenario(spec, random: Random(8));
+    final lavaBurst = spec.cooldownDefinition('lava_burst')!;
+    for (final loadout in spec.loadouts) {
+      final cap = spec.maxCharges(lavaBurst, loadout.talents)!;
+      final seen = [
+        for (var i = 0; i < 500; i++)
+          generate(loadout).cooldown('lava_burst').charges!,
+      ];
+      expect(seen.reduce(max), inInclusiveRange(cap - 0.5, cap));
+    }
   });
 
   test('generated Maelstrom spans the whole range up to the cap', () {

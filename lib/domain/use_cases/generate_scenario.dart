@@ -59,7 +59,7 @@ class GenerateScenario {
 
     final cooldowns = {...state.cooldowns};
     for (final cooldown in spec.cooldowns) {
-      final maxCharges = cooldown.maxCharges;
+      final maxCharges = spec.maxCharges(cooldown, loadout.talents);
       final readyChance = cooldown.quizReadyChance;
       if (maxCharges != null) {
         cooldowns[cooldown.id] = CooldownState(
