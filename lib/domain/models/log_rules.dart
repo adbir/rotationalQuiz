@@ -23,6 +23,7 @@ class SpecLogRules {
     this.raidSupportIds = const {},
     this.chanceProcs = const [],
     this.auraLogIds = const {},
+    this.rankingMetric = 'dps',
     this.unobservableAuras = const {},
     this.aoeDamage = const {},
   });
@@ -80,6 +81,10 @@ class SpecLogRules {
   /// Buff ids as logged, by aura id, where they differ from the aura's spell
   /// id (Ascendance casts as 114050 and its buff is 1219480).
   final Map<String, Set<int>> auraLogIds;
+
+  /// The Warcraft Logs ranking metric that sorts the spec's top logs: `dps`,
+  /// or `hps` for a healer.
+  final String rankingMetric;
 
   /// Auras a fight's events never show, so a replay can only guess them.
   final Set<String> unobservableAuras;

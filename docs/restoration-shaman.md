@@ -120,6 +120,36 @@ Cost is the `classResources` `cost` in the logs (max mana 250,000 for the owner,
   charges of a 6 s cooldown allow (52). Neither guide names a reduction for
   Totemic. Healing Stream Totem's counts fit once Stormstream restores charges.
 
+## What the tables hold (#76)
+
+`restoration_shaman_data.dart` and `restoration_shaman_log_data.dart` take their
+ids, costs and cooldowns from the Spells table above, with these additions:
+
+| Entry | Value | Source |
+| --- | --- | --- |
+| Lightning Bolt 188196 | 500 mana, 2.5 s cast | log (owner's cost, above); tooltip |
+| Flame Shock 188389, Lava Burst 51505 | 750 and 1,250 mana | tooltip: 0.3% and 0.5% of 250,000 base mana (no log cast them) |
+| Earth Shield | cast 974, alias 383648 | Spells table; `castAliases {383648: 974}` |
+| Healing Rain 1307888 | 25 s | Surging Totem's duration above |
+| Stormstream buff 1267089 | 60 s, 2 stacks | the ticket (#76); tooltip names the proc, not the length |
+| Ascendance buff 114052 | 15 s | Spells table (the buff ran 24 s in the fixture's window) |
+| Tidal Waves 53390 | 2 stacks | tooltip |
+| Earthliving 382024 | 6 s HoT | tooltip |
+| Earth Shield durations | 600 s, not checked | placeholder for the editor only |
+| Innervate 29166, Source of Magic 372571 | raid support | fixture's received-buffs and abilities tables. Source of Magic's cast id on the Evoker is 369459 (tooltip); the buff on the Shaman logs as 372571 |
+| Riptide, Healing Stream Totem charges | 2 each | Spells table; Echo of the Elements and the second node are in the build |
+
+Ranking metric: `SpecLogRules.rankingMetric` is `hps` here and `dps` for
+Elemental; the rankings query writes it in (`metric: hps`).
+
+**The build.** Every spec and hero name in the list above resolved to one tree
+entry, except Stormstream Totem, which has three entries (a one-rank, a two-rank
+and a one-rank node) that share the token `stormstream_totem`. Rank 1's
+`CombatantInfo` has exactly these 43 spec and hero tokens. The loadout's export
+string is rank 1's whole tree written by the same bit layout the codec reads
+(zero tree hash, as third-party tools write it); it decodes to spec 264, hero
+tree 54. Not tried in game.
+
 ## Open questions
 
 - What shortens Riptide's cooldown in the Totemic build.
