@@ -10,10 +10,14 @@ class MetricsTable extends StatelessWidget {
     super.key,
     required this.comparison,
     required this.resourceLabel,
+    required this.tracksSpenders,
   });
 
   final BossComparison comparison;
   final String resourceLabel;
+
+  /// Whether the resource and spender rows mean anything for the spec.
+  final bool tracksSpenders;
 
   @override
   Widget build(BuildContext context) {
@@ -45,21 +49,23 @@ class MetricsTable extends StatelessWidget {
           'Gaps over ${threshold.toStringAsFixed(1)} s',
           (m) => '${m.gaps.count}',
         ),
-        row(
-          '$resourceLabel per minute',
-          (m) => m.resource.gainedPerMinute.round().toString(),
-        ),
-        row('$resourceLabel wasted', (m) => '${m.resource.wasted}'),
-        if (buff != null)
+        if (tracksSpenders) ...[
           row(
-            'Spenders with $buff',
-            (m) => _of(m.spenders.withBuff, m.spenders.casts),
+            '$resourceLabel per minute',
+            (m) => m.resource.gainedPerMinute.round().toString(),
           ),
-        row('Free spenders', (m) => _of(m.spenders.free, m.spenders.casts)),
-        row(
-          'Free spenders lost by refreshing',
-          (m) => '${m.spenders.lostFree}',
-        ),
+          row('$resourceLabel wasted', (m) => '${m.resource.wasted}'),
+          if (buff != null)
+            row(
+              'Spenders with $buff',
+              (m) => _of(m.spenders.withBuff, m.spenders.casts),
+            ),
+          row('Free spenders', (m) => _of(m.spenders.free, m.spenders.casts)),
+          row(
+            'Free spenders lost by refreshing',
+            (m) => '${m.spenders.lostFree}',
+          ),
+        ],
         for (final (i, dot) in first.dotUptime.indexed)
           row(
             '${dot.name} uptime',
@@ -80,10 +86,40 @@ class MetricsTable extends StatelessWidget {
             final match = m.cooldowns.where((c) => c.id == cooldown.id);
             if (match.isEmpty) return '–';
             final delay = match.first.medianDrift;
-            return delay == null
+            final uses = match.first.possible == null
                 ? '${match.first.uses}'
-                : '${match.first.uses} · ${delay.toStringAsFixed(2)} s';
+                : '${match.first.uses} of ${match.first.possible}';
+            return delay == null
+                ? uses
+                : '$uses · ${delay.toStringAsFixed(2)} s';
           }),
+        for (final (i, aura) in first.upkeep.indexed)
+          row(
+            '${aura.name} uptime',
+            (m) => m.upkeep.length > i
+                ? '${m.upkeep[i].percent.toStringAsFixed(1)}%'
+                : '–',
+          ),
+        for (final proc in first.heldProcs)
+          row('${proc.name}, procs · average hold', (m) {
+            final match = m.heldProcs.where((p) => p.name == proc.name);
+            if (match.isEmpty) return '–';
+            final hold = match.first.averageHold;
+            return hold == null
+                ? '${match.first.gained}'
+                : '${match.first.gained} · '
+                      '${(hold.inMilliseconds / 1000).toStringAsFixed(1)} s';
+          }),
+        if (first.resourceLevels != null) ...[
+          row(
+            '$resourceLabel at the end',
+            (m) => _percent(m.resourceLevels?.atEnd?.percent),
+          ),
+          row(
+            'Lowest $resourceLabel',
+            (m) => _percent(m.resourceLevels?.lowest?.percent),
+          ),
+        ],
         for (final free in first.raidFreeCasts)
           row('${free.name} spent / available', (m) {
             final match = m.raidFreeCasts.where((r) => r.name == free.name);
@@ -94,6 +130,9 @@ class MetricsTable extends StatelessWidget {
       ],
     );
   }
+
+  static String _percent(double? v) =>
+      v == null ? '–' : '${v.toStringAsFixed(0)}%';
 
   static String _of(int? part, int total) =>
       part == null ? '–' : '$part of $total';

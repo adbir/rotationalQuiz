@@ -3,17 +3,21 @@ import 'package:flutter/material.dart';
 import '../../../../../domain/models/boss_comparison.dart';
 import 'comparison_grid.dart';
 
-/// Who is compared: fought length with kill or wipe, then DPS and item level
+/// Who is compared: fought length with kill or wipe, then the rankings' DPS or HPS and item level
 /// where the rankings give them (blank otherwise).
 class LogHeaderTable extends StatelessWidget {
   const LogHeaderTable({
     super.key,
     required this.comparison,
     required this.bossName,
+    required this.rankingLabel,
   });
 
   final BossComparison comparison;
   final String bossName;
+
+  /// "DPS" or "HPS": what the rankings sort by.
+  final String rankingLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -59,14 +63,18 @@ class LogHeaderTable extends StatelessWidget {
       caption:
           'Everything below compares the first '
           '${comparison.fought.inSeconds} s, which all logs fought.',
-      columns: const ['Fought', 'DPS', 'Item level'],
+      columns: ['Fought', rankingLabel, 'Item level'],
       labelWidth: 70,
       cellWidth: 94,
       rows: [
         for (final log in comparison.logs)
           GridRow(log.label, [
             GridCell('${log.fought.inSeconds} s ${log.kill ? 'kill' : 'wipe'}'),
-            GridCell(log.dps == null ? '' : _thousands(log.dps!.round())),
+            GridCell(
+              log.rankedAmount == null
+                  ? ''
+                  : _thousands(log.rankedAmount!.round()),
+            ),
             GridCell(log.itemLevel?.toString() ?? ''),
           ]),
       ],

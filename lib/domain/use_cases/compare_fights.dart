@@ -68,7 +68,7 @@ class CompareFights {
             label: f.label,
             metrics: computed[i],
             kill: f.log.fight.kill,
-            dps: f.ranked?.amount,
+            rankedAmount: f.ranked?.amount,
             itemLevel: (f.ranked?.itemLevel ?? 0) > 0
                 ? f.ranked!.itemLevel
                 : null,

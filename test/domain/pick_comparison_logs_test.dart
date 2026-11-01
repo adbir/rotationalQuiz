@@ -121,7 +121,7 @@ void main() {
     );
     expect(comparison.castsPerMinute.first, comparison.castsPerMinute.last);
     expect(comparison.pooling.first, hasLength(2));
-    expect(comparison.logs.first.dps, isNull);
-    expect(comparison.logs.last.dps, 1);
+    expect(comparison.logs.first.rankedAmount, isNull);
+    expect(comparison.logs.last.rankedAmount, 1);
   });
 }
