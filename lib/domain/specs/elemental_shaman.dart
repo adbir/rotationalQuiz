@@ -101,7 +101,6 @@ class ElementalShaman extends RotationSpec {
   @override
   double costOf(SpellDefinition spell, CombatState state) {
     if (spell.cost == 0) return 0;
-    if (spell.id == 'lava_burst' && state.buff('lava_surge').isUp) return 0;
     var cost = spell.cost;
     if (state.hasTalent(ElementalTalents.eyeOfTheStorm)) {
       cost -= spell.id == 'elemental_blast' ? 10 : 5;
