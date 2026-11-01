@@ -121,4 +121,58 @@ void main() {
       expect(adds.waveStarts().length, greaterThanOrEqualTo(5));
     },
   );
+
+  test(
+    'counts the enemies alive and the targets hit in the Twin Fangs logs',
+    skip: env['WCL_LIVE'] == null,
+    timeout: const Timeout(Duration(minutes: 3)),
+    () async {
+      final token = await _clientToken();
+      final repo = WarcraftLogsRepository(
+        spec: spec,
+        service: WarcraftLogsService(accessToken: () async => token),
+      );
+      const logs = [
+        ('dvpkyx8D4YnAHGJK', 18),
+        ('pDkwjXv3Z2Q8mBVc', 2),
+        ('CGjdNa8RBfcQtAWg', 33),
+      ];
+      for (final (code, fight) in logs) {
+        final result = await repo.loadEnemyPresence(
+          reportCode: code,
+          fightId: fight,
+        );
+        final presence = switch (result) {
+          Ok(:final value) => value,
+          Error(:final error) => fail('$error'),
+        };
+        // Two bosses alone before the first wave, and a Bulwark wave arriving from 11 s.
+        expect(presence.aliveAt(const Duration(seconds: 5)), 2);
+        expect(presence.aliveAt(const Duration(seconds: 15)), greaterThan(2));
+        // Every wave is gone again before the next.
+        expect(presence.aliveAt(const Duration(seconds: 65)), 2);
+      }
+
+      final rank1 = await repo.loadFight(
+        reportCode: logs.last.$1,
+        fightId: logs.last.$2,
+        sourceId: 25,
+        includeTargetsHit: true,
+      );
+      final log = switch (rank1) {
+        Ok(:final value) => value,
+        Error(:final error) => fail('$error'),
+      };
+      final chain = [
+        for (final cast in log.casts)
+          if (cast.abilityId == 188443 && !cast.isBegin) cast.targetsHit,
+      ];
+      expect(chain, isNotEmpty);
+      expect(chain, everyElement(isNotNull));
+      expect(
+        chain.whereType<int>().reduce((a, b) => a > b ? a : b),
+        greaterThan(3),
+      );
+    },
+  );
 }

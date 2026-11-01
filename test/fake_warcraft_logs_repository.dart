@@ -1,5 +1,6 @@
 import 'package:rotational_quiz/data/repositories/warcraft_logs_repository.dart';
 import 'package:rotational_quiz/domain/models/enemy_group.dart';
+import 'package:rotational_quiz/domain/models/enemy_presence.dart';
 import 'package:rotational_quiz/domain/models/fight_log.dart';
 import 'package:rotational_quiz/domain/specs/rotation_spec.dart';
 import 'package:rotational_quiz/utils/result.dart';
@@ -52,6 +53,7 @@ class FakeWarcraftLogsRepository implements WarcraftLogsRepository {
     required int fightId,
     int? sourceId,
     String? playerName,
+    bool includeTargetsHit = false,
   }) async {
     await hold;
     if (error != null) return Result.error(error!);
@@ -103,6 +105,16 @@ class FakeWarcraftLogsRepository implements WarcraftLogsRepository {
         ],
       ),
     ]);
+  }
+
+  @override
+  Future<Result<EnemyPresence>> loadEnemyPresence({
+    required String reportCode,
+    required int fightId,
+  }) async {
+    await hold;
+    if (error != null) return Result.error(error!);
+    return Result.ok(EnemyPresence.single);
   }
 
   @override
