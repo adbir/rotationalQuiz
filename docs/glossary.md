@@ -91,8 +91,9 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - The fields inside `playerDetails`, `graph` and `phases`.
 - Damage, healing and debuff events. Their field names are unknown, so this
   file doesn't name any.
-- A way to measure enemy debuff uptime. `table(dataType: Debuffs,
-  hostilityType: Enemies)` with a `sourceID` returned no auras.
+- Enemy debuff uptime is measured: see "Flame Shock uptime" in
+  [warcraft-logs.md](warcraft-logs.md). `hostilityType: Enemies` returns nothing
+  for a player's debuffs; the default works.
 - Whether `includeResources` is what adds `classResources`, `x` and `y` to cast
   events. Requests with it return them; none has been tried without it.
 - Whose hit points and item level `hitPoints` and `itemLevel` report.
@@ -426,9 +427,20 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 
 - **Meaning:** A temporary harmful effect, on an enemy or a player.
 - **In a log:** Debuff uptime: percent of the time the target was alive and
-  affected. Needs debuff events, which have not been sampled.
-- **Status:** `needs checking`
+  affected, from `events(dataType: Debuffs, sourceID, abilityID)` or the
+  `Debuffs` table, which agree. Read as [aura bands](#aura-band).
+- **Status:** `confirmed`
 - **In this repo:** `debuff.<name>`, such as `debuff.lightning_rod.remains`.
+
+### Aura band
+
+- **Meaning:** One unbroken stretch of an aura on one target, from its apply to
+  its remove. A refresh inside a band doesn't start a new one.
+- **In a log:** The `bands` of a `Debuffs` table row, or `applydebuff` to the
+  next `removedebuff` in events. Uptime is the bands' summed length. A band
+  still open at the end of the fight closes at the fight's end. Down time is the
+  fight minus the bands.
+- **Status:** `confirmed`
 
 ### DoT (damage over time)
 
@@ -928,9 +940,12 @@ the app's, and all the log measures depend on ability ids, so every entry here i
   most of the fight.
 - **In a log:** DoT uptime on the boss, percent of [kill time](#kill-time), and
   early refreshes per minute (see [pandemic](#pandemic)). Counting Flame Shock
-  casts isn't enough, because the APL also maintains it with Voltaic Blaze. Count
-  id 188389 only: 470411 fires with every cast and isn't a press.
-- **Status:** `needs checking`
+  casts isn't enough, because the APL also maintains it with Voltaic Blaze and
+  Ascendance casts it unpressed. Uptime comes from debuff events for id 188389
+  on the boss (1 API point). Count casts of 188389 only: 470411 fires with every
+  cast, never appears as a debuff, and isn't a press.
+- **Status:** `confirmed` for uptime. Early-refresh waste is `needs checking`:
+  a refresh event carries no remaining time.
 - **In this repo:** `flame_shock`, `dot.flame_shock.refreshable`, `.remains`,
   `active_dot.flame_shock`. Duration 18 seconds and cooldown 6 seconds in the app.
   The APL's main refresh line needs `cooldown.ascendance.remains>5`.
