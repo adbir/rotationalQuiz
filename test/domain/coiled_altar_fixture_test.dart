@@ -7,16 +7,19 @@ import 'player_metrics_fixture_test.dart' show loadFixture, loadFixtureEnemies;
 
 /// 75 seconds of a real Mythic Coiled Altar kill (rank 1, 514 s), from 225 s
 /// to 300 s of the pull. Two pairs of Spiteful Soulcoilers arrive in it, at
-/// 24.5 s and 57.5 s into the window (249.5 s and 282.5 s of the pull). Six
-/// Manifestations of Dread arrive just before each pair, and the player
-/// damages neither them nor the Axegrinders, so they are not in the fixture.
+/// 24.5 s and 57.5 s into the window (249.5 s and 282.5 s of the pull); the
+/// fixture's `waves` hold them as they arrived and `enemies` only the copies
+/// the player's own spells hit (one, from 71 s). Six Manifestations of Dread
+/// arrive just before each pair, and the player damages neither them nor the
+/// Axegrinders, so they are not in the fixture.
 void main() {
   final log = loadFixture('coiled_altar_window');
   final timeline = const RebuildResourceTimeline(spec)(log);
   final enemies = loadFixtureEnemies('coiled_altar_window').groups;
-  final soulcoilers = enemies.singleWhere(
-    (e) => e.name == 'Spiteful Soulcoiler',
-  );
+  final soulcoilers = loadFixtureEnemies(
+    'coiled_altar_window',
+    key: 'waves',
+  ).groups.single;
 
   test('rebuilds Maelstrom within 9 of every logged reading', () {
     expect(timeline.checkpoints, hasLength(11));
@@ -37,20 +40,22 @@ void main() {
     expect(soulcoilers.arrivals, hasLength(4));
   });
 
-  test('counts the hittable boss and the Soulcoilers up', () {
-    // Zul'jan is not hittable in 225 to 300 s, and Malacrass from 231.3 s, so
-    // one boss is up (see "Untargetable stretches" in docs/warcraft-logs.md).
+  test('counts the hittable boss and the Soulcoilers the player hit', () {
+    // Zul'jan is not hittable in 225 to 300 s. Malacrass is, from before the
+    // window: a shield took his first hits, and a hit it fully absorbed
+    // counts (see "Untargetable stretches" in docs/warcraft-logs.md).
     final malacrass = enemies.singleWhere(
       (e) => e.name == 'Hex Lord Malacrass',
     );
+    final hit = enemies.singleWhere((e) => e.name == 'Spiteful Soulcoiler');
     expect(enemies.map((e) => e.name), isNot(contains("Zul'jan")));
-    expect(malacrass.aliveAt(const Duration(seconds: 5)), 0);
-    expect(malacrass.aliveAt(const Duration(seconds: 7)), 1);
+    expect(malacrass.aliveAt(const Duration(seconds: 5)), 1);
     expect(malacrass.aliveAt(const Duration(seconds: 75)), 1);
-    expect(soulcoilers.aliveAt(const Duration(seconds: 26)), 2);
-    expect(soulcoilers.aliveAt(const Duration(seconds: 70)), 2);
-    expect(soulcoilers.aliveAt(const Duration(seconds: 40)), 2);
-    expect(soulcoilers.aliveAt(const Duration(seconds: 56)), 0);
+    // Wave 3's Soulcoilers were hit only by gear procs, so they never count;
+    // wave 4's one copy counts from the first Flame Shock on it.
+    expect(hit.aliveAt(const Duration(seconds: 26)), 0);
+    expect(hit.aliveAt(const Duration(seconds: 70)), 0);
+    expect(hit.aliveAt(const Duration(seconds: 72)), 1);
   });
 
   test('top player holds a spender for both waves', () {

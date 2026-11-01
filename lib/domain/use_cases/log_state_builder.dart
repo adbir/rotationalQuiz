@@ -56,7 +56,12 @@ class LogStateBuilder {
   static const _flameShockStart = 12.0;
   static const _flameShockLength = 18.0;
 
-  CombatState at(Duration q) {
+  /// The state at [q]. For a press in the same millisecond as its predecessor
+  /// ([pressAt]), the buff events from the last removal in that millisecond on
+  /// are the press's own (a Lava Surge it spends, a Master of the Elements it
+  /// grants) and are left out: they can't be told apart by time, but the log
+  /// lists them in order.
+  CombatState at(Duration q, {Duration? pressAt}) {
     final resource = timeline.at(q);
     final max = spec.maxResource(talents);
     final tail = fightRemainsAfter ?? _unknownTail;
@@ -67,7 +72,7 @@ class LogStateBuilder {
       talents: talents,
       targets: presence?.aliveAt(q) ?? targets,
       setBonuses: {for (final bonus in spec.setBonuses) bonus.id},
-      buffs: _buffs(q),
+      buffs: _buffs(q, _ownEffectsFrom(pressAt)),
       dots: {'flame_shock': _flameShock(q)},
       cooldowns: _cooldowns(q),
     );
@@ -121,7 +126,7 @@ class LogStateBuilder {
         !_castTimes(id).any((t) => t <= q);
   }
 
-  Map<String, AuraState> _buffs(Duration q) {
+  Map<String, AuraState> _buffs(Duration q, int ownFrom) {
     final buffs = <String, AuraState>{
       'lightning_shield': const AuraState.up(remains: 3600),
     };
@@ -131,7 +136,7 @@ class LogStateBuilder {
       var stacks = 0;
       var remains = 0.0;
       for (final id in ids) {
-        final state = _buff(id, q);
+        final state = _buff(id, q, ownFrom);
         stacks += state.stacks;
         if (state.remains > remains) remains = state.remains;
       }
@@ -142,14 +147,30 @@ class LogStateBuilder {
     return buffs;
   }
 
+  /// The index of the first of the press's own buff events at [pressAt], or
+  /// past the end when it has none to leave out.
+  int _ownEffectsFrom(Duration? pressAt) {
+    final events = log.buffEvents;
+    if (pressAt == null) return events.length;
+    final last = events.lastIndexWhere(
+      (e) =>
+          e.time == pressAt &&
+          e.targetId == log.playerId &&
+          (e.change == LogBuffChange.remove ||
+              e.change == LogBuffChange.removeStack),
+    );
+    return last < 0 ? events.length : last;
+  }
+
   /// A buff on the player at [q]. Time left reads ahead to the log's own
   /// removal, so it is what the buff really had.
-  AuraState _buff(int id, Duration q) {
+  AuraState _buff(int id, Duration q, int ownFrom) {
     var stacks = 0;
     Duration? removedAt;
-    for (final e in log.buffEvents) {
+    for (var i = 0; i < log.buffEvents.length; i++) {
+      final e = log.buffEvents[i];
       if (e.abilityId != id || e.targetId != log.playerId) continue;
-      if (e.time > q) {
+      if (e.time > q || i >= ownFrom) {
         if (stacks > 0 && e.change == LogBuffChange.remove) {
           removedAt = e.time;
           break;

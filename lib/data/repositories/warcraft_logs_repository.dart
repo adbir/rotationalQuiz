@@ -5,6 +5,7 @@ import '../../domain/models/spec_definition.dart';
 import '../../domain/specs/rotation_spec.dart';
 import '../../utils/result.dart';
 import '../services/warcraft_logs_service.dart';
+import 'warcraft_logs_hits.dart';
 import 'warcraft_logs_mapper.dart';
 
 /// Fetches fights and rankings from Warcraft Logs as domain models.
@@ -151,6 +152,14 @@ class WarcraftLogsRepository {
     }
   }
 
+  /// The ability ids of the player's own spells on damage events: the spell
+  /// table's, and the damage ids of the area abilities in the log rules. Gear
+  /// procs are not among them.
+  Set<int> get _damageIds => {
+    for (final spell in spec.spells.values) ?spell.spellId,
+    for (final aoe in spec.logRules.aoeDamage.values) aoe.damageId,
+  };
+
   Future<List<EnemyGroup>> _enemyGroups(
     String reportCode,
     int fightId, {
@@ -181,15 +190,12 @@ class WarcraftLogsRepository {
           enemy: true,
         );
 
-    final deaths = withDepartures
-        ? await enemyEvents(WclEventType.deaths)
-        : const <JsonMap>[];
     // ponytail: an add counts only if the player damaged it, which drops
     // Barbed Bulwark (crowd controlled, not killed). A kind the player simply
     // ignored drops out too; the ceiling is a fight with a real add left alone.
     final hits = playerId == null
         ? null
-        : WarcraftLogsMapper.reallyDamaged(
+        : WarcraftLogsHits(
             await _service.events(
               code: reportCode,
               fightId: fightId,
@@ -215,9 +221,9 @@ class WarcraftLogsRepository {
           // the player chose to ignore while it was hittable. No hits at all
           // keeps the whole-fight span.
           groups.add(
-            WarcraftLogsMapper.hittableSpans(
+            WarcraftLogsHits.hittableSpans(
                   name,
-                  hits?[id.toInt()] ?? const [],
+                  hits?.timesOn(id.toInt()) ?? const [],
                   start,
                   bossHitGap,
                 ) ??
@@ -226,27 +232,22 @@ class WarcraftLogsRepository {
         }
         continue;
       }
-      if (hits != null && !hits.containsKey(id.toInt())) continue;
-      final casts = await enemyEvents(WclEventType.casts, id.toInt());
-      var ends = [
-        for (final death in deaths)
-          if (death['targetID'] == id) death,
-      ];
-      // Some adds die without a death event. The last damage they took stands
-      // in for it.
-      final noDeaths = withDepartures && ends.isEmpty;
-      if (noDeaths) {
-        ends = await enemyEvents(WclEventType.damageTaken, id.toInt());
+      if (hits == null) {
+        final casts = await enemyEvents(WclEventType.casts, id.toInt());
+        groups.add(WarcraftLogsMapper.enemyGroup(name, casts, start));
+        continue;
       }
-      groups.add(
-        WarcraftLogsMapper.enemyGroup(
-          name,
-          casts,
-          start,
-          endEvents: ends,
-          unseenGoneAtArrival: noDeaths,
-        ),
+      // ponytail: a copy is up while the player's own spells keep hitting it,
+      // in stretches split at bossHitGap, so a copy hit only by gear procs, or
+      // across the room, is not counted. The ceiling is a copy in reach that
+      // the player ignored: it reads as absent.
+      final spans = WarcraftLogsHits.spansOfCopies(
+        name,
+        hits.timesByCopy(id.toInt(), _damageIds).values,
+        start,
+        bossHitGap,
       );
+      if (spans != null) groups.add(spans);
     }
     return groups;
   }

@@ -94,6 +94,63 @@ void main() {
     expect(report.kinds.keys.single, startsWith('lightning_bolt instead of'));
   });
 
+  group('timing', () {
+    LogCast begin(double seconds, String id) => LogCast(
+      time: Duration(milliseconds: (seconds * 1000).round()),
+      abilityId: spec.spells[id]!.spellId!,
+      targetId: 2,
+      isBegin: true,
+    );
+
+    test('a chained cast takes its own begincast, not the next one', () {
+      // Two Lightning Bolts back to back: the first finishes at 5.0 s as the
+      // second begins.
+      final report = replay(
+        syntheticLog(
+          [(5, 'lightning_bolt'), (7, 'lightning_bolt')],
+          [begin(3, 'lightning_bolt'), begin(5, 'lightning_bolt')],
+        ),
+        document,
+      );
+
+      expect(report.compared, 2);
+      expect(report.deviations.first.time, const Duration(seconds: 3));
+    });
+
+    test('a cast that begins in its own millisecond is an instant', () {
+      // Lava Burst on a Lava Surge: begincast and cast share 3.0 s, and
+      // Master of the Elements, which it grants, is logged then too. The
+      // state it was pressed in doesn't have the buff yet.
+      LogBuffEvent mastery(LogBuffChange change) => LogBuffEvent(
+        time: const Duration(seconds: 3),
+        abilityId: 260734,
+        targetId: 1,
+        change: change,
+      );
+      final log = syntheticLog([(3, 'lava_burst')], [begin(3, 'lava_burst')]);
+      final withBuff = FightLog(
+        reportCode: log.reportCode,
+        fight: log.fight,
+        playerName: log.playerName,
+        playerId: log.playerId,
+        abilityNames: log.abilityNames,
+        casts: log.casts,
+        resourceGains: log.resourceGains,
+        buffEvents: [mastery(LogBuffChange.apply)],
+        talents: log.talents,
+      );
+
+      final plain = replay(log, document);
+      final granted = replay(withBuff, document);
+
+      expect(granted.agreements, plain.agreements);
+      expect(
+        granted.deviations.map((d) => d.wanted),
+        plain.deviations.map((d) => d.wanted),
+      );
+    });
+  });
+
   test('presses of abilities outside the spell table are not compared', () {
     const ghostWolf = LogCast(
       time: Duration(seconds: 1),
@@ -123,7 +180,8 @@ void main() {
       );
 
       expect(report.compared, 46);
-      expect(report.agreements, 19);
+      expect(report.agreements, 22);
+      expect(report.exactDeviations, hasLength(13));
       expect(report.deviations, isNotEmpty);
     });
 
@@ -136,8 +194,10 @@ void main() {
       final owner = replay(loadFixture(), document);
 
       expect(rank1.compared, 59);
+      expect(rank1.agreements, 37);
+      expect(rank1.exactDeviations, hasLength(18));
       expect(rank1.agreementRate, greaterThan(0.58));
-      expect(rank1.agreementRate, greaterThan(owner.agreementRate + 0.15));
+      expect(rank1.agreementRate, greaterThan(owner.agreementRate + 0.14));
     });
 
     test('rank 1 on Coiled Altar, with only the hittable boss counted', () {
@@ -149,8 +209,8 @@ void main() {
 
       // Both bosses up all fight scored 8 of 61 (13%).
       expect(report.compared, 61);
-      expect(report.agreements, 11);
-      expect(report.exactDeviations, hasLength(42));
+      expect(report.agreements, 36);
+      expect(report.exactDeviations, hasLength(17));
     });
 
     test('the enemy count beats guessing one target', () {

@@ -65,13 +65,14 @@ FightLog loadFixture([String name = 'sszorak_window']) {
 
 /// The enemies a fixture holds, as the repository would build them: each
 /// kind's arrivals and departures in milliseconds from the fixture's start.
-EnemyPresence loadFixtureEnemies(String name) {
+/// [key] `waves` is the Coiled Altar adds as they arrived, from their casts.
+EnemyPresence loadFixtureEnemies(String name, {String key = 'enemies'}) {
   final json = jsonDecode(
     File('test/fixtures/$name.json').readAsStringSync(),
   ) as JsonMap;
   Duration ms(Object? t) => Duration(milliseconds: (t! as num).toInt());
   return EnemyPresence([
-    for (final e in (json['enemies'] as List).cast<JsonMap>())
+    for (final e in (json[key] as List).cast<JsonMap>())
       EnemyGroup(
         name: e['name']! as String,
         arrivals: [for (final t in e['arrivals']! as List) ms(t)],

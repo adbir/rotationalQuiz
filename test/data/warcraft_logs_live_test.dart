@@ -149,8 +149,9 @@ void main() {
       // wave is up (11 s): they are crowd controlled, not damaged.
       expect(presence.aliveAt(const Duration(seconds: 5)), 2);
       expect(presence.aliveAt(const Duration(seconds: 13)), 2);
-      // The first Vexhul wave brings 3 Vexhul and some Broodlings.
-      expect(presence.aliveAt(const Duration(seconds: 40)), greaterThan(5));
+      // The first Vexhul wave brings 3 Vexhul; Broodlings count only while the
+      // player's own spells hit them.
+      expect(presence.aliveAt(const Duration(seconds: 40)), 5);
       expect(presence.aliveAt(const Duration(seconds: 65)), 2);
       // Both bosses are hit all fight, so each is one stretch, not several.
       for (final name in ['Vexhul', 'Ithraz']) {
@@ -208,11 +209,14 @@ void main() {
       final waves = presence.groups
           .singleWhere((g) => g.name == 'Spiteful Soulcoiler')
           .waveStarts();
+      // Only the copies the player's own spells hit: wave 3 (249.5 s) was hit
+      // by gear procs alone, and wave 4's copy counts from 296 s.
       expect(waves, hasLength(5));
-      expect(waves[2].inMilliseconds, closeTo(249500, 200));
+      expect(waves[1].inMilliseconds, closeTo(296000, 200));
 
-      // Only one boss is hittable at a time in phases 1 and 2: the stretches
-      // of docs/warcraft-logs.md, "Untargetable stretches".
+      // Zul'jan has two stretches. Malacrass's shield takes hits through his
+      // untargetable gaps ("Untargetable stretches" in
+      // docs/warcraft-logs.md), and an absorbed hit counts, so he is one.
       List<(double, double)> spans(String name) {
         final g = presence.groups.singleWhere((g) => g.name == name);
         return [
@@ -234,13 +238,7 @@ void main() {
       }
 
       expectSpans("Zul'jan", [(0, 139.2), (323.5, 510.4)]);
-      expectSpans('Hex Lord Malacrass', [
-        (147.1, 216.9),
-        (231.3, 301.6),
-        (318.1, 398.0),
-        (409.3, 494.6),
-        (506.1, 513.8),
-      ]);
+      expectSpans('Hex Lord Malacrass', [(147.1, 513.8)]);
     },
   );
 }
