@@ -38,7 +38,8 @@ The cap is 100, +50 from Swelling Maelstrom and +25 from Primordial Capacity
 | Spell | Maelstrom | Source |
 | ----- | --------- | ------ |
 | Elemental Blast | costs 90 | log |
-| Earth Shock, Earthquake | cost 60 | estimate |
+| Earth Shock | cost 60 | estimate |
+| Earthquake | costs 60, cast id 462620 | log (`classResources` cost 60 on 13 casts) |
 | Eye of the Storm | -5 on spenders, -10 on Elemental Blast | inferred from APL thresholds |
 | Lava Burst | gives 8 | tooltip |
 | Flame Shock | gives 3 | tooltip |
@@ -191,7 +192,8 @@ Most players are Farseer (owner), so check that path first.
 
 - Expected Ancestors run 1.4 to 2.8 below actual in three logs. Ascendance's rolls
   are the likely cause.
-- The talent tree has two Earthquake entries in one node. Do they log under
-  different ids?
+- The talent tree has two Earthquake entries in one node. Farseer logs cast
+  Earthquake as 462620 (13 casts in a rank 1 Twin Fangs log, none as 61882).
+  Which entry gives 61882, if either, is not known.
 - What do the three Elemental Blast stat buffs in the APL's `aoe` list do in
   Midnight? The FAQ says to cast it when none are up, at any target count.

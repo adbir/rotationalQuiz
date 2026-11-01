@@ -368,7 +368,9 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   deviation can be the right play.
 - **Measured here as:** `DetectPooling`: the mean Maelstrom in the 8 s before
   an event is at least 15 points above the fight's mean, and a spender is cast
-  in the 8 s after. Both limits are guesses, not tuned on logs.
+  in the 8 s after. Both limits are guesses. On Twin Fangs no setting separated
+  add waves from other moments, so they were not tuned (see
+  [warcraft-logs.md](warcraft-logs.md)).
 - **Not to be confused with:** [overcap](#overcap-overcapping-capped), and with
   holding a resource when nothing is coming, which is a
   [mistake](#mistake).
@@ -557,7 +559,10 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   predictable point in the fight.
 - **In a log:** Spawn time: seconds into the pull of the first record for a new
   enemy. A player's first cast on it is a late estimate. Compare the same wave
-  across logs.
+  across logs. Measured here as the first cast by each copy of an enemy NPC
+  (`EnemyGroup.arrivals`), a second or so after the spawn; a wave starts when
+  none of its group has arrived for 15 s. Twin Fangs waves repeat to within
+  0.2 s between pulls.
 - **Status:** `needs checking`
 
 ### AoE (area of effect)
@@ -881,9 +886,9 @@ the app's, and all the log measures depend on ability ids, so every entry here i
   Earthquake line needs `spell_targets.chain_lightning=2`, so the APL never casts
   it on one target.
 - **To check:** The talent tree has a node with two entries both named
-  Earthquake, which suggests two versions of the spell. Find out how they differ
-  and whether they log under different ids. The app has only 61882, and doesn't
-  treat Earthquake as a talent.
+  Earthquake, which suggests two versions of the spell. Farseer logs cast it as
+  462620, which is the id the app now uses; 61882 never appeared. The app
+  doesn't treat Earthquake as a talent.
 
 ### Elemental Blast (EB)
 
