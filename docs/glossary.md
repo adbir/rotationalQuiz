@@ -91,8 +91,9 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - The fields inside `playerDetails`, `graph` and `phases`.
 - Damage, healing and debuff events. Their field names are unknown, so this
   file doesn't name any.
-- A way to measure enemy debuff uptime. `table(dataType: Debuffs,
-  hostilityType: Enemies)` with a `sourceID` returned no auras.
+- Enemy debuff uptime is measured: see "Flame Shock uptime" in
+  [warcraft-logs.md](warcraft-logs.md). `hostilityType: Enemies` returns nothing
+  for a player's debuffs; the default works.
 - Whether `includeResources` is what adds `classResources`, `x` and `y` to cast
   events. Requests with it return them; none has been tried without it.
 - Whose hit points and item level `hitPoints` and `itemLevel` report.
@@ -431,9 +432,20 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 
 - **Meaning:** A temporary harmful effect, on an enemy or a player.
 - **In a log:** Debuff uptime: percent of the time the target was alive and
-  affected. Needs debuff events, which have not been sampled.
-- **Status:** `needs checking`
+  affected, from `events(dataType: Debuffs, sourceID, abilityID)` or the
+  `Debuffs` table, which agree. Read as [aura bands](#aura-band).
+- **Status:** `confirmed`
 - **In this repo:** `debuff.<name>`, such as `debuff.lightning_rod.remains`.
+
+### Aura band
+
+- **Meaning:** One unbroken stretch of an aura on one target, from its apply to
+  its remove. A refresh inside a band doesn't start a new one.
+- **In a log:** The `bands` of a `Debuffs` table row, or `applydebuff` to the
+  next `removedebuff` in events. Uptime is the bands' summed length. A band
+  still open at the end of the fight closes at the fight's end. Down time is the
+  fight minus the bands.
+- **Status:** `confirmed`
 
 ### DoT (damage over time)
 
@@ -758,6 +770,43 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   comment "Use Power Infusion on Cooldown." The app lists it as unmodelled.
 - **To check:** Its effect in Midnight.
 
+### Blessing of the Bronze
+
+- **Meaning:** An Evoker buff on the whole raid before the pull. It takes 15% off
+  some cooldowns, such as Spiritwalker's Grace.
+- **In a log:** Id 381756. It has no event in the fight, because it is applied
+  before the pull. Only `table(dataType: Buffs, sourceID: <player>)` lists it,
+  at 100% uptime. See [carried-over aura](#carried-over-aura).
+- **Status:** `confirmed`
+
+### Buff `sourceID` and `targetID` (Buffs data)
+
+- **Meaning:** In `dataType: Buffs`, `sourceID` filters on the player holding the
+  buff and `targetID` on its caster, the opposite of damage and casts.
+- **In a log:** To list a player's buffs, use `sourceID`. The events' own
+  `sourceID` field is still the caster.
+- **Status:** `confirmed`, on three Sszorak logs.
+
+### Carried-over aura
+
+- **Meaning:** A buff already active when the pull starts, which the fight's
+  events never apply.
+- **In a log:** Absent from `events(dataType: Buffs)` within the fight. The buff
+  `table` reports it with its full uptime. An earlier window shows only
+  `removebuff` events from past pulls.
+- **Status:** `confirmed`
+- **In this repo:** [Blessing of the Bronze](#blessing-of-the-bronze).
+
+### Ebon Might, Prescience and Shifting Sands
+
+- **Meaning:** Buffs an Augmentation Evoker gives other players
+  ([Aug support](#augmentation-support-aug)). Ebon Might raises damage.
+  Prescience and Shifting Sands came from the same Evoker in the logs checked.
+- **In a log:** Ids 395152, 410089 and 413984. Uptime from the buff `table` with
+  `sourceID` set to the player. The caster is the `sourceID` of the events.
+- **Status:** `needs checking`
+- **To check:** Their numbers in Midnight.
+
 ### Time Spiral
 
 - **Meaning:** An Evoker spell that gives raid members one free use of a movement
@@ -935,9 +984,12 @@ the app's, and all the log measures depend on ability ids, so every entry here i
   most of the fight.
 - **In a log:** DoT uptime on the boss, percent of [kill time](#kill-time), and
   early refreshes per minute (see [pandemic](#pandemic)). Counting Flame Shock
-  casts isn't enough, because the APL also maintains it with Voltaic Blaze. Count
-  id 188389 only: 470411 fires with every cast and isn't a press.
-- **Status:** `needs checking`
+  casts isn't enough, because the APL also maintains it with Voltaic Blaze and
+  Ascendance casts it unpressed. Uptime comes from debuff events for id 188389
+  on the boss (1 API point). Count casts of 188389 only: 470411 fires with every
+  cast, never appears as a debuff, and isn't a press.
+- **Status:** `confirmed` for uptime. Early-refresh waste is `needs checking`:
+  a refresh event carries no remaining time.
 - **In this repo:** `flame_shock`, `dot.flame_shock.refreshable`, `.remains`,
   `active_dot.flame_shock`. Duration 18 seconds and cooldown 6 seconds in the app.
   The APL's main refresh line needs `cooldown.ascendance.remains>5`.
