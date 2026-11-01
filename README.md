@@ -6,6 +6,9 @@ list (APL) for a spec and lets you poke at it.
 
 First spec: **Elemental Shaman — single target** (Midnight APL).
 
+**Try it:** https://adbir.github.io/rotationalQuiz/ (deployed from `main` by
+GitHub Pages; works on desktop and mobile browsers).
+
 ## Features
 
 - **Sandbox** – set Maelstrom, procs (Master of the Elements, Lava Surge,

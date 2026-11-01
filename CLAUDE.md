@@ -29,6 +29,15 @@ CI (`.github/workflows/ci.yaml`) runs `pub get`, then the format check
 (`dart format --output=none --set-exit-if-changed lib test`), then `analyze`,
 then `test`. Run all three before pushing.
 
+## Deployment
+
+`.github/workflows/deploy-pages.yaml` builds the web app on every push to
+`main`, runs the tests, and publishes it to GitHub Pages at
+https://adbir.github.io/rotationalQuiz/ (built with
+`--base-href /rotationalQuiz/`). Anything merged to `main` goes live, so keep
+`main` green. Pages needs the repository to be public, with Settings → Pages
+→ Source set to "GitHub Actions".
+
 ## Seeing the UI without a browser
 
 Cloud containers have no Chrome and no GTK, so `flutter run` and the hot
