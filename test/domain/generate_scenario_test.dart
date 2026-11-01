@@ -80,6 +80,21 @@ void main() {
     }
   });
 
+  test('set bonus procs only come up with the set on', () {
+    final generate = GenerateScenario(spec, random: Random(12));
+    final farseer = spec.loadouts.first;
+    var withSet = 0;
+    for (var i = 0; i < 500; i++) {
+      final state = generate(farseer);
+      expect(state.setBonuses, contains('mid2_4pc'));
+      if (state.buff('overcharge_tier').isUp) withSet++;
+      final off = generate(farseer, setBonuses: const {});
+      expect(off.buff('overcharge_tier').isUp, isFalse);
+      expect(off.buff('flowing_elements').isUp, isFalse);
+    }
+    expect(withSet, greaterThan(50));
+  });
+
   test('generated Maelstrom spans the whole range up to the cap', () {
     final generate = GenerateScenario(spec, random: Random(7));
     for (final loadout in spec.loadouts) {

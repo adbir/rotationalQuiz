@@ -72,6 +72,14 @@ void main() {
   });
 
   group('QuizViewModel', () {
+    test('the tier set is on by default and can be turned off', () {
+      final vm = quiz();
+      expect(vm.setBonuses, contains('mid2_4pc'));
+      expect(vm.state!.setBonuses, contains('mid2_4pc'));
+      vm.setSetBonus('mid2_4pc', false);
+      expect(vm.state!.setBonuses, isEmpty);
+    });
+
     test('scores guesses against the APL', () {
       final vm = quiz();
       expect(vm.state, isNotNull);

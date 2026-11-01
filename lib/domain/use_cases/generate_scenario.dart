@@ -15,7 +15,7 @@ class GenerateScenario {
 
   CombatState call(
     TalentLoadout loadout, {
-    Set<String> setBonuses = const {},
+    Set<String>? setBonuses,
     double movingChance = 0.25,
   }) {
     final steps = spec.maxResource(loadout.talents) ~/ 5;
@@ -39,7 +39,7 @@ class GenerateScenario {
         continue;
       }
       if (aura.requiredSetBonus != null &&
-          !setBonuses.contains(aura.requiredSetBonus)) {
+          !state.setBonuses.contains(aura.requiredSetBonus)) {
         continue;
       }
       final target = switch (aura.kind) {
