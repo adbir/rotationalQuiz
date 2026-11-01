@@ -485,6 +485,46 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - **Not to be confused with:** [RNG](#rng-random-number-generator-luck). A proc
   is the event, RNG is the luck behind it.
 
+### Casts against possible
+
+- **Meaning:** How many times you cast a cooldown, out of the most the fight
+  allowed.
+- **In a log:** Casts of the spell over the fought portion, against its charges
+  plus one per full cooldown, plus one per cast that gives a charge back
+  (Stormstream Totem restores a Healing Stream Totem charge). The Boss
+  Evaluation table also shows how long after the cooldown was back each cast
+  came.
+- **Status:** `needs checking`
+- **In this repo:** `PossibleCastsRule`, `CooldownMetrics.possible`.
+
+### Aura uptime (upkeep)
+
+- **Meaning:** The share of the fight an aura you keep up, such as Healing Rain
+  or Earth Shield, was on.
+- **In a log:** Percent of the log's length from the buff table. On others, the
+  table counts it up while it is on anyone. The stretches it was down are known
+  only for an aura on yourself.
+- **Status:** `needs checking`
+- **In this repo:** `UpkeepAura`, `PlayerMetrics.upkeep`.
+
+### Proc hold time
+
+- **Meaning:** How long a proc waited before you spent it.
+- **In a log:** Seconds from a buff application or added stack to its removal,
+  oldest proc first, averaged over the procs that went.
+- **Status:** `needs checking`
+- **In this repo:** `HeldProcRule`, `PlayerMetrics.heldProcs`.
+
+### Mana at phase changes
+
+- **Meaning:** How much mana you had left as the boss changed phase, and at the
+  end.
+- **In a log:** Percent of maximum from the resource reading on the last cast
+  before the change. Shown beside rank 1's, never ranked as behind: without the
+  boss's health neither direction is worse.
+- **Status:** `needs checking`
+- **In this repo:** `ResourceLevelMetrics`.
+
 ### RNG (random number generator, luck)
 
 - **Meaning:** The random chance built into the game. "Good RNG" means more

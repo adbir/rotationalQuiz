@@ -18,14 +18,14 @@ class RaidSupport {
 }
 
 /// One log in a comparison, with the numbers the rankings add when they have
-/// them. A missing [dps] or [itemLevel] is blank, never a guess.
+/// them. A missing [rankedAmount] or [itemLevel] is blank, never a guess.
 @immutable
 class ComparedLog {
   const ComparedLog({
     required this.label,
     required this.metrics,
     required this.kill,
-    this.dps,
+    this.rankedAmount,
     this.itemLevel,
     this.raidSupport = const [],
   });
@@ -34,7 +34,10 @@ class ComparedLog {
   final String label;
   final PlayerMetrics metrics;
   final bool kill;
-  final double? dps;
+
+  /// What the rankings sort by: damage per second, or healing per second for a
+  /// healer (see `SpecLogRules.rankingMetric`).
+  final double? rankedAmount;
   final int? itemLevel;
 
   /// Raid buffs the log received, in the order of the spec's rule. Context for

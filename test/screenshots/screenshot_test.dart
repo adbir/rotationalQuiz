@@ -17,6 +17,10 @@ import 'package:rotational_quiz/data/repositories/active_spec_repository.dart';
 import 'package:rotational_quiz/data/repositories/warcraft_logs_repository.dart';
 import 'package:rotational_quiz/data/services/local_store.dart';
 import 'package:rotational_quiz/domain/models/keybind.dart';
+import 'package:rotational_quiz/domain/specs/restoration_shaman.dart';
+import 'package:rotational_quiz/ui/core/theme.dart';
+import 'package:rotational_quiz/ui/features/boss_evaluation/view_models/boss_evaluation_view_model.dart';
+import 'package:rotational_quiz/ui/features/boss_evaluation/views/boss_evaluation_screen.dart';
 
 import '../fake_warcraft_logs_repository.dart';
 import '../test_helpers.dart';
@@ -152,6 +156,36 @@ void main() {
     await tester.tap(find.text('Boss').last);
     await tester.pumpAndSettle();
     await shot('restoration_boss');
+
+    // Boss Evaluation for a Restoration log, from the Heroic Coiled Altar
+    // fixture. The 'All numbers' tables are open.
+    tester.view.physicalSize = Size(size.width, 3200);
+    final bossVm = BossEvaluationViewModel(
+      repository: FakeWarcraftLogsRepository(spec: const RestorationShaman()),
+      signIn: repos.warcraftLogs,
+      store: repos.store,
+    );
+    addTearDown(bossVm.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: ThemeMode.dark,
+        home: Scaffold(
+          body: BossEvaluationScreen(viewModel: bossVm, onOpenSetup: () {}),
+        ),
+      ),
+    );
+    await tester.enterText(
+      find.byType(TextField),
+      'https://www.warcraftlogs.com/reports/mine?fight=18&source=278',
+    );
+    await tester.tap(find.text('Load'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All numbers'));
+    await tester.pumpAndSettle();
+    await shot('boss_evaluation_restoration');
+    tester.view.physicalSize = size;
 
     // Let the hot-key countdown expire so no timers are left pending.
     await tester.pumpWidget(const SizedBox());

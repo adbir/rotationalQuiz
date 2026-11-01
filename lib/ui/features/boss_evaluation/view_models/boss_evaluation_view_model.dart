@@ -17,6 +17,7 @@ import '../../../../domain/use_cases/format_nsrt_note.dart';
 import '../../../../domain/use_cases/pick_comparison_logs.dart';
 import '../../../../domain/use_cases/rank_findings.dart';
 import '../../../../utils/result.dart';
+import 'evidence_details.dart';
 import 'finding_text.dart';
 
 enum BossEvaluationStatus { idle, loading, failed, loaded }
@@ -56,7 +57,20 @@ class BossEvaluationViewModel extends ChangeNotifier {
   /// The words for [report], while [status] is loaded.
   FindingText? get text => comparison == null
       ? null
-      : FindingText(comparison: comparison!, resourceLabel: resourceLabel);
+      : FindingText(
+          comparison: comparison!,
+          resourceLabel: resourceLabel,
+          details: details,
+        );
+
+  /// Times from your own log for the evidence tables, while [status] is loaded.
+  EvidenceDetails? get details => comparison == null || _mine == null
+      ? null
+      : EvidenceDetails(
+          spec: _repository.spec,
+          comparison: comparison!,
+          mine: _mine!,
+        );
 
   static const showAllKey = 'boss_evaluation.show_all';
 
@@ -75,6 +89,7 @@ class BossEvaluationViewModel extends ChangeNotifier {
 
   var _allWaves = false;
   FightLog? _topLog;
+  FightLog? _mine;
   var _groups = const <EnemyGroup>[];
 
   /// The NSRT note for the result: rank 1's pooling, spender and Stormkeeper
@@ -107,6 +122,21 @@ class BossEvaluationViewModel extends ChangeNotifier {
       Clipboard.setData(ClipboardData(text: nsrtNote));
 
   String get resourceLabel => _repository.spec.resourceLabel;
+
+  /// What the rankings sort by, as the header and notes name it: "DPS" or
+  /// "HPS".
+  String get rankingLabel =>
+      _repository.spec.logRules.rankingMetric.toUpperCase();
+
+  /// Whether the spec builds a resource toward a spender buff. Only then are
+  /// wasted resource, pooling and the NSRT note about anything.
+  bool get tracksSpenders => _repository.spec.logRules.spenderBuffId != null;
+
+  /// Whether the spec moves in a form or casts while moving, which the gap
+  /// table has columns for.
+  bool get tracksMovement =>
+      _repository.spec.logRules.movementFormId != null ||
+      _repository.spec.logRules.graceId != null;
 
   bool get isSignedIn => _signIn.isSignedIn;
 
@@ -185,6 +215,7 @@ class BossEvaluationViewModel extends ChangeNotifier {
       report = const RankFindings()(comparison!);
       bossName = fight.name;
       _topLog = fights.last.log;
+      _mine = mine;
       _groups = groups;
       status = BossEvaluationStatus.loaded;
       notifyListeners();

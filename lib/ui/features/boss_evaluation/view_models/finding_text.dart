@@ -1,15 +1,25 @@
+import '../../../../domain/models/aura_metrics.dart';
 import '../../../../domain/models/boss_comparison.dart';
 import '../../../../domain/models/dot_uptime.dart';
 import '../../../../domain/models/finding.dart';
+import '../../../../domain/models/player_metrics.dart';
 import '../../../../domain/models/window_cast.dart';
+import 'evidence_details.dart';
 
 /// The words for a result: facts and numbers, no adjectives. Lines stay short
 /// so they read as one column.
 class FindingText {
-  const FindingText({required this.comparison, required this.resourceLabel});
+  const FindingText({
+    required this.comparison,
+    required this.resourceLabel,
+    this.details,
+  });
 
   final BossComparison comparison;
   final String resourceLabel;
+
+  /// Your own log's times, for the "where" of an aura or a cooldown.
+  final EvidenceDetails? details;
 
   /// "3 Spawn of Vexhul arrivals", "3 add waves" or "3 phases".
   String _events(int count) {
@@ -101,11 +111,13 @@ class FindingText {
         ].join(', ');
       case FindingKind.dotUptime:
         return 'down ${[for (final g in _dot().gaps) '${_s(g.start)}-${_s(g.start + g.length)} s'].join(', ')}';
-      case FindingKind.castsAgainstPossible ||
-          FindingKind.upkeep ||
-          FindingKind.procHoldTime ||
-          FindingKind.abilityCastsPerMinute ||
-          FindingKind.resourceAtEnd:
+      case FindingKind.castsAgainstPossible:
+        return _castsWhere(f.subject);
+      case FindingKind.upkeep:
+        return _upkeepWhere(f.subject);
+      case FindingKind.procHoldTime:
+        return _procWhere(f.subject);
+      case FindingKind.abilityCastsPerMinute || FindingKind.resourceAtEnd:
         return 'the whole fought portion, ${comparison.fought.inSeconds} s.';
       case FindingKind.wastedResource:
         if (f.stretchIndexes.isEmpty || comparison.stretches.length == 1) {
@@ -118,6 +130,54 @@ class FindingText {
             '${comparison.wastedResource.last[worst]} for rank 1).';
     }
   }
+
+  /// "3 of 4 possible casts, 2 of them late; rank 1: 4 of 4."
+  String _castsWhere(String? name) {
+    final mine = _cooldownOf(0, name);
+    final top = _cooldownOf(comparison.logs.length - 1, name);
+    if (mine == null) return _whole();
+    final late =
+        details
+            ?.cooldownCasts(name!)
+            .where((c) => (c.late ?? Duration.zero) > _lateAfter)
+            .length ??
+        0;
+    return '${mine.uses} of ${mine.possible} possible casts'
+        '${late == 0 ? '' : ', $late of them more than ${_lateAfter.inSeconds} s after it was ready'}'
+        '${top == null ? '' : '; rank 1: ${top.uses} of ${top.possible}'}.';
+  }
+
+  /// "down 12.0-20.5 s", or the total for an aura the log gives no stretches.
+  String _upkeepWhere(String? name) {
+    final down = details?.downStretches(name!);
+    if (down == null || down.isEmpty) return _whole();
+    return 'down ${[for (final w in down) '${_s(w.start)}-${_s(w.end)} s'].join(', ')}.';
+  }
+
+  /// "1 of 1 procs held, 0.4 s on average; rank 1: 3 of 3."
+  String _procWhere(String? name) {
+    HeldProcMetrics? at(int i) => comparison.logs[i].metrics.heldProcs
+        .where((p) => p.name == name)
+        .firstOrNull;
+    final mine = at(0);
+    final top = at(comparison.logs.length - 1);
+    if (mine == null) return _whole();
+    return '${mine.spent} of ${mine.gained} procs spent'
+        '${mine.unspentAtEnd == 0 ? '' : ', ${mine.unspentAtEnd} still up at the end'}'
+        '${top == null ? '' : '; rank 1: ${top.spent} of ${top.gained}'}.';
+  }
+
+  static const _lateAfter = Duration(seconds: 3);
+
+  String _whole() =>
+      'the whole fought portion, ${comparison.fought.inSeconds} s.';
+
+  CooldownMetrics? _cooldownOf(int log, String? name) => comparison
+      .logs[log]
+      .metrics
+      .cooldowns
+      .where((c) => c.name == name)
+      .firstOrNull;
 
   DotUptime _dot() => comparison.logs.first.metrics.dotUptime.first;
 

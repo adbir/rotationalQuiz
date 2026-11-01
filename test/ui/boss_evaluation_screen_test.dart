@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rotational_quiz/data/services/local_store.dart';
+import 'package:rotational_quiz/domain/specs/restoration_shaman.dart';
 import 'package:rotational_quiz/ui/features/boss_evaluation/view_models/boss_evaluation_view_model.dart';
 import 'package:rotational_quiz/ui/features/boss_evaluation/views/boss_evaluation_screen.dart';
 import 'package:rotational_quiz/ui/features/boss_evaluation/views/widgets/fight_bar.dart';
@@ -202,4 +203,61 @@ void main() {
       expect(find.byType(FindingCard), findsNothing);
     },
   );
+
+  group('Restoration', () {
+    Future<void> loadResto(WidgetTester tester) async {
+      await show(
+        tester,
+        FakeWarcraftLogsRepository(spec: const RestorationShaman()),
+      );
+      await load(tester);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('shows HPS in the header and raid support', (tester) async {
+      await loadResto(tester);
+      await tester.tap(find.text('All numbers'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('HPS'), findsOneWidget);
+      expect(find.text('DPS'), findsNothing);
+      // Rank 1's amount from the rankings, scaled for a healer.
+      expect(find.text('437,706'), findsOneWidget);
+      expect(find.textContaining('Innervate'), findsWidgets);
+      expect(find.textContaining('not by measured HPS'), findsOneWidget);
+    });
+
+    testWidgets('leads with a healer finding and its evidence', (tester) async {
+      await loadResto(tester);
+
+      expect(find.byType(FindingCard), findsWidgets);
+      expect(
+        find.textContaining('You cast Surging Totem 0.0% of the times'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('0 of 4 possible casts'), findsOneWidget);
+      expect(find.textContaining('Cast Surging Totem each time'), findsWidgets);
+
+      await tester.tap(find.text('Show the numbers').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Surging Totem casts of possible'), findsOneWidget);
+    });
+
+    testWidgets('has no Maelstrom, pooling or NSRT content', (tester) async {
+      await loadResto(tester);
+      await tester.tap(find.text('All numbers'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Copy NSRT note'), findsNothing);
+      expect(find.textContaining('NSRT'), findsNothing);
+      expect(find.textContaining('Maelstrom'), findsNothing);
+      expect(find.textContaining('Free spenders'), findsNothing);
+      expect(find.textContaining('Spawn of Vexhul'), findsNothing);
+      expect(find.textContaining('wasted'), findsNothing);
+      // The healer rows the metrics table adds.
+      expect(find.text('Healing Rain uptime'), findsOneWidget);
+      expect(find.text('Mana at the end'), findsOneWidget);
+      expect(find.text('Stormstream Totem, procs · average hold'), findsOne);
+    });
+  });
 }
