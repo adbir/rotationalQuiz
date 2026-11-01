@@ -87,6 +87,8 @@ void main() {
       expect(report.meanBefore, greaterThan(report.normalLevel + 15));
       expect(report.spendersAfter, 2);
       expect(report.isPooled, isTrue);
+      expect(report.isHeld, isTrue);
+      expect(report.firstSpenderAfter, _s(1));
     });
 
     test('does not flag a player spending steadily through the event', () {
@@ -95,6 +97,7 @@ void main() {
 
       expect(report.spendersBefore, 1);
       expect(report.isPooled, isFalse);
+      expect(report.isHeld, isFalse);
     });
 
     test('does not flag a high level that nothing spends afterwards', () {
@@ -103,6 +106,7 @@ void main() {
 
       expect(report.spendersAfter, 0);
       expect(report.isPooled, isFalse);
+      expect(report.isHeld, isFalse);
     });
   });
 }
