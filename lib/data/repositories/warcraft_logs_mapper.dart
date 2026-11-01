@@ -177,21 +177,52 @@ abstract final class WarcraftLogsMapper {
   /// The enemy NPCs the player really damaged: some hit for at least 1% of
   /// what it would have done. Hits on an immune or absorbing enemy land for 0,
   /// or for 1 from a tick, and don't count.
-  static Set<int> damagedTargets(List<JsonMap> damage, int playerId) {
-    final targets = <int>{};
+  static Set<int> damagedTargets(List<JsonMap> damage, int playerId) =>
+      reallyDamaged(damage, playerId).keys.toSet();
+
+  /// The times (log milliseconds) of the player's real hits, per enemy NPC.
+  /// "Real" is the [damagedTargets] test.
+  static Map<int, List<num>> reallyDamaged(List<JsonMap> damage, int playerId) {
+    final times = <int, List<num>>{};
     for (final row in damage) {
       final target = _int(row['targetID']);
+      final time = row['timestamp'];
       final amount = row['amount'];
       final raw = row['unmitigatedAmount'];
       if (target != null &&
+          time is num &&
           _int(row['sourceID']) == playerId &&
           amount is num &&
           amount > 0 &&
           (raw is! num || amount * 100 >= raw)) {
-        targets.add(target);
+        times.putIfAbsent(target, () => []).add(time);
       }
     }
-    return targets;
+    return times;
+  }
+
+  /// The stretches a single enemy was hittable, from the [hits] on it (log
+  /// milliseconds): a stretch ends at the last hit before a silence longer
+  /// than [gap]. One arrival and departure per stretch, from the pull. Null
+  /// when there are no hits, so the caller can keep the whole-fight span.
+  static EnemyGroup? hittableSpans(
+    String name,
+    List<num> hits,
+    num start,
+    Duration gap,
+  ) {
+    if (hits.isEmpty) return null;
+    final times = [...hits]..sort();
+    final arrivals = <Duration>[_since(times.first, start)];
+    final departures = <Duration>[];
+    for (var i = 1; i < times.length; i++) {
+      if (times[i] - times[i - 1] > gap.inMilliseconds) {
+        departures.add(_since(times[i - 1], start));
+        arrivals.add(_since(times[i], start));
+      }
+    }
+    departures.add(_since(times.last, start));
+    return EnemyGroup(name: name, arrivals: arrivals, departures: departures);
   }
 
   /// Sets [LogCast.targetsHit] on each finished cast of an area ability in

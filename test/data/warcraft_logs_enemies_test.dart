@@ -75,6 +75,21 @@ http.Response _answer(http.Request request) {
           'amount': amount,
           'unmitigatedAmount': 5000,
         },
+      // The boss is hit to 5.8 s, is immune at 12 s (a hit for 0), then is hit
+      // from 20 s: two stretches, more than 8 s apart.
+      for (final (seconds, amount) in [
+        (1.0, 900),
+        (5.8, 900),
+        (12.0, 0),
+        for (final t in [20.0, 27.0, 34.0, 41.0, 48.0, 55.0, 59.5]) (t, 900),
+      ])
+        {
+          'timestamp': _start + (seconds * 1000).round(),
+          'sourceID': 7,
+          'targetID': 30,
+          'amount': amount,
+          'unmitigatedAmount': 5000,
+        },
     ],
     ('Casts', 31) => [
       _row(4, 1, 'sourceInstance'),
@@ -144,6 +159,16 @@ void main() {
       expect(presence.aliveByKindAt(_s(6.5))['Imp'], 1);
       expect(presence.aliveByKindAt(_s(7.5))['Imp'], 1);
       expect(presence.aliveByKindAt(_s(8.6)).containsKey('Imp'), isFalse);
+    });
+
+    test('holds a boss only while the player hits it', () {
+      final boss = presence.groups.firstWhere((g) => g.name == 'Boss');
+      expect(boss.arrivals, [_s(1), _s(20)]);
+      expect(boss.departures, [_s(5.8), _s(59.5)]);
+      expect(boss.aliveAt(_s(3)), 1);
+      // Immune at 12 s: the 0 hit opens no stretch.
+      expect(boss.aliveAt(_s(12)), 0);
+      expect(boss.aliveAt(_s(30)), 1);
     });
 
     test('leaves out an add the player never really damaged', () {

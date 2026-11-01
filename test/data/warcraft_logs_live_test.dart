@@ -152,6 +152,12 @@ void main() {
       // The first Vexhul wave brings 3 Vexhul and some Broodlings.
       expect(presence.aliveAt(const Duration(seconds: 40)), greaterThan(5));
       expect(presence.aliveAt(const Duration(seconds: 65)), 2);
+      // Both bosses are hit all fight, so each is one stretch, not several.
+      for (final name in ['Vexhul', 'Ithraz']) {
+        final boss = presence.groups.singleWhere((g) => g.name == name);
+        expect(boss.arrivals, hasLength(1), reason: name);
+        expect(boss.departures.single!.inSeconds, greaterThan(400));
+      }
 
       final rank1 = await repo.loadFight(
         reportCode: code,
@@ -204,6 +210,37 @@ void main() {
           .waveStarts();
       expect(waves, hasLength(5));
       expect(waves[2].inMilliseconds, closeTo(249500, 200));
+
+      // Only one boss is hittable at a time in phases 1 and 2: the stretches
+      // of docs/warcraft-logs.md, "Untargetable stretches".
+      List<(double, double)> spans(String name) {
+        final g = presence.groups.singleWhere((g) => g.name == name);
+        return [
+          for (var i = 0; i < g.arrivals.length; i++)
+            (
+              g.arrivals[i].inMilliseconds / 1000,
+              g.departures[i]!.inMilliseconds / 1000,
+            ),
+        ];
+      }
+
+      void expectSpans(String name, List<(double, double)> want) {
+        final got = spans(name);
+        expect(got, hasLength(want.length), reason: name);
+        for (var i = 0; i < want.length; i++) {
+          expect(got[i].$1, closeTo(want[i].$1, 1), reason: '$name $i start');
+          expect(got[i].$2, closeTo(want[i].$2, 1), reason: '$name $i end');
+        }
+      }
+
+      expectSpans("Zul'jan", [(0, 139.2), (323.5, 510.4)]);
+      expectSpans('Hex Lord Malacrass', [
+        (147.1, 216.9),
+        (231.3, 301.6),
+        (318.1, 398.0),
+        (409.3, 494.6),
+        (506.1, 513.8),
+      ]);
     },
   );
 }

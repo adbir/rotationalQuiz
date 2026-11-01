@@ -140,6 +140,19 @@ void main() {
       expect(rank1.agreementRate, greaterThan(owner.agreementRate + 0.15));
     });
 
+    test('rank 1 on Coiled Altar, with only the hittable boss counted', () {
+      final report = replay(
+        loadFixture('coiled_altar_window'),
+        document,
+        presence: loadFixtureEnemies('coiled_altar_window'),
+      );
+
+      // Both bosses up all fight scored 8 of 61 (13%).
+      expect(report.compared, 61);
+      expect(report.agreements, 11);
+      expect(report.exactDeviations, hasLength(42));
+    });
+
     test('the enemy count beats guessing one target', () {
       final log = loadFixture('twin_fangs_window');
       double rate({int targets = 1, EnemyPresence? presence}) => replay(

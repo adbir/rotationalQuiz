@@ -488,8 +488,8 @@ the player damaged it), and neither dies in the log. Measured on rank 1:
 only. The rule needed no change. The Axegrinder arrivals at 15 and 100 s are timing
 markers only, like Twin Fangs' Bulwark waves.
 
-**Untargetable stretches (not changed).** Zul'jan and Hex Lord Malacrass are
-single-copy enemies, so `loadEnemyPresence` has both up for the whole fight. The
+**Untargetable stretches.** Zul'jan and Hex Lord Malacrass are single-copy
+enemies, which `loadEnemyPresence` used to have up for the whole fight. The
 player's damage says otherwise, in hits more than 8 s apart (rank 1, with rank 28
 alike):
 
@@ -499,15 +499,25 @@ alike):
 | Hex Lord Malacrass | 147.1 to 216.9 s, 231.3 to 301.6 s, 318.1 to 398.0 s, 409.3 to 494.6 s, 506.1 to 513.8 s | 150.9 to 220.5 s, 235.6 to 373.5 s, 387.9 to 470.3 s, 487.4 to 506.4 s |
 
 The owner's wipe damaged only Zul'jan, from 2.8 s, and its report has no Malacrass.
-So in phases 1 and 2 only one boss is hit at a time, but the alive count says 2
-(4 in a Soulcoiler wave, where 3 can be hit). In the owner's wipe it reads 1
-(no Malacrass in that report), so the same phase reads 2 for rank 1 and 1 for
-the owner. The replay compares the alive count with the APL's `spell_targets`
-thresholds of 2 and 3, so the 2 is enough to ask for an area spell where a
-single target is hit. `loadEnemyPresence` is unchanged: `EnemyGroup` holds one
-arrival and one departure per copy, and the boss's real spans are several, so a
-fix is a model change, not a small rule. Whether it is wanted is an open
-decision on the map (#25).
+So in phases 1 and 2 only one boss is hit at a time. Counting both gave 2 (4 in
+a Soulcoiler wave, where 3 can be hit), and 1 in the owner's wipe (no Malacrass
+in that report), so the same phase asked for an area spell in rank 1 and a
+single-target one for the owner.
+
+**Done (#65).** `loadEnemyPresence` builds a single-copy enemy's group from the
+player's `DamageDone` rows (already fetched, no new query): one arrival and
+departure per stretch, where a stretch ends at the last hit before a silence
+over `WarcraftLogsRepository.bossHitGap` (8 s). A hit counts by the same test as
+`damagedTargets` (at least 1% of the unmitigated amount), so a 0-damage hit on an
+immune boss opens nothing. The model is unchanged: `EnemyGroup` already holds a
+list of spans. A boss with no real hit keeps the whole-fight span, and so does
+any call without a `playerId`. Live on rank 1 it reads Zul'jan 0.0 to 139.2 s and
+324.0 to 510.4 s, Malacrass 147.1 to 216.9 s, 231.3 to 301.6 s, 318.1 to 398.0 s,
+409.3 to 494.6 s and 506.1 to 513.8 s, matching the table. The ceiling is a boss
+the player chose to ignore while it was hittable, which reads as untargetable.
+Twin Fangs rank 1 is one span per boss, 0.7 to 406.5 s (Vexhul) and 0.7 to
+419.8 s (Ithraz): they are hit all fight, so the only change is that a boss is
+up from its first hit (0.7 s) to its last, not from 0 to the end.
 
 Queries and cost, in points, measured on rank 1 by the change in `rateLimitData`
 across each call (minus the 1 of the query itself): `loadEnemyPresence` 5,
@@ -567,7 +577,8 @@ Rank 50:
 `test/fixtures/coiled_altar_window.json` is rank 1 from 225 s to 300 s of the
 pull (the same shape and keys as the Twin Fangs one, 66 KB). It holds waves 3 and 4
 (24.5 and 57.5 s into the window, two Soulcoilers each, which die at about 55 s and
-past 75 s), both bosses, 11 Maelstrom readings, the player's Chain Lightning and
+past 75 s), Malacrass hittable from 6.3 s to the end (Zul'jan is not hittable in
+the window, so he is left out), 11 Maelstrom readings, the player's Chain Lightning and
 Earthquake damage rows (one, since this player cast almost no area spells), and
 Flame Shock on both bosses. Its rebuild drifts a mean of 1.2: nine readings are
 exact, one is 4 off, and one is 9 off at 23.0 s, where the Stormkeeper cast's reading
@@ -824,6 +835,13 @@ log carries and the set bonus on:
 | ------- | ---------------- | --------- | ---------------- |
 | `sszorak_window` (owner, low parse), one boss | 46 | 41% (19) | 16 of 27 |
 | `twin_fangs_window` (rank 1), enemies alive | 59 | 61% (36) | 19 of 23 |
+| `coiled_altar_window` (rank 1), hittable boss | 61 | 18% (11) | 42 of 50 |
+
+The Coiled Altar window read both bosses as up all fight before #65, which gave
+13% (8 of 61, 45 of 53 exact). Counting only the hittable boss moves three
+presses to agreement. The 18% is low for rank 1 and mostly Lightning Bolt
+pressed where the APL wanted Lava Burst, Chain Lightning, Earthquake or
+Elemental Blast; it is not explained here, only measured.
 
 Counting the Barbed Bulwarks as targets gave 68% (40 of 59, 16 of 19 exact), a
 rate that rested on enemies the player can't hit; the figure above leaves them out.
