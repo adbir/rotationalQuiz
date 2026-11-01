@@ -75,6 +75,18 @@ needs: `reports/<code>?fight=58&source=278`.
 - **Maelstrom** comes from two places. `resourcechange` events show every gain
   and its `waste`. `classResources` on a cast is an exact reading, but only about
   a quarter of casts carry Maelstrom.
+- **Rebuilding Maelstrom** (`RebuildResourceTimeline`, checked on the 75 s
+  Sszorak fixture, 19 readings). A `resourcechange` has `resourceChange` (gross
+  gain), `resourceChangeType` 11, `maxResourceAmount` (125 for this build) and
+  `waste`. Findings:
+  - A reading is taken after that moment's gains and before its spend.
+  - A spender with a reading but no `cost` was free; with `cost` 90 it is
+    Elemental Blast.
+  - Hold gains at the cap and ignore `waste`. Also subtracting `waste` drifted
+    8 points low, so the two double count.
+  - Drift against readings: 0 for 15 of 19, worst 8 (one Lava Burst gain),
+    mean about 1.
+  - The first reading sets the starting amount when the log starts mid-pull.
 - **Buff ids can differ from cast ids:** Ascendance casts as 114050, and its buff
   is 1219480.
 - **Some ids are echoes.** Flame Shock 470411 fires with every 188389 cast, so
