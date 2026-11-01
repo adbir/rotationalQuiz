@@ -34,7 +34,7 @@ class QuizActionBar extends StatelessWidget {
           runSpacing: 12,
           children: [for (final spell in vm.actionBar) button(spell)],
         ),
-        if (hotkeys && vm.offGcdBar.isNotEmpty) ...[
+        if (vm.offGcdBar.isNotEmpty) ...[
           const SizedBox(height: 12),
           Text('Off the GCD', style: theme.textTheme.labelMedium),
           const SizedBox(height: 6),

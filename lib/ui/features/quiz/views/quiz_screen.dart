@@ -75,7 +75,7 @@ class _QuizScreenState extends State<QuizScreen> {
       ];
       final index = digits.indexOf(event.physicalKey);
       if (index >= 0 && index < vm.options.length) {
-        vm.guessSpell(vm.options[index].id);
+        vm.guessOption(vm.options[index]);
         return KeyEventResult.handled;
       }
       return KeyEventResult.ignored;

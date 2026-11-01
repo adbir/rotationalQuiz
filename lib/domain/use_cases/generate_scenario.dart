@@ -16,7 +16,7 @@ class GenerateScenario {
   CombatState call(
     TalentLoadout loadout, {
     Set<String> setBonuses = const {},
-    double movingChance = 0.08,
+    double movingChance = 0.25,
   }) {
     final steps = spec.maxResource(loadout.talents) ~/ 5;
     final state = spec
@@ -60,11 +60,12 @@ class GenerateScenario {
     final cooldowns = {...state.cooldowns};
     for (final cooldown in spec.cooldowns) {
       final maxCharges = cooldown.maxCharges;
+      final readyChance = cooldown.quizReadyChance;
       if (maxCharges != null) {
         cooldowns[cooldown.id] = CooldownState(
-          charges: _roundTenth(_random.nextDouble() * maxCharges),
+          charges: _roundTenth(_rollCharges(maxCharges, readyChance)),
         );
-      } else if (_random.nextBool()) {
+      } else if (_random.nextDouble() < (readyChance ?? 0.5)) {
         cooldowns[cooldown.id] = CooldownState.ready;
       } else {
         cooldowns[cooldown.id] = CooldownState(
@@ -95,6 +96,15 @@ class GenerateScenario {
       debuffs: debuffs,
       cooldowns: cooldowns,
     );
+  }
+
+  /// Fractional charges: spread evenly, or at least one [readyChance] of the
+  /// time.
+  double _rollCharges(int maxCharges, double? readyChance) {
+    if (readyChance == null) return _random.nextDouble() * maxCharges;
+    return _random.nextDouble() < readyChance
+        ? 1 + _random.nextDouble() * (maxCharges - 1)
+        : _random.nextDouble() * 0.9;
   }
 
   static double _roundTenth(double value) => (value * 10).round() / 10;

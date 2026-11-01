@@ -88,7 +88,8 @@ void main() {
 
     Future<void> shot(String name) => expectLater(
       find.byType(MaterialApp),
-      matchesGoldenFile('$_outDir/$name.png'),
+      // A Uri keeps the drive letter of a Windows path.
+      matchesGoldenFile(Uri.file('$_outDir/$name.png')),
     );
 
     await shot('sandbox');

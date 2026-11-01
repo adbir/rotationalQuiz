@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../domain/models/spec_definition.dart';
+import '../../../../../domain/use_cases/pick_answer_options.dart';
 import '../../../../core/theme.dart';
 import '../../../../core/widgets/spell_button.dart';
 import '../../view_models/quiz_view_model.dart';
@@ -24,16 +24,16 @@ class MultipleChoiceOptions extends StatelessWidget {
           spacing: 12,
           runSpacing: 12,
           children: [
-            for (final (i, spell) in vm.options.indexed)
+            for (final (i, option) in vm.options.indexed)
               SizedBox(
                 width: width,
                 child: _OptionTile(
                   index: i,
-                  spell: spell,
-                  mark: markSpell(vm, spell.id),
+                  option: option,
+                  mark: markOption(vm, option),
                   onPressed: vm.isAnswered
                       ? null
-                      : () => vm.guessSpell(spell.id),
+                      : () => vm.guessOption(option),
                   textTheme: theme.textTheme,
                 ),
               ),
@@ -47,14 +47,14 @@ class MultipleChoiceOptions extends StatelessWidget {
 class _OptionTile extends StatelessWidget {
   const _OptionTile({
     required this.index,
-    required this.spell,
+    required this.option,
     required this.mark,
     required this.onPressed,
     required this.textTheme,
   });
 
   final int index;
-  final SpellDefinition spell;
+  final AnswerOption option;
   final SpellButtonMark mark;
   final VoidCallback? onPressed;
   final TextTheme textTheme;
@@ -86,9 +86,17 @@ class _OptionTile extends StatelessWidget {
                 child: Text('${index + 1}', style: textTheme.labelLarge),
               ),
               const SizedBox(width: 12),
-              SpellButton(spell: spell, size: 44, showName: false),
+              for (final (i, spell) in option.spells.indexed) ...[
+                if (i > 0)
+                  Icon(Icons.arrow_forward, size: 16, color: scheme.outline),
+                SpellButton(
+                  spell: spell,
+                  size: option.spells.length > 1 ? 36 : 44,
+                  showName: false,
+                ),
+              ],
               const SizedBox(width: 12),
-              Expanded(child: Text(spell.name, style: textTheme.titleMedium)),
+              Expanded(child: Text(option.name, style: textTheme.titleMedium)),
               if (mark == SpellButtonMark.correct)
                 const Icon(Icons.check_circle, color: AppTheme.passColor),
               if (mark == SpellButtonMark.wrong)
