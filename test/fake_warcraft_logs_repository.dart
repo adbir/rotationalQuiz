@@ -12,7 +12,10 @@ import 'test_helpers.dart' as helpers;
 /// missing, rank 53 misses every fifth, and rank 1 is the fixture as logged.
 /// The two add waves (28 s and 58 s) are made up to fit the 75 s window.
 class FakeWarcraftLogsRepository implements WarcraftLogsRepository {
-  FakeWarcraftLogsRepository({this.error, this.hold});
+  FakeWarcraftLogsRepository({this.error, this.hold, this.matchRank1 = false});
+
+  /// The player's fight is rank 1's, so nothing differs.
+  final bool matchRank1;
 
   /// Fails every call with this, when set.
   final Exception? error;
@@ -54,7 +57,7 @@ class FakeWarcraftLogsRepository implements WarcraftLogsRepository {
     if (error != null) return Result.error(error!);
     final log = loadFixture('twin_fangs_window');
     final (thin, kill) = switch (reportCode) {
-      mine => (5, false),
+      mine => matchRank1 ? (0, true) : (5, false),
       'rank53' => (6, true),
       _ => (0, true),
     };

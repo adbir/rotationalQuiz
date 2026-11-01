@@ -111,7 +111,9 @@ class ComparisonGrid extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
     child: Text(
       text,
-      style: style,
+      style: style?.copyWith(
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
       textAlign: left ? TextAlign.start : TextAlign.end,
     ),
   );

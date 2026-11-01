@@ -6,6 +6,7 @@ import '../../../../data/repositories/apl_repository.dart';
 import '../../../../data/repositories/keybind_repository.dart';
 import '../../../../data/repositories/talent_build_repository.dart';
 import '../../../../data/repositories/warcraft_logs_repository.dart';
+import '../../../../data/services/local_store.dart';
 import '../../../../data/services/pkce_access_token_source.dart';
 import '../../apl_viewer/view_models/apl_viewer_view_model.dart';
 import '../../apl_viewer/views/apl_viewer_screen.dart';
@@ -69,6 +70,7 @@ class _HomeShellState extends State<HomeShell> {
     _bossEvaluation = BossEvaluationViewModel(
       repository: context.read<WarcraftLogsRepository>(),
       signIn: context.read<PkceAccessTokenSource>(),
+      store: context.read<LocalStore>(),
     );
   }
 

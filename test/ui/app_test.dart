@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:rotational_quiz/app.dart';
 import 'package:rotational_quiz/data/repositories/warcraft_logs_repository.dart';
+import 'package:rotational_quiz/data/services/local_store.dart';
 
 import '../fake_warcraft_logs_repository.dart';
 import '../test_helpers.dart';
@@ -21,6 +22,7 @@ void main() {
           ChangeNotifierProvider.value(value: repos.talentBuilds),
           ChangeNotifierProvider.value(value: repos.keybinds),
           ChangeNotifierProvider.value(value: repos.warcraftLogs),
+          Provider<LocalStore>.value(value: repos.store),
           Provider<WarcraftLogsRepository>.value(
             value: FakeWarcraftLogsRepository(),
           ),
