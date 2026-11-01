@@ -49,6 +49,7 @@ class QuizViewModel extends ChangeNotifier {
     _talentBuilds.addListener(_onBuildChanged);
     _keybinds.addListener(notifyListeners);
     _loadoutId = _talentBuilds.active.id;
+    _setBonuses = {for (final bonus in spec.setBonuses) bonus.id};
     if (_aplRepository.document != null) nextQuestion();
   }
 
@@ -102,7 +103,7 @@ class QuizViewModel extends ChangeNotifier {
 
   void selectLoadout(TalentLoadout loadout) => _talentBuilds.setActive(loadout);
 
-  Set<String> _setBonuses = const {};
+  late Set<String> _setBonuses;
   Set<String> get setBonuses => _setBonuses;
 
   void setSetBonus(String id, bool enabled) {

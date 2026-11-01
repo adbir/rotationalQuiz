@@ -365,6 +365,9 @@ Fix what it flags; don't `// ignore:` it without a comment explaining why.
   - Maximum Maelstrom is 100, +50 with Swelling Maelstrom and +25 with
     Primordial Capacity (in-game tooltips; a rank-1 Farseer log shows 125).
   - Fire Elemental is treated as baseline.
+  - The Season 2 four-piece set is on by default, because current raiders have
+    it. Overcharge! makes spenders free, and a log shows about half of Elemental
+    Blasts cost nothing.
   - Cooldowns are tooltip values with the talents both reference builds take
     (First Ascendant, Graceful Spirit). Stormkeeper stays at its 60 s base:
     Offering from Beyond shortens it during play.
