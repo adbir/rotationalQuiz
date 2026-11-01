@@ -29,7 +29,11 @@ abstract final class WarcraftLogsMapper {
     );
   }
 
-  static LogCast? cast(JsonMap json, num start) {
+  static LogCast? cast(
+    JsonMap json,
+    num start, {
+    Map<int, int> aliases = const {},
+  }) {
     final type = json['type'];
     final time = json['timestamp'];
     final ability = _int(json['abilityGameID']);
@@ -41,7 +45,7 @@ abstract final class WarcraftLogsMapper {
     final readings = json['classResources'];
     return LogCast(
       time: _since(time, start),
-      abilityId: ability,
+      abilityId: aliases[ability] ?? ability,
       targetId: _int(json['targetID']) ?? -1,
       isBegin: type == 'begincast',
       resources: [
