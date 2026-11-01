@@ -47,6 +47,7 @@ class BossComparison {
     required this.stretchSource,
     required this.stretches,
     required this.castsPerMinute,
+    required this.wastedResource,
     required this.pooling,
     this.gapsAlsoInRank1 = const [],
     this.eventName,
@@ -63,6 +64,9 @@ class BossComparison {
 
   /// By log, then by stretch.
   final List<List<double>> castsPerMinute;
+
+  /// Resource wasted, by log, then by stretch.
+  final List<List<int>> wastedResource;
 
   /// By log, then by stretch start after the first. Empty when the stretches
   /// are the whole fight, which has no event to check before.
