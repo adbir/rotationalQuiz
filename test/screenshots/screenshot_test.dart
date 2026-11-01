@@ -13,8 +13,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:rotational_quiz/app.dart';
+import 'package:rotational_quiz/data/repositories/warcraft_logs_repository.dart';
 import 'package:rotational_quiz/domain/models/keybind.dart';
 
+import '../fake_warcraft_logs_repository.dart';
 import '../test_helpers.dart';
 
 final _outDir = Platform.environment['SCREENSHOT_DIR'];
@@ -81,6 +83,9 @@ void main() {
           ChangeNotifierProvider.value(value: repos.talentBuilds),
           ChangeNotifierProvider.value(value: repos.keybinds),
           ChangeNotifierProvider.value(value: repos.warcraftLogs),
+          Provider<WarcraftLogsRepository>.value(
+            value: FakeWarcraftLogsRepository(),
+          ),
         ],
         child: const RotationalQuizApp(),
       ),
@@ -111,6 +116,21 @@ void main() {
     await tester.runAsync(repos.signInWithCode);
     await tester.pump();
     await shot('setup_signed_in');
+
+    // Boss Evaluation with a fight loaded, on a tall screen so the three
+    // tables fit in one image.
+    final size = tester.view.physicalSize;
+    tester.view.physicalSize = Size(size.width, 2400);
+    await tester.tap(find.text('Boss').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextField),
+      'https://www.warcraftlogs.com/reports/dvpkyx8D4YnAHGJK?fight=18&source=278',
+    );
+    await tester.tap(find.text('Load'));
+    await tester.pumpAndSettle();
+    await shot('boss_evaluation');
+    tester.view.physicalSize = size;
 
     // Let the hot-key countdown expire so no timers are left pending.
     await tester.pumpWidget(const SizedBox());
