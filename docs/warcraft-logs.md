@@ -1089,3 +1089,104 @@ questions:
   `hitGroups`, which hides a missed cleave. Counting enemies within Chain
   Lightning's reach of the player's target (enemy positions, 1 point a page per
   kind) would see it.
+
+## Restoration Shaman
+
+What a healing log holds and what separates top logs (ticket #69). Checked on
+2026-11-01 with a client token on the owner's PC, on Heroic Coiled Altar (3429).
+Spell ids, the build and the must-dos are in
+[restoration-shaman.md](restoration-shaman.md).
+
+### Queries and cost
+
+`rateLimitData { pointsSpentThisHour }` costs 1 point itself (four checks in a
+row read 237.41, 238.41, 239.41, 240.41), so each cost is the change across the
+call less that 1.
+
+| Query | Cost | What it gives a healer |
+| --- | --- | --- |
+| `characterRankings(className: "Shaman", specName: "Restoration", metric: hps, difficulty, page, includeCombatantInfo: true)` | 1 | 100 rows with `amount`, `duration`, `bracketData`, `talents [{talentID, points}]`, `gear`, `externalBuffs [{name, id, applications}]` (Innervate, Source of Magic) and `size` |
+| Report `masterData`, `fights` and `playerDetails` | 3 | Healers by spec (`playerDetails.healers`), item level, phases |
+| `table(dataType: Healing, sourceID: P)` | 1 to 7.5 | Per ability: `total`, `overheal`, `uses`, `hitCount`. Totems and Spirit Link's negative part included |
+| `table(dataType: Casts, sourceID: P)` | 1 | Casts per ability |
+| `table(dataType: Buffs, sourceID: P)` | 1 | Buffs on P: Healing Rain 1307888, Tidal Waves, Ascendance, Innervate |
+| `table(dataType: Buffs, targetID: P)` | 1 | Buffs P put on anyone: Riptide, Earth Shield, Earthliving. Never above 100%, though Riptide's uses × 18 s exceed the fight, so read as "at least one out" (inferred) |
+| `table(dataType: Debuffs, sourceID: P)` | 14 | Mechanics on P, with `bands` |
+| `table(DamageTaken)` and `table(Healing)`, whole raid, one query | 2 to 3.7 | Raid intake and each player's net healing |
+| `events(dataType: Casts, sourceID: P, includeResources: true)` | 1 (one page, 374 to 410 events) | Mana on every cast: `classResources` type 0 `{amount, max, cost}` |
+| `events(dataType: CombatantInfo, sourceID: P)` | 1 | `talentTree`, `specID` 264 |
+
+With `metric: hps`, `amount` is net healing over fight length: the Healing table
+total less Spirit Link's negative 98021, over 305.4 s, gives rank 1's 601,734
+exactly, and rank 50's 467,668. Healing events were not read; the tables were
+enough. The study cost about 70 points in queries and 55 in checks.
+
+### Three logs
+
+The owner's kill, rank 50 (the Heroic top 100's closest length) and rank 1.
+Possible casts are `floor(length / cooldown) + 1`, with base cooldowns. Healing
+Stream Totem's is `2 + floor(length / 30)` plus one per Stormstream cast, which
+restores a charge (Wowhead).
+
+| | Owner | Rank 50 | Rank 1 |
+| --- | --- | --- | --- |
+| Report / fight / source | `GaZ4Fj7VTm8YgqhQ` / 30 / 12 | `y93ZPmqCM7HJNLrf` / 10 / 8 | `PRkbJByN4VdzpHcC` / 67 / 611 |
+| Length, item level | 316.3 s, 333 | 306.9 s, 333 | 305.4 s, 331 |
+| Raid size; other healers | 21; Holy Paladin, Preservation | 24; Mistweaver, Restoration Shaman | 29; Preservation, Mistweaver |
+| HPS (net) | 280,624 | 467,668 | 601,734 |
+| Raid damage taken per second | 1,345,447 | 1,591,028 | 1,800,067 |
+| Share of raid healing | 20.3% | 28.5% | 33.9% |
+| Overheal share | 14.5% | 14.5% | 13.1% |
+| Casts per minute | 41.7 | 48.1 | 51.3 |
+| By phase (P1 / P2 / P3 / P4) | 42.1 / 32.7 / 59.9 / 40.9 | 45.5 / 46.2 / 52.7 / 49.6 | 51.7 / 50.7 / 49.6 / 51.9 |
+| Gaps over 2.5 s (longest) | 7 (9.3 s) | 8 (3.5 s) | 4 (3.8 s) |
+| Damage casts (Lava Burst, Flame Shock, Lightning Bolt) | 44 | 4 | 0 |
+| Riptide casts (per minute) | 28 (5.3) | 53 (10.4) | 61 (12.0) |
+| Riptide out / Tidal Waves up | 89% / 28% | 100% / 65% | 100% / 68% |
+| Healing Stream Totem, of possible | 13 of 19 | 16 of 20 | 19 of 22 |
+| Stormstream casts; average proc held | 7; 4.1 s | 8; 2.8 s | 10; 1.4 s |
+| Surging Totem, of 13 possible | 9 | 10 | 12 |
+| Healing Rain up | 67% | 85% | 95% |
+| Ascendance / Spirit Link Totem, of 2 each | 1 / 1 | 2 / 2 | 2 / 2 |
+| Ascendance with Surging Totem 1 s before; totems in its 15 s | 0 of 1 (13.9 s before); 0 | 1 of 2; 1, 0 | 1 of 2; 2, 1 |
+| Nature's Swiftness, of 6 | 4 | 5 | 5 |
+| Earth Shield / Earthliving out | 94% / 91% | 100% / 100% | 81% / 100% |
+| Mana at P2 / P3 / P4 | 85 / 70 / 44% | 82 / 66 / 73% | 93 / 55 / 35% |
+| Mana at end (lowest) | 19% (14%) | 51% (50%) | 13% (12%) |
+| Mana support | Source of Magic, own mana potion | Source of Magic, Innervate ×3 | Source of Magic, Innervate ×2 |
+
+Phases start near 84, 152 and 190 s in all three (rank 1: 78.9, 148.7, 187.5);
+mana is the last reading before each. The owner's longest gaps match mechanics
+in the Debuffs table: Unnerving Fixation 105.7 to 130.8 s and 261.6 to 313.8 s,
+and Dreadmarch (mind control) at 137.4 s. Rank 50's mana rises into P4 with
+Innervate.
+
+### Recommended metrics
+
+Rank on what the healer controls whatever the intake, and show the rest for
+honesty. Don't blend them into a score.
+
+- **Ranked, with an owner gap:** Surging Totem casts against possible and
+  Healing Rain uptime; Riptide casts per minute, with Riptide out; Healing
+  Stream Totem against possible (13 of 19 against 16 of 20 and 19 of 22);
+  Stormstream proc hold time (4.1 s against 2.8 and 1.4); Ascendance, Spirit
+  Link Totem and Nature's Swiftness against possible; casts per minute by
+  phase, with gaps shown beside the mechanics on the player.
+- **Ranked, no gap here:** mana at the end against Icy Veins' "near 0%" (owner
+  19%, rank 1 13%; rank 50's 51% is the outlier) and at phase changes (the
+  owner's fall matches rank 1's); Earth Shield and Earthliving uptime.
+- **Shown, too few to rank:** Wowhead's Ascendance preparation. One or two
+  Ascendances a log, and the top logs did it once in two.
+- Unleash Life is left out: no top log takes it. Guide sources and the must-do
+  list are in [restoration-shaman.md](restoration-shaman.md).
+- **Honesty only:** HPS, overheal share (14.5%, 14.5% and 13.1%), share of raid
+  healing and raid damage taken per second (intake and the other healers set
+  them), raid size and healers, mana support received, Ascendance procs and
+  Riptide's 6% Stormstream procs (chance), damage casts (Icy Veins: DPS when no
+  one is in danger, which the log can't show).
+- **The log can't show:** whether a cooldown met heavy damage or overlapped
+  another healer's (raid intake over time might approximate it; not tried), how
+  many allies were hurt when Chain Heal was cast, whether a GCD was spare for
+  Lava Burst, which tank held Earth Shield (974 is on others, 383648 on the
+  Shaman; which tank needs Buffs events) and boss health against mana (not
+  fetched). Dispels were not queried.

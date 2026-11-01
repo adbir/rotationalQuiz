@@ -82,12 +82,14 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   and stats such as `hasteSpell` and `intellect`.
 - `table` works with `dataType` `DamageDone`, `Buffs` and `Deaths`. `Buffs`
   returns `auras` with `name`, `guid`, `totalUptime` and `totalUses`.
+  `Healing` (with `total` and `overheal` per ability), `Casts`, `Debuffs` and
+  `DamageTaken` work too. With `metric: hps`, `amount` is net healing per second.
   `viewBy: Target` splits damage by target.
 
 ### Not yet verified
 
 - The raw units of `x` and `y`.
-- What `amount` holds for any `metric` other than `dps`.
+- What `amount` holds for any `metric` other than `dps` and `hps`.
 - The fields inside `playerDetails`, `graph` and `phases`.
 - Damage, healing and debuff events. Their field names are unknown, so this
   file doesn't name any.
@@ -145,9 +147,11 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 
 - **Meaning:** Healing done divided by fight length. It is the main measure for
   a healer, and Elemental Shaman is rarely judged on it.
-- **In a log:** Healing per second. Probably `amount` on a ranked entry when
-  `metric` selects healing.
-- **Status:** `needs checking`
+- **In a log:** Healing per second: `amount` on a ranked entry with
+  `metric: hps`. It is net: the `table(dataType: Healing)` total less Spirit
+  Link's negative healing, over fight length. Bounded by
+  [healing intake](#healing-intake), so show it, never rank on it.
+- **Status:** `confirmed`
 - **Not to be confused with:** [DPS](#dps-damage-per-second).
 
 ### Item-level bracket (ilvl bracket)
@@ -1130,6 +1134,58 @@ the app's, and all the log measures depend on ability ids, so every entry here i
   spending suggests that spending does, but the app doesn't say so.
 - **Not to be confused with:** [Stormbringer](#stormbringer), which is the hero
   tree.
+
+## Healer terms
+
+Measured on three Heroic Coiled Altar logs: see "Restoration Shaman" in
+[warcraft-logs.md](warcraft-logs.md) and
+[restoration-shaman.md](restoration-shaman.md).
+
+### Healing intake
+
+- **Meaning:** The damage the raid takes. Healing done is bounded by it (raid
+  healing was 99% to 103% of damage taken in the three logs), so it depends on
+  the raid as much as on the healer.
+- **In a log:** Raid damage taken per second: the `table(dataType: DamageTaken)`
+  total for the fight, no `sourceID`, over fight length. A healer's share of
+  raid healing (their `total` in the whole-raid `table(dataType: Healing)`)
+  depends on intake and the other healers too: show both, never rank.
+- **Status:** `confirmed`
+
+### Overheal (overhealing)
+
+- **Meaning:** Healing past full health, which does nothing. Some is
+  unavoidable from heal-over-time effects and totems.
+- **In a log:** Overheal share: `overheal` over `total` plus `overheal`, summed
+  over the `table(dataType: Healing, sourceID: P)` entries. Shown, not ranked:
+  three logs had 13.1% to 14.5%.
+- **Status:** `confirmed`
+
+### Healing cooldown (raid cooldown)
+
+- **Meaning:** A long-cooldown spell for heavy raid damage, such as Ascendance
+  or Spirit Link Totem. Raids plan them so healers don't overlap.
+- **In a log:** Casts against possible, `floor(fight length / cooldown) + 1`.
+  Whether a press met heavy damage or overlapped another healer's: not measured.
+- **Status:** `needs checking` (cooldowns are tooltip base values)
+
+### Upkeep
+
+- **Meaning:** Keeping an effect running all fight, such as Healing Rain under
+  Surging Totem or a Riptide on someone.
+- **In a log:** Uptime: `totalUptime` over fight length from
+  `table(dataType: Buffs)`, `sourceID: P` for buffs on the healer, `targetID: P`
+  for buffs the healer put on others.
+- **Status:** `confirmed`
+
+### Mana
+
+- **Meaning:** The healer's resource. Unspent mana at a kill is healing not
+  done; running out early stops healing.
+- **In a log:** Mana percent over time: `classResources` type 0 `amount` over
+  `max` on each cast, from `events(dataType: Casts, includeResources: true)`.
+  Mana from others (Innervate 29166, Source of Magic 369459) is raid support.
+- **Status:** `confirmed`
 
 ## Raid notes
 
