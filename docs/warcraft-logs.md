@@ -58,6 +58,11 @@ needs: `reports/<code>?fight=58&source=278`.
 - **Some ids are echoes.** Flame Shock 470411 fires with every 188389 cast, so
   count only 188389.
 - **A free spender has no `cost`.** About half of Elemental Blasts are free.
+- **Allow for timing.** A buff can be removed a few milliseconds before or after
+  the cast that used it. Treat a buff as up within about 60 ms of a cast, or
+  buffed casts are undercounted.
+- **A lost proc shows as `refreshbuff`.** Overcharge! refreshing means a free
+  spender was lost.
 - **Buffs from others appear in the player's stream.** Filter on `targetID` where
   it matters.
 - **Overlapping buffs:** a second Time Spiral ends the first and starts a new
@@ -100,7 +105,8 @@ All three are Farseers with the same key talents.
 | Gaps over 1.8 s | 18 | 4 | 7 |
 | Maelstrom per minute | 284 | 358 | 352 |
 | Maelstrom wasted | 99 | 11 | 0 |
-| Spenders with Master of the Elements | 82% | 76% | 65% |
+| Elemental Blasts with Master of the Elements | 38 of 38 | 34 of 46 | 27 of 37 |
+| Overcharge! lost by refreshing | 2 | 0 | 1 |
 | Ancestors, actual / expected | 44 / 41.6 | 50 / 48.6 | 40 / 37.2 |
 | Stormkeeper median press delay | 2.3 s | 1.9 s | 1.5 s |
 | Free Elemental Blasts | 20 of 38 | 22 of 46 | 19 of 37 |
@@ -108,8 +114,10 @@ All three are Farseers with the same key talents.
 
 The biggest gap for rank ~1133 was casts per minute, in every phase. That lowered
 Maelstrom gained and Elemental Blasts cast. Ancestors per cast were the same in
-all three, so luck wasn't the cause. All damage went to the boss on this fight, so
-it can't test pooling.
+all three, so luck wasn't the cause. Buffing every Elemental Blast isn't simply
+better: top players fire without Master of the Elements when both tier buffs are
+up, and waiting for it lost two Overcharge! in that log. All damage went to the
+boss on this fight, so it can't test pooling.
 
 This is one comparison log, and it doesn't show how much DPS each difference is
 worth.

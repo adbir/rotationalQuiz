@@ -80,9 +80,18 @@ Chain Lightning instant with 150% more damage. The APL's
 `buff.stormkeeper.stack<4` passes at any stack count.
 
 **Master of the Elements:** Lava Burst adds 15% to your next Nature, Physical or
-Frost spell (tooltip). The aim is to always make that a spender (owner). Flame
-Shock doesn't consume it (owner), so the APL comment "Consume spare MotE to buff
-Flame Shock" doesn't match the game.
+Frost spell (tooltip). The aim is to always make that a spender (owner).
+
+- **Flame Shock consumes it.** Its damage is Volcanic in the tooltip. In three
+  logs the buff never survived a Flame Shock cast, and SimC consumes it on 188389.
+- **That's deliberate with a spare one.** On two targets, a Farseer gains about
+  1.2% by spending spare ones on Flame Shock, instead of wasting them on an
+  unbuffed Lightning Bolt or Chain Lightning (Shaman Discord FAQ). The APL has the
+  same line. For Stormbringer without Voltaic Blaze, the FAQ says Flame Shock on a
+  second target isn't worth it.
+- **Tier buffs come first.** With Flowing Elements and Overcharge! both up, cast
+  the spender without waiting for this buff (APL, FAQ). Waiting can gain a second
+  Overcharge! while holding one, which loses a free spender.
 
 **Lava Surge:** resets Lava Burst's cooldown and makes it instant (owner, SimC).
 Lava Burst has no Maelstrom cost, so the proc doesn't save any.
@@ -93,7 +102,7 @@ is instant, deals 10% more, and calls an Ancestor (tooltip).
 **Ascendance:** 15 s. It instantly casts Flame Shock and a 50% Lava Burst, and
 boosts Elemental Overload (tooltip).
 
-**Flame Shock:** 18 s, and has no cooldown (tooltip).
+**Flame Shock:** 18 s, Volcanic damage, and has no cooldown (tooltip).
 
 ### Ancestors (Farseer)
 
@@ -131,8 +140,52 @@ it.
 - It still reads `buff.storm_elemental` and `buff.wind_gust`, although Fire and
   Storm Elemental aren't talents in Midnight. The app treats Fire Elemental as
   baseline and hides the Storm Elemental buffs.
-- Comments can lag behind the game, as the Flame Shock line shows. Follow its
-  conditions for priority, and check its comments against the game.
+- Follow its conditions for priority, and check its comments against the game.
+
+## Opener
+
+The Shaman Discord FAQ gives three single-target openers and says the choice
+doesn't matter, so don't score one as a mistake. Potion and trinket go with
+Ascendance in each.
+
+| | Before the pull | After the pull |
+| --- | --- | --- |
+| 1 | Stormkeeper, Lava Burst | Ancestral Swiftness, Ascendance, Lightning Bolt, Lava Burst, Lightning Bolt |
+| 2 | Stormkeeper | Ancestral Swiftness, Ascendance, Lava Burst, Lightning Bolt, Lava Burst, Lightning Bolt |
+| 3 | Stormkeeper | Lightning Bolt, Lightning Bolt, Ancestral Swiftness, Ascendance, Lava Burst, Elemental Blast, Lava Burst, Elemental Blast |
+
+For AoE it gives Stormkeeper before the pull, then Ancestral Swiftness, Voltaic
+Blaze, Ascendance.
+
+- **Logs:** all three Sszorak logs in [warcraft-logs.md](warcraft-logs.md) use the
+  third shape. Stormkeeper's stacks go on Lightning Bolt, and Ancestral Swiftness
+  goes on the first Lava Burst after Ascendance.
+- **Extra Flame Shock:** ranks 18 and 1 also finish a Lava Burst at the pull and
+  cast Flame Shock with it, which consumes that Master of the Elements at once.
+- **APL, single target:** `precombat` casts only Stormkeeper. Ancestral Swiftness
+  has no condition, so it comes at the pull, before the Lightning Bolts.
+- **APL, AoE:** for Farseer with the tier set, the Stormkeeper Chain Lightning line
+  comes before Ascendance, so the APL spends those stacks first. The FAQ's AoE
+  opener doesn't.
+
+## Community guidance
+
+The Shaman Discord's Elemental FAQ (dated April 2026) matched the APL and logs line
+by line in a review, with no real rotation conflict. Its text uses emoji for spell
+names, which copying can strip, so ask for the original when a line reads oddly.
+It doesn't replace the APL, but it explains the reasons behind many lines.
+
+Most players are Farseer (owner), so check that path first.
+
+- **Farseer:** the FAQ's one-target list puts a Stormkeeper-buffed Lightning Bolt
+  above Voltaic Blaze with Crackling Fury. The APL has no such line for Farseer,
+  so with that talent it casts Voltaic Blaze first. Neither reference build takes
+  Crackling Fury, so the app gives the same answer either way.
+- **Stormbringer:** the FAQ's lists for one target, two targets and AoE follow the
+  APL's order, from reading them line by line. One exception: for M+ builds without
+  Master of the Elements, the FAQ allows Lava Burst only with Lava Surge or Flowing
+  Elements, and the APL also allows it with Molten Wrath or Purging Flames. These
+  lists aren't the whole of Stormbringer (owner).
 
 ## Open questions
 
@@ -141,4 +194,4 @@ it.
 - The talent tree has two Earthquake entries in one node. Do they log under
   different ids?
 - What do the three Elemental Blast stat buffs in the APL's `aoe` list do in
-  Midnight?
+  Midnight? The FAQ says to cast it when none are up, at any target count.

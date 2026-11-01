@@ -608,6 +608,8 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - **In a log:** The first casts of a fight: `cast` events for one `sourceID` in
   one of `fightIDs`, in `timestamp` order, as a list of `abilityGameID`s. How many
   casts count as the opener is not decided.
+- **Note:** Elemental's accepted openers are listed in
+  [elemental-shaman.md](elemental-shaman.md#opener).
 - **Status:** `confirmed`
 - **Not to be confused with:** [prepull](#prepull).
 
@@ -940,9 +942,10 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 - **In this repo:** `talent.master_of_the_elements`,
   `buff.master_of_the_elements.up`. The APL also spends it on Tempest and on
   Lightning Bolt with Stormkeeper.
-- **Note:** Flame Shock doesn't consume it. The APL comment "Consume spare MotE to
-  buff Flame Shock" doesn't match the game, so don't read that line as a use of
-  the buff.
+- **Note:** Flame Shock consumes it, and using a spare one there is deliberate.
+  With [Flowing Elements](#flowing-elements) and [Overcharge!](#overcharge) both
+  up, spend without waiting for it, so a spender without this buff isn't always a
+  mistake.
 
 ### Overcharge!
 
