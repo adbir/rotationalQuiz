@@ -114,11 +114,11 @@ void main() {
       }
     });
 
-    test('hot keys: the bound key answers the question', () {
+    test('hot keys: the bound key answers the question', () async {
       final vm = quiz()..setMode(QuizMode.hotkeys);
       final answer = vm.answer!.selectedSpellId!;
       const key = Keybind(code: 0x0007001e, keyLabel: '1', shift: true);
-      repos.keybinds.bind(answer, key);
+      await repos.keybinds.bind(answer, key);
       expect(
         vm.pressKeybind(const Keybind(code: 0x0007001e, keyLabel: '1')),
         isFalse,

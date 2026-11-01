@@ -243,6 +243,52 @@ test/
 - **Widget tests that start timers:** dispose the view model before the test
   ends, or Flutter reports "A Timer is still pending".
 
+## Code organisation
+
+**Extend before you add.** Most changes fit an existing extension point;
+use it rather than creating a parallel file or class.
+
+| To change… | Extend | Not |
+| ---------- | ------ | --- |
+| Per-spec behaviour (costs, availability, resources) | the spec's `RotationSpec` overrides | `if (spec is …)` checks elsewhere |
+| Spells, procs, cooldowns, talents | the data lists on the spec (`SpellDefinition`, `AuraDefinition`, …) | new widgets or editors for one aura |
+| Spec-agnostic APL identifiers | `AplEvaluator._resolve` | each spec's `resolveScalar` |
+| Persistence | a repository over `LocalStore` | direct `SharedPreferences` calls |
+| A widget used by two features | `ui/core/widgets/` | copy-pasted private widgets |
+| Feature behaviour | the feature's ViewModel | logic in `build()` |
+
+When a new file *is* justified:
+- **A new responsibility,** not "more of the same". A second screen, a new
+  repository, or a new use case qualifies; a helper for one function does
+  not.
+- **It lives in the layer folder that owns it** (see the tree above).
+  Avoid `utils/` or `helpers/` grab-bags.
+- **Prefer composition over inheritance.** Add a method to an existing
+  interface, with a default implementation in the base class when only some
+  implementations need it, as `RotationSpec.applyOffGcd` does.
+
+Keep files focused:
+- **Size:** aim for ≤ 300 hand-written lines per file. When a file passes
+  that, split it by responsibility. Typical splits:
+  - a screen's private widgets go into `views/widgets/`
+  - a spec's data tables go apart from its behaviour
+- **Widgets:** one public widget per file. Private helper widgets may share
+  the file while they're small.
+- **Exceptions:** generated files (`*.g.dart`) and test files.
+- **No dead code:** delete it. Never leave commented-out blocks or unused
+  parameters "for later".
+- **No duplication:** if you're about to copy a block, extract it to where
+  both callers can reach it.
+
+Some files are over the size target today: `quiz_screen.dart`,
+`elemental_shaman.dart`, `apl_evaluator.dart`. Don't make them bigger;
+split them when you work there.
+
+`analysis_options.yaml` enforces part of this. It turns on strict casts,
+inference and raw types, plus `prefer_final_locals`, `unawaited_futures`,
+`avoid_dynamic_calls`, `directives_ordering` and `sort_constructors_first`.
+Fix what it flags; don't `// ignore:` it without a comment explaining why.
+
 ## Conventions
 
 - Immutable models with `copyWith`. ViewModels extend `ChangeNotifier` and

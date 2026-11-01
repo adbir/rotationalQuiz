@@ -75,18 +75,6 @@ class AplDocument {
     this.origin = 'unknown',
   });
 
-  /// Lists in file order, keyed by name. The top-level list is
-  /// [defaultActionListName].
-  final Map<String, AplActionList> lists;
-
-  /// The original file contents.
-  final String source;
-
-  /// Where the document came from (asset path or URL), for display.
-  final String origin;
-
-  AplActionList? operator [](String name) => lists[name];
-
   /// Parses the contents of a SimC `.simc` file.
   ///
   /// Lines that are not `actions...` assignments are ignored, which makes it
@@ -153,6 +141,18 @@ class AplDocument {
       origin: origin,
     );
   }
+
+  /// Lists in file order, keyed by name. The top-level list is
+  /// [defaultActionListName].
+  final Map<String, AplActionList> lists;
+
+  /// The original file contents.
+  final String source;
+
+  /// Where the document came from (asset path or URL), for display.
+  final String origin;
+
+  AplActionList? operator [](String name) => lists[name];
 
   static AplAction _parseAction(
     String text, {
