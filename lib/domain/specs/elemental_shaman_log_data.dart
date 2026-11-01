@@ -47,6 +47,18 @@ const elementalLogRules = SpecLogRules(
   raidCooldownSupport: {
     'spiritwalkers_grace': ['Time Spiral', 'Blessing of the Bronze'],
   },
+  auraLogIds: {
+    'ascendance': {1219480},
+    'call_of_the_ancestors': {447244, 445624},
+  },
+  // Pets, the shield (up all fight) and anything on the target.
+  unobservableAuras: {
+    'fire_elemental',
+    'storm_elemental',
+    'lightning_shield',
+    'flame_shock',
+    'lightning_rod',
+  },
   chanceProcs: [
     // Sources: Wowhead tooltips and `summon_ancestor` in SimC's sc_shaman.cpp.
     ChanceProcRule(

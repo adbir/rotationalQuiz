@@ -494,3 +494,73 @@ Spiral windows, Power Infusion, Time Warp) and for the caster.
   hard-coded names in `raidCooldownSupport`.
 
 Not implemented. The source is the v2 API responses above.
+
+## APL replay
+
+`ReplayLog` rebuilds the state at each GCD press of a fight (`LogStateBuilder`),
+asks `AplEvaluator` what it wanted, and reports where the player pressed
+something else. Measured on the two 75 s fixtures, with the Farseer talents each
+log carries and the set bonus on:
+
+| Fixture | Presses compared | Agreement | Exact deviations |
+| ------- | ---------------- | --------- | ---------------- |
+| `sszorak_window` (owner, low parse) | 46 | 41% (19) | 12 of 27 |
+| `twin_fangs_window` (rank 1), 1 target | 59 | 37% (22) | 1 of 37 |
+| `twin_fangs_window` (rank 1), 2 targets | 59 | 63% (37) | 0 of 22 |
+
+Five presses (Sszorak) and two (Twin Fangs) are of abilities outside the spell
+table, such as Ghost Wolf, and are not compared. Twin Fangs is two bosses, so 2
+targets is assumed; the log has no enemy count, so `ReplayLog` takes `targets`
+and holds it for the whole log. Rank 1 beats the owner only with it, because at
+1 target every Chain Lightning reads as a miss. Treat these as how well the APL
+fits a window, not a grade: even rank 1 is at 63%.
+
+Top deviation kinds (pressed instead of wanted):
+
+| Sszorak | n | Twin Fangs, 2 targets | n |
+| ------- | - | --------------------- | - |
+| Lava Burst instead of Elemental Blast | 6 | Chain Lightning instead of Lava Burst | 13 |
+| Lightning Bolt instead of Lava Burst | 4 | Lightning Bolt instead of Lava Burst | 3 |
+| Lava Burst instead of Lightning Bolt | 4 | Elemental Blast instead of Earthquake | 2 |
+| Lava Burst instead of Flame Shock | 3 | Voltaic Blaze instead of Flame Shock | 1 |
+| Lightning Bolt instead of Flame Shock | 3 | Lava Burst instead of Earthquake | 1 |
+
+What explains them:
+
+- **Different play, owner.** Lava Burst instead of Elemental Blast is Maelstrom
+  sitting at the 125 cap for about 15 s (33 s to 50 s of the window) with no
+  spender, while the APL wanted Elemental Blast on every press. It matches this
+  log's 99 wasted Maelstrom, and is exact.
+- **Different play, rank 1.** Chain Lightning instead of Lava Burst, 13 times,
+  with Lava Surge up or 2+ charges: the player keeps cleaving, where the APL at 2
+  targets prefers a Lava Burst. There may be more than 2 enemies at those moments
+  (add waves), which the replay can't see.
+- **State the APL can't see: targets.** Every Twin Fangs deviation reads
+  `spell_targets`, so all are `uncertain`.
+- **State the replay estimates.** Flame Shock is on the target and no event shows
+  it, so its time left is rebuilt from the player's casts and assumed 12 s at the
+  start. It drives the Flame Shock deviations, all `uncertain`.
+- **Cooldowns.** Lava Burst charges refill at the table 8 s, but haste speeds
+  them, so `charges_fractional > 1.8` is reached later than in play. Voltaic Blaze
+  shows the same: rank 1 pressed it 1 to 2 s before the table said it was ready.
+  These count as agreement with a note, as does Stormkeeper pressed 45 s after its
+  last use (Offering from Beyond shortens it). A cooldown first cast inside the
+  window is taken to come off cooldown just then, which hides a late press.
+- **Timing.** An instant is read 60 ms before its own cast, and a cast with a
+  `begincast` 10 ms after it, so buffs its predecessor applied are up and the ones
+  it spends are not yet gone. A press within 10 ms of the previous finish is the
+  one case still wrong.
+- **Not rebuilt.** Movement (`moving` is always false), the fight length (a window
+  gets a `fight_remains` of 5 minutes or more unless `fightRemainsAfter` is
+  passed), Lava Surge's exact refund, pets (Fire and Storm Elemental), buffs up
+  from before the window that never change, and haste.
+- **Leniency.** A press counts as agreement, with a note, when the APL line for it
+  passed but the rebuilt state said it was unavailable: the player did press it, so
+  the state is wrong, not the play. An unmodelled action (potion, trinket) is never
+  the winner because the evaluator skips it. Off-GCD abilities the APL wanted with
+  a press and the log doesn't show are counted (`skippedOffGcd`) and don't change
+  the score, as in the quiz.
+- **Confidence.** A deviation is `exact` when every identifier read by the winning
+  line and by the pressed ability's own lines was seen in the log. Dots, debuffs,
+  pets, enemy counts, cooldowns with raid or proc support and Maelstrom more than 5
+  off the last logged reading are estimates.
