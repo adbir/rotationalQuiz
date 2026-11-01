@@ -11,6 +11,10 @@ import 'warcraft_logs_mapper.dart';
 class WarcraftLogsRepository {
   WarcraftLogsRepository({required this.spec, required this._service});
 
+  /// The longest silence in the player's hits on a boss that still counts as
+  /// hittable. The doc's 8 s, from rank 1 and rank 28 of Coiled Altar.
+  static const bossHitGap = Duration(seconds: 8);
+
   final RotationSpec spec;
   final WarcraftLogsService _service;
 
@@ -183,9 +187,9 @@ class WarcraftLogsRepository {
     // ponytail: an add counts only if the player damaged it, which drops
     // Barbed Bulwark (crowd controlled, not killed). A kind the player simply
     // ignored drops out too; the ceiling is a fight with a real add left alone.
-    final damaged = playerId == null
+    final hits = playerId == null
         ? null
-        : WarcraftLogsMapper.damagedTargets(
+        : WarcraftLogsMapper.reallyDamaged(
             await _service.events(
               code: reportCode,
               fightId: fightId,
@@ -206,11 +210,23 @@ class WarcraftLogsRepository {
       final name = names[id.toInt()] as String? ?? 'Enemy ${id.toInt()}';
       if (copies == 1) {
         if (withDepartures) {
-          groups.add(EnemyGroup(name: name, arrivals: const [Duration.zero]));
+          // ponytail: a boss is hittable while the player keeps hitting it; a
+          // silence over bossHitGap ends the stretch. The ceiling is a boss
+          // the player chose to ignore while it was hittable. No hits at all
+          // keeps the whole-fight span.
+          groups.add(
+            WarcraftLogsMapper.hittableSpans(
+                  name,
+                  hits?[id.toInt()] ?? const [],
+                  start,
+                  bossHitGap,
+                ) ??
+                EnemyGroup(name: name, arrivals: const [Duration.zero]),
+          );
         }
         continue;
       }
-      if (damaged != null && !damaged.contains(id.toInt())) continue;
+      if (hits != null && !hits.containsKey(id.toInt())) continue;
       final casts = await enemyEvents(WclEventType.casts, id.toInt());
       var ends = [
         for (final death in deaths)

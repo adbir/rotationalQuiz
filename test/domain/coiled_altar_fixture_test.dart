@@ -37,9 +37,16 @@ void main() {
     expect(soulcoilers.arrivals, hasLength(4));
   });
 
-  test('counts the two bosses and the Soulcoilers up', () {
-    expect(enemies.map((e) => e.name), contains("Zul'jan"));
-    expect(enemies.map((e) => e.name), contains('Hex Lord Malacrass'));
+  test('counts the hittable boss and the Soulcoilers up', () {
+    // Zul'jan is not hittable in 225 to 300 s, and Malacrass from 231.3 s, so
+    // one boss is up (see "Untargetable stretches" in docs/warcraft-logs.md).
+    final malacrass = enemies.singleWhere(
+      (e) => e.name == 'Hex Lord Malacrass',
+    );
+    expect(enemies.map((e) => e.name), isNot(contains("Zul'jan")));
+    expect(malacrass.aliveAt(const Duration(seconds: 5)), 0);
+    expect(malacrass.aliveAt(const Duration(seconds: 7)), 1);
+    expect(malacrass.aliveAt(const Duration(seconds: 75)), 1);
     expect(soulcoilers.aliveAt(const Duration(seconds: 26)), 2);
     expect(soulcoilers.aliveAt(const Duration(seconds: 70)), 2);
     expect(soulcoilers.aliveAt(const Duration(seconds: 40)), 2);
