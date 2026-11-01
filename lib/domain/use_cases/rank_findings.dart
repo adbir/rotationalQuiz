@@ -53,6 +53,14 @@ class RankFindings {
       ]),
       if (windowCasts.any((n) => n > 0))
         _finding(FindingKind.castBeforeWindow, windowCasts),
+      // ponytail: the first DoT stands for all; the Elemental Shaman has one.
+      if (all.any(
+        (m) => m.dotUptime.isNotEmpty && m.dotUptime.first.percent > 0,
+      ))
+        _finding(FindingKind.dotUptime, [
+          for (final m in all)
+            m.dotUptime.isEmpty ? 0 : m.dotUptime.first.percent,
+        ], higherIsBetter: true),
       if (comparison.pooling.isNotEmpty) _held(comparison),
     ];
 

@@ -38,27 +38,29 @@ class DebuffWindows {
     return DebuffWindows._(windows, log.fight.duration);
   }
 
-  const DebuffWindows._(this.windows, this._length);
+  const DebuffWindows._(this.windows, this.length);
 
   /// Shorter gaps are within event-ordering tolerance.
   static const gapThreshold = Duration(seconds: 1);
 
   final List<BuffWindow> windows;
-  final Duration _length;
+
+  /// The fight's length.
+  final Duration length;
 
   Duration get uptime =>
       windows.fold(Duration.zero, (sum, w) => sum + (w.end - w.start));
 
   /// Of the whole fight, 0 to 100.
   double get uptimePercent =>
-      100 * uptime.inMicroseconds / _length.inMicroseconds;
+      100 * uptime.inMicroseconds / length.inMicroseconds;
 
   /// Stretches of [gapThreshold] or more with the debuff down, including
   /// before the first band and after the last.
   List<DebuffGap> get gaps {
     final found = <DebuffGap>[];
     var from = Duration.zero;
-    for (final w in [...windows, BuffWindow(_length, _length)]) {
+    for (final w in [...windows, BuffWindow(length, length)]) {
       if (w.start - from >= gapThreshold) {
         found.add((start: from, length: w.start - from));
       }
