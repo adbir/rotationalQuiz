@@ -971,7 +971,9 @@ enough. The study cost about 70 points in queries and 55 in checks.
 ### Three logs
 
 The owner's kill, rank 50 (the Heroic top 100's closest length) and rank 1.
-Possible casts are `floor(length / cooldown) + 1`, with base cooldowns.
+Possible casts are `floor(length / cooldown) + 1`, with base cooldowns. Healing
+Stream Totem's is `2 + floor(length / 30)` plus one per Stormstream cast, which
+restores a charge (Wowhead).
 
 | | Owner | Rank 50 | Rank 1 |
 | --- | --- | --- | --- |
@@ -988,10 +990,12 @@ Possible casts are `floor(length / cooldown) + 1`, with base cooldowns.
 | Damage casts (Lava Burst, Flame Shock, Lightning Bolt) | 44 | 4 | 0 |
 | Riptide casts (per minute) | 28 (5.3) | 53 (10.4) | 61 (12.0) |
 | Riptide out / Tidal Waves up | 89% / 28% | 100% / 65% | 100% / 68% |
-| Healing Stream + Stormstream Totem | 13 + 7 | 16 + 8 | 19 + 10 |
+| Healing Stream Totem, of possible | 13 of 19 | 16 of 20 | 19 of 22 |
+| Stormstream casts; average proc held | 7; 4.1 s | 8; 2.8 s | 10; 1.4 s |
 | Surging Totem, of 13 possible | 9 | 10 | 12 |
 | Healing Rain up | 67% | 85% | 95% |
 | Ascendance / Spirit Link Totem, of 2 each | 1 / 1 | 2 / 2 | 2 / 2 |
+| Ascendance with Surging Totem 1 s before; totems in its 15 s | 0 of 1 (13.9 s before); 0 | 1 of 2; 1, 0 | 1 of 2; 2, 1 |
 | Nature's Swiftness, of 6 | 4 | 5 | 5 |
 | Earth Shield / Earthliving out | 94% / 91% | 100% / 100% | 81% / 100% |
 | Mana at P2 / P3 / P4 | 85 / 70 / 44% | 82 / 66 / 73% | 93 / 55 / 35% |
@@ -1011,20 +1015,25 @@ honesty. Don't blend them into a score.
 
 - **Ranked, with an owner gap:** Surging Totem casts against possible and
   Healing Rain uptime; Riptide casts per minute, with Riptide out; Healing
-  Stream Totem casts per minute, Stormstream included; Ascendance, Spirit Link
-  Totem and Nature's Swiftness against possible; casts per minute by phase,
-  with gaps shown beside the mechanics on the player.
-  Unleash Life, which Method and Icy Veins name, is left out: no top log
-  takes it. Guide sources are in [restoration-shaman.md](restoration-shaman.md).
-- **Ranked, no gap here:** mana left at the end (unspent mana is healing not
-  done; the owner ended at 19%, rank 1 at 13%), Earth Shield and Earthliving
-  uptime.
+  Stream Totem against possible (13 of 19 against 16 of 20 and 19 of 22);
+  Stormstream proc hold time (4.1 s against 2.8 and 1.4); Ascendance, Spirit
+  Link Totem and Nature's Swiftness against possible; casts per minute by
+  phase, with gaps shown beside the mechanics on the player.
+- **Ranked, no gap here:** mana at the end against Icy Veins' "near 0%" (owner
+  19%, rank 1 13%; rank 50's 51% is the outlier) and at phase changes (the
+  owner's fall matches rank 1's); Earth Shield and Earthliving uptime.
+- **Shown, too few to rank:** Wowhead's Ascendance preparation. One or two
+  Ascendances a log, and the top logs did it once in two.
+- Unleash Life is left out: no top log takes it. Guide sources and the must-do
+  list are in [restoration-shaman.md](restoration-shaman.md).
 - **Honesty only:** HPS, overheal share (14.5%, 14.5% and 13.1%), share of raid
   healing and raid damage taken per second (intake and the other healers set
-  them), raid size and healers, mana support received, Stormstream and
-  Ascendance procs (chance), damage casts.
+  them), raid size and healers, mana support received, Ascendance procs and
+  Riptide's 6% Stormstream procs (chance), damage casts (Icy Veins: DPS when no
+  one is in danger, which the log can't show).
 - **The log can't show:** whether a cooldown met heavy damage or overlapped
   another healer's (raid intake over time might approximate it; not tried), how
   many allies were hurt when Chain Heal was cast, whether a GCD was spare for
-  Lava Burst, and who held Earth Shield (needs Buffs events). Dispels were not
-  queried.
+  Lava Burst, which tank held Earth Shield (974 is on others, 383648 on the
+  Shaman; which tank needs Buffs events) and boss health against mana (not
+  fetched). Dispels were not queried.
