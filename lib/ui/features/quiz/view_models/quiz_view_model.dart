@@ -44,7 +44,7 @@ class QuizViewModel extends ChangeNotifier {
        _evaluator = AplEvaluator(aplRepository.spec),
        _random = random ?? Random(),
        _generate = GenerateScenario(aplRepository.spec, random: random),
-       _pickOptions = PickAnswerOptions(random: random) {
+       _pickOptions = PickAnswerOptions(aplRepository.spec, random: random) {
     _aplRepository.addListener(nextQuestion);
     _talentBuilds.addListener(_onBuildChanged);
     _keybinds.addListener(notifyListeners);
@@ -128,10 +128,15 @@ class QuizViewModel extends ChangeNotifier {
   int get questionNumber => _questionNumber;
   var _questionNumber = 0;
 
-  List<SpellDefinition> _options = const [];
+  List<AnswerOption> _options = const [];
 
   /// The four choices in [QuizMode.multipleChoice].
-  List<SpellDefinition> get options => _options;
+  List<AnswerOption> get options => _options;
+
+  AnswerOption? _guessedOption;
+
+  /// The option picked in [QuizMode.multipleChoice].
+  AnswerOption? get guessedOption => _guessedOption;
 
   String? _guess;
   String? get guess => _guess;
@@ -143,14 +148,14 @@ class QuizViewModel extends ChangeNotifier {
 
   final Set<String> _offGcdPressed = {};
 
-  /// Off-GCD abilities already pressed for this question (hot keys).
+  /// Off-GCD abilities already pressed for this question.
   Set<String> get offGcdPressed => Set.unmodifiable(_offGcdPressed);
 
-  /// Off-GCD abilities the APL wanted pressed before a correct hot-key
-  /// answer but that weren't. The answer still counts; the UI reminds the
-  /// player.
+  /// Off-GCD abilities the APL wanted pressed before a correct answer but
+  /// that weren't. The answer still counts; the UI reminds the player.
+  /// Multiple choice scores the whole sequence instead, so it has none.
   List<String> get skippedOffGcd => [
-    if (_mode == QuizMode.hotkeys && isCorrect)
+    if (_mode != QuizMode.multipleChoice && isCorrect)
       for (final action in _answer?.offGcd ?? const <Never>[])
         if (!_offGcdPressed.contains(action.name)) action.name,
   ];
@@ -197,19 +202,19 @@ class QuizViewModel extends ChangeNotifier {
         if (spell.onActionBar && !spell.offGcd) spell,
   ];
 
-  /// Off-GCD abilities shown on the hot-key bar, since pressing them is part
-  /// of the answer there.
+  /// Off-GCD abilities shown beside the action bar, since pressing them is
+  /// part of the answer.
   List<SpellDefinition> get offGcdBar => [
     if (_state case final state?)
       for (final spell in spec.knownSpells(state))
-        if (spell.offGcd) spell,
+        if (spell.onActionBar && spell.offGcd) spell,
   ];
 
   Keybind? keybindFor(String spellId) => _keybinds.bindFor(spellId);
 
-  /// Action bar spells without a keybind.
+  /// Bar spells without a keybind.
   List<SpellDefinition> get unboundSpells => [
-    for (final spell in actionBar)
+    for (final spell in [...actionBar, ...offGcdBar])
       if (_keybinds.bindFor(spell.id) == null) spell,
   ];
 
@@ -218,19 +223,26 @@ class QuizViewModel extends ChangeNotifier {
   void guessSpell(String spellId) {
     if (isAnswered || _answer == null) return;
     final correctId = _answer!.selectedSpellId;
-    if (_mode == QuizMode.hotkeys && spellId != correctId) {
-      final isOffGcd = _answer!.offGcd.any((a) => a.name == spellId);
-      if (isOffGcd) {
-        // Weaving the off-GCD button first is right; keep waiting for the
-        // GCD ability.
-        _offGcdPressed.add(spellId);
-        notifyListeners();
-        return;
-      }
+    if (spellId != correctId && _answer!.offGcd.any((a) => a.name == spellId)) {
+      // Weaving the off-GCD button first is right; keep waiting for the GCD
+      // ability.
+      _offGcdPressed.add(spellId);
+      notifyListeners();
+      return;
     }
     _finish(
       spellId == correctId ? QuizOutcome.correct : QuizOutcome.wrong,
       spellId,
+    );
+  }
+
+  /// Answers [QuizMode.multipleChoice] with a whole sequence.
+  void guessOption(AnswerOption option) {
+    if (isAnswered || _answer == null) return;
+    _guessedOption = option;
+    _finish(
+      option.isCorrect ? QuizOutcome.correct : QuizOutcome.wrong,
+      option.spells.last.id,
     );
   }
 
@@ -282,6 +294,7 @@ class QuizViewModel extends ChangeNotifier {
     _state = state;
     _answer = answer;
     _guess = null;
+    _guessedOption = null;
     _outcome = null;
     _reactionTime = null;
     _offGcdPressed.clear();

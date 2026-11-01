@@ -108,10 +108,67 @@ void main() {
       final vm = quiz(3)..setMode(QuizMode.multipleChoice);
       for (var i = 0; i < 100; i++) {
         vm.nextQuestion();
-        final ids = vm.options.map((s) => s.id).toList();
-        expect(ids.toSet().length, 4, reason: 'run $i');
-        expect(ids, contains(vm.answer!.selectedSpellId));
+        expect(vm.options.map((o) => o.name).toSet(), hasLength(4));
+        final correct = vm.options.singleWhere((o) => o.isCorrect);
+        expect(correct.spells.last.id, vm.answer!.selectedSpellId);
       }
+    });
+
+    test('multiple choice scores the chosen sequence', () {
+      final vm = quiz(3)..setMode(QuizMode.multipleChoice);
+      vm.guessOption(vm.options.firstWhere((o) => !o.isCorrect));
+      expect(vm.outcome, QuizOutcome.wrong);
+      vm.nextQuestion();
+      vm.guessOption(vm.options.singleWhere((o) => o.isCorrect));
+      expect(vm.outcome, QuizOutcome.correct);
+      expect(vm.guessedOption!.isCorrect, isTrue);
+    });
+
+    test('action bar: off-GCD abilities are shown and part of the answer', () {
+      final vm = quiz();
+      expect(
+        vm.offGcdBar.map((s) => s.id),
+        containsAll(['ancestral_swiftness', 'spiritwalkers_grace']),
+      );
+      while (vm.answer!.offGcd.isEmpty) {
+        vm.nextQuestion();
+      }
+      for (final action in vm.answer!.offGcd) {
+        vm.guessSpell(action.name);
+      }
+      expect(vm.isAnswered, isFalse);
+      vm.guessSpell(vm.answer!.selectedSpellId!);
+      expect(vm.isCorrect, isTrue);
+      expect(vm.skippedOffGcd, isEmpty);
+    });
+
+    test('action bar: skipping the off-GCD ability gets the reminder', () {
+      final vm = quiz();
+      while (vm.answer!.offGcd.isEmpty) {
+        vm.nextQuestion();
+      }
+      vm.guessSpell(vm.answer!.selectedSpellId!);
+      expect(vm.isCorrect, isTrue);
+      expect(vm.skippedOffGcd, isNotEmpty);
+    });
+
+    test('Ancestral Swiftness and Spiritwalker\'s Grace come up often', () {
+      final vm = quiz(2);
+      const runs = 300;
+      var swiftness = 0;
+      var grace = 0;
+      var moving = 0;
+      for (var i = 0; i < runs; i++) {
+        vm.nextQuestion();
+        final names = vm.answer!.offGcd.map((a) => a.name);
+        if (names.contains('ancestral_swiftness')) swiftness++;
+        if (vm.state!.moving) {
+          moving++;
+          if (names.contains('spiritwalkers_grace')) grace++;
+        }
+      }
+      expect(swiftness / runs, greaterThan(0.5));
+      expect(grace / moving, greaterThan(0.7));
     });
 
     test('hot keys: the bound key answers the question', () async {

@@ -161,7 +161,8 @@ variable support in the evaluator before it will give correct answers.
    - `onActionBar: false` hides it from the quiz bar.
    - `spellId`: the in-game spell id, for its icon (see the aura recipe).
 2. If it has a cooldown, add a `CooldownDefinition` (`maxCharges` for charge
-   spells) and set `cooldownId`/`usesCharges` on the spell.
+   spells) and set `cooldownId`/`usesCharges` on the spell. For abilities used
+   on cooldown, set `quizReadyChance` so quiz scenarios usually have them ready.
 3. Special rules go in `ElementalShaman.availability()` (e.g. Wind Shear
    needs a casting target) and `applyOffGcd()` (the buff an off-GCD press
    applies).
@@ -222,12 +223,14 @@ anything new the sandbox doesn't model.
 - **Sandbox** (`ui/features/sandbox`): edit a `CombatState`, re-evaluate on
   every change. "Save as build" stores hand-edited talents.
 - **Quiz** (`ui/features/quiz`), in `QuizViewModel`:
-  - **Action bar mode.**
-  - **Multiple choice:** options come from the `PickAnswerOptions` use case.
-    Distractors are abilities from trace lines the APL considered before
-    the winner. Answer with keys 1–4.
-  - **Hot keys:** timed, uses the user's keybinds. An off-GCD press before
-    the GCD ability is allowed. Auto-advances after a correct answer.
+  - **Action bar mode.** Off-GCD abilities are on a row of their own and are
+    part of the answer. Skipping one still counts, with a reminder.
+  - **Multiple choice:** options come from the `PickAnswerOptions` use case
+    and are whole sequences, such as "Ancestral Swiftness → Lightning Bolt".
+    Wrong answers are that GCD ability alone and abilities from trace lines
+    the APL considered before the winner. Answer with keys 1–4.
+  - **Hot keys:** timed, uses the user's keybinds, and treats off-GCD abilities
+    as Action bar mode does. Auto-advances after a correct answer.
   - Scenarios come from `GenerateScenario` and are re-rolled to down-weight
     the unconditional filler.
 - **Talent builds** (`TalentBuildRepository`): reference builds from the

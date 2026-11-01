@@ -163,7 +163,6 @@ const elementalSpells = <String, SpellDefinition>{
     school: SpellSchool.arcane,
     offGcd: true,
     usesCharges: true,
-    onActionBar: false,
   ),
   'wind_shear': SpellDefinition(
     id: 'wind_shear',
@@ -351,6 +350,7 @@ const elementalCooldowns = <CooldownDefinition>[
     name: 'Ancestral Swiftness',
     duration: 30,
     requiredTalent: ElementalTalents.ancestralSwiftnessTalent,
+    quizReadyChance: 0.95,
   ),
   CooldownDefinition(
     id: 'natures_swiftness',
@@ -366,6 +366,7 @@ const elementalCooldowns = <CooldownDefinition>[
     name: "Spiritwalker's Grace",
     duration: 90,
     maxCharges: 2,
+    quizReadyChance: 0.85,
   ),
 ];
 

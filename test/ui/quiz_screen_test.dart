@@ -55,6 +55,50 @@ void main() {
     vm.dispose(); // Cancels the next question's countdown.
   });
 
+  testWidgets('multiple choice shows off-GCD sequences in order', (
+    tester,
+  ) async {
+    final repos = await tester.runAsync(TestRepositories.create);
+    tester.view.physicalSize = const Size(420, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final vm = QuizViewModel(
+      aplRepository: repos!.apl,
+      talentBuilds: repos.talentBuilds,
+      keybinds: repos.keybinds,
+      random: Random(4),
+    )..setMode(QuizMode.multipleChoice);
+    addTearDown(vm.dispose);
+    while (vm.answer!.offGcd.length != 1 ||
+        vm.answer!.offGcd.single.name != 'ancestral_swiftness') {
+      vm.nextQuestion();
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: QuizScreen(
+            viewModel: vm,
+            onOpenInSandbox: (_) {},
+            onOpenSetup: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final correct = vm.options.singleWhere((o) => o.isCorrect);
+    expect(correct.spells.first.id, 'ancestral_swiftness');
+    expect(find.text(correct.name), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_forward), findsWidgets);
+    expect(
+      tester.takeException(),
+      isNull,
+      reason: 'no overflow at phone width',
+    );
+  });
+
   testWidgets('multiple choice: number keys pick an option', (tester) async {
     final repos = await tester.runAsync(TestRepositories.create);
     final vm = QuizViewModel(
@@ -78,9 +122,7 @@ void main() {
     );
     await tester.pump();
 
-    final index = vm.options.indexWhere(
-      (s) => s.id == vm.answer!.selectedSpellId,
-    );
+    final index = vm.options.indexWhere((o) => o.isCorrect);
     await tester.sendKeyEvent(
       [
         LogicalKeyboardKey.digit1,

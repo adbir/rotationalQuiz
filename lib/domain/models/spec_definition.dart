@@ -122,6 +122,7 @@ class CooldownDefinition {
     required this.duration,
     this.maxCharges,
     this.requiredTalent,
+    this.quizReadyChance,
   });
 
   final String id;
@@ -132,6 +133,10 @@ class CooldownDefinition {
   final int? maxCharges;
 
   final String? requiredTalent;
+
+  /// Probability that a random quiz scenario has this ability ready. Set it
+  /// for abilities that are used on cooldown. `null` gives the usual spread.
+  final double? quizReadyChance;
 }
 
 /// A talent the APL checks with `talent.<id>`.

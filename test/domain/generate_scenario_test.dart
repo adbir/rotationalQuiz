@@ -27,6 +27,46 @@ void main() {
     }
   });
 
+  test('on-cooldown abilities are ready in most scenarios', () {
+    final generate = GenerateScenario(spec, random: Random(3));
+    final farseer = spec.loadouts.first;
+    const runs = 1000;
+    var swiftness = 0;
+    var grace = 0;
+    for (var i = 0; i < runs; i++) {
+      final state = generate(farseer);
+      if (spec.availability('ancestral_swiftness', state).isAvailable) {
+        swiftness++;
+      }
+      if ((state.cooldown('spiritwalkers_grace').charges ?? 0) >= 1) grace++;
+    }
+    expect(swiftness / runs, greaterThan(0.7));
+    expect(grace / runs, greaterThan(0.7));
+  });
+
+  test('a quarter of scenarios are moving', () {
+    final generate = GenerateScenario(spec, random: Random(4));
+    const runs = 1000;
+    var moving = 0;
+    for (var i = 0; i < runs; i++) {
+      if (generate(spec.loadouts.first).moving) moving++;
+    }
+    expect(moving / runs, closeTo(0.25, 0.05));
+  });
+
+  test('cooldowns without a ready chance keep their usual spread', () {
+    final generate = GenerateScenario(spec, random: Random(6));
+    const runs = 1000;
+    var ready = 0;
+    for (var i = 0; i < runs; i++) {
+      if (generate(spec.loadouts.first).cooldown('voltaic_blaze').remains <=
+          0) {
+        ready++;
+      }
+    }
+    expect(ready / runs, closeTo(0.5, 0.1));
+  });
+
   test('generated Maelstrom spans the whole range up to the cap', () {
     final generate = GenerateScenario(spec, random: Random(7));
     for (final loadout in spec.loadouts) {
