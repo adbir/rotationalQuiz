@@ -106,10 +106,10 @@ query ($code: String!, $fight: Int!, $source: Int, $type: EventDataType!, $start
 }''';
 
   static const _buffTableQuery = r'''
-query ($code: String!, $fight: Int!, $source: Int!, $start: Float!, $end: Float!) {
+query ($code: String!, $fight: Int!, $source: Int, $target: Int, $start: Float!, $end: Float!) {
   reportData {
     report(code: $code) {
-      table(dataType: Buffs, fightIDs: [$fight], sourceID: $source, startTime: $start, endTime: $end)
+      table(dataType: Buffs, fightIDs: [$fight], sourceID: $source, targetID: $target, startTime: $start, endTime: $end)
     }
   }
 }''';
@@ -200,11 +200,13 @@ query ($code: String!, $fight: Int!, $source: Int!, $start: Float!, $end: Float!
 
   /// Every buff the player held in the window, with uptime and uses but no
   /// caster. It is the only place a buff that began before the pull shows.
-  /// For `Buffs`, `sourceID` is the holder, not the caster.
+  /// For `Buffs`, `sourceID` is the holder, not the caster. Give [casterId]
+  /// instead of [sourceId] for every buff that player cast, on anyone.
   Future<JsonMap> buffTable({
     required String code,
     required int fightId,
-    required int sourceId,
+    int? sourceId,
+    int? casterId,
     required num start,
     required num end,
   }) async {
@@ -212,6 +214,7 @@ query ($code: String!, $fight: Int!, $source: Int!, $start: Float!, $end: Float!
       'code': code,
       'fight': fightId,
       'source': sourceId,
+      'target': casterId,
       'start': start,
       'end': end,
     });

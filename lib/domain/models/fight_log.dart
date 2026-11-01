@@ -164,6 +164,7 @@ class FightLog {
     required this.talents,
     this.debuffEvents = const [],
     this.receivedBuffs = const [],
+    this.appliedBuffs = const [],
   });
 
   final String reportCode;
@@ -187,6 +188,11 @@ class FightLog {
   /// Every buff the player held, from the log's buff table. It has what the
   /// events lack, such as a buff that began before the pull.
   final List<LogReceivedBuff> receivedBuffs;
+
+  /// Every buff the player cast, on anyone, from the buff table read by
+  /// caster. Loaded only when the spec keeps an aura up on others; a buff on
+  /// several players at once counts up while it is on any of them.
+  final List<LogReceivedBuff> appliedBuffs;
 
   /// SimC talent tokens.
   final Set<String> talents;

@@ -8,6 +8,7 @@ import 'package:rotational_quiz/data/repositories/warcraft_logs_repository.dart'
 import 'package:rotational_quiz/data/services/warcraft_logs_service.dart';
 import 'package:rotational_quiz/domain/models/enemy_group.dart';
 import 'package:rotational_quiz/domain/models/fight_log.dart';
+import 'package:rotational_quiz/domain/specs/restoration_shaman.dart';
 import 'package:rotational_quiz/utils/result.dart';
 
 import '../test_helpers.dart';
@@ -229,6 +230,36 @@ void main() {
   });
 
   group('loadFight', () {
+    test(
+      'reads the buffs a healer cast on others only for that spec',
+      () async {
+        bool asksByCaster() => api.requests.any(
+          (r) => (r['variables']! as Map<String, Object?>)['target'] != null,
+        );
+        await repo.loadFight(reportCode: 'ycBr', fightId: 58, sourceId: 7);
+        expect(asksByCaster(), isFalse);
+
+        final healer = WarcraftLogsRepository(
+          spec: const RestorationShaman(),
+          service: WarcraftLogsService(
+            accessToken: () async => 'token',
+            client: api.client,
+          ),
+        );
+        final result = await healer.loadFight(
+          reportCode: 'ycBr',
+          fightId: 58,
+          sourceId: 7,
+        );
+        final caster = api.requests.last['variables']! as Map<String, Object?>;
+        expect([caster['source'], caster['target']], [null, 7]);
+        expect(
+          (result as Ok<FightLog>).value.appliedBuffs.single.abilityId,
+          10060,
+        );
+      },
+    );
+
     test('combines a fight across every page and event type', () async {
       final result = await repo.loadFight(
         reportCode: 'ycBr',

@@ -324,6 +324,62 @@ const topHeroicExport =
     'CgQAAAAAAAAAAAAAAAAAAAAAAAAAAgBAAAAzMzsssNjZGjZGzMYsAbwMWMjtBwMwmZYGmtx'
     'YmZWWmZWMjZhFzMzYwsMAAAwMzgZGAYwM';
 
+/// The most common spec and hero talents of the Mythic top 20 (5 of 20, tied
+/// with the Heroic build, which also has 5): the Heroic build with Acid Rain
+/// for Torrent and Oversurge for Amplification Core. Mythic rank 1 runs it.
+const _topMythicTokens = {
+  'acid_rain',
+  'ancestral_reach',
+  'ascendance',
+  'coalescing_water',
+  'current_control',
+  'deeply_rooted_elements',
+  'deluge',
+  'earthliving_weapon',
+  'echo_of_the_elements',
+  'healing_rain',
+  'healing_stream_totem',
+  'living_stream',
+  'overflowing_shores',
+  'preeminence',
+  'primal_tide_core',
+  'quickstream',
+  'resurgence',
+  'rip_current',
+  'riptide',
+  'soothing_rain',
+  'spirit_link_totem',
+  'stormstream_totem',
+  'swelling_tides',
+  'tidal_waves',
+  'tidewaters',
+  'undercurrent',
+  'water_totem_mastery',
+  'wavespeakers_blessing',
+  'white_water',
+  // Totemic, hero tree 54.
+  'earthsurge',
+  'elemental_attunement',
+  'imbuement_mastery',
+  'lively_totems',
+  'oversized_totems',
+  'oversurge',
+  'primal_catalyst',
+  'splitstream',
+  'supportive_imbuements',
+  'surging_totem',
+  'totemic_momentum',
+  'totemic_rebound',
+  'whirling_elements',
+  'wind_barrier',
+};
+
+/// Mythic rank 1's own tree (`nDhy4JNt3kYamjwV`, fight 1), written from its
+/// ranking's `CombatantInfo` talents the same way as [topHeroicExport].
+const topMythicExport =
+    'CgQAAAAAAAAAAAAAAAAAAAAAAAAAAgBAAAAzMzsssNzMzYMzYmBjFYDmxmZsNAmB2MDGsNmZ'
+    'mZ2WmZWMjZhlZGzYwsMAAAwMzgZGAYwM';
+
 const restorationLoadouts = [
   TalentLoadout(
     id: 'top_heroic_totemic',
@@ -334,5 +390,16 @@ const restorationLoadouts = [
         'full tree, class talents included.',
     exportString: topHeroicExport,
     talents: _topHeroicTokens,
+  ),
+  TalentLoadout(
+    id: 'top_mythic_totemic',
+    name: 'Top Mythic logs, Totemic, 2026-11-01',
+    description:
+        'The Totemic build 5 of the top 20 Mythic Coiled Altar Restoration '
+        'logs run, rank 1 among them: Acid Rain for Torrent and Oversurge for '
+        "Amplification Core. The export string is Mythic rank 1's full tree, "
+        'class talents included.',
+    exportString: topMythicExport,
+    talents: _topMythicTokens,
   ),
 ];

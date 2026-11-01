@@ -16,7 +16,8 @@ facts are in [elemental-shaman.md](elemental-shaman.md).
   cost 1 point, and one full fight about 20.
 - **Live check:**
   `WCL_LIVE=1 flutter test test/data/warcraft_logs_live_test.dart`. Normal test
-  runs make no network calls.
+  runs make no network calls. `test/data/restoration_live_test.dart` checks the
+  three Heroic Restoration logs (about 24 points).
 
 ## Sign-in for the public site
 
@@ -1202,3 +1203,86 @@ honesty. Don't blend them into a score.
   Lava Burst, which tank held Earth Shield (974 is on others, 383648 on the
   Shaman; which tank needs Buffs events) and boss health against mana (not
   fetched). Dispels were not queried.
+
+### Metrics and findings (#78)
+
+**Design.** Everything is read from `SpecLogRules` and the spec's tables; the
+use cases check no spec. New rule kinds, named for what they measure:
+
+| Rule | Measures | Restoration |
+| --- | --- | --- |
+| `PossibleCastsRule(cooldownId, restoredByCastIds)` | `CooldownMetrics.possible`: charges (or 1) + `floor(length / cooldown)` + casts that restore a charge. A charged cooldown named here joins `cooldowns`, with no drift | Healing Stream Totem (a Stormstream Totem 1267068 cast restores), Surging Totem, Ascendance, Spirit Link Totem, Nature's Swiftness. Not Riptide (below) |
+| `UpkeepAura(buffId, name, onOthers)` | `PlayerMetrics.upkeep` (`AuraUptime`): table uptime over fight length. On self from `receivedBuffs`; on others from the new `FightLog.appliedBuffs`, the buff table by caster (`targetID: P`, 1 point, loaded only when a rule has `onOthers`) | Healing Rain 1307888; Earth Shield 974 and Earthliving 382024 on others; Earth Shield 383648 on self (shown only) |
+| `HeldProcRule(buffId, name)` | `PlayerMetrics.heldProcs`: each application or added stack waits until a stack goes, oldest first; average over procs that went; still up at the end counted apart | Stormstream Totem 1267089 |
+| `readsResourceLevel` | `PlayerMetrics.resourceLevels`: readings, the last reading before each phase change, at the end, the lowest; percent of the reading's `max` | mana (type 0) |
+| `findings: FindingRules([RankedMetric ...], orderByShare)` | Which metrics are ranked, each with direction (`higherIsBetter`), what the shortfall is a share of (`fullScale`, or rank 1's value), `onlyWhenSeen`, its subject (`cooldownId` or `abilityId`) and a `whatToTry` sentence naming it | 12 metrics, ordered by share |
+
+`FindingKind` keeps Elemental's six kinds and adds five generic ones:
+`castsAgainstPossible`, `upkeep`, `procHoldTime`, `abilityCastsPerMinute` and
+`resourceAtEnd`. `RankFindings` walks the spec's list: casts per minute leads
+when 10% behind, and the rest follow by shortfall in their own unit (Elemental,
+unchanged) or by share (Restoration, whose units are percent, seconds and casts
+a minute). `Finding` gains `subject` and `whatToTry`; `FindingsReport.same`
+holds the findings within 10% (`sameAsRank1` is their kinds). Elemental's rules
+list its six metrics with today's conditions, and its tests pass unchanged.
+
+**Left out of the ranking, on purpose.** Mana at phase changes is measured but
+not ranked: Icy Veins wants it near the boss's health, which isn't fetched, so
+neither direction is "behind". Riptide's possible casts: the tree data holds
+talent names only, and no name in the Totemic build says it shortens Riptide,
+so the reduction is still unknown and Riptide is ranked on casts per minute.
+Ascendance preparation stays shown, not ranked (too few).
+
+**Fixture** (`coiled_altar_heroic_resto_window.json`, 75 s of rank 1, now with
+`appliedBuffs`, the window's caster table: 1 point, plus 1 for the fight's start
+time): Healing Rain 95.0% (71,213 ms); Surging Totem 3 of 4; Healing Stream
+Totem 4 of 5 (2 charges, 2 cooldowns, 1 Stormstream); Riptide 15 (12.0 a
+minute); Ascendance 1 of 1, Spirit Link 1 of 1, Nature's Swiftness 1 of 2; 63
+mana readings, no phase change in the window; Stormstream: 2 gained, 1 spent
+after 0.408 s, 1 still up at the end. **No Earth Shield 974 is in the window's
+caster table** (0%), though rank 1 has it out 81% of the fight; Earthliving is
+out 100%.
+
+**Whole logs, live** (`WCL_LIVE=1 flutter test
+test/data/restoration_live_test.dart`, run once on 2026-11-01: 24 points for the
+three, about 8 a log: report 3, casts 1, resources 1, buffs 1 to 2,
+`CombatantInfo` 1, the two buff tables 1 each):
+
+| | Owner | Rank 50 | Rank 1 |
+| --- | --- | --- | --- |
+| Casts per minute (by phase) | 44.4 (45.0 / 34.4 / 63.0 / 43.7) | 48.9 (46.9 / 46.2 / 52.7 / 50.6) | 51.3 (51.7 / 50.7 / 49.6 / 51.9) |
+| Healing Stream Totem of possible; Stormstream casts | 13 of 19; 7 | 16 of 20; 8 | 19 of 22; 10 |
+| Stormstream hold (buff table) | 4.15 s (4.11) | 2.96 s (2.84) | 1.41 s (1.41) |
+| Surging Totem; Healing Rain up | 9 of 13; 66.8% | 10 of 13; 85.1% | 12 of 13; 94.8% |
+| Riptide (per minute) | 28 (5.3) | 53 (10.4) | 61 (12.0) |
+| Ascendance / Spirit Link / Nature's Swiftness | 1/2, 1/2, 4/6 | 2/2, 2/2, 5/6 | 2/2, 2/2, 5/6 |
+| Earth Shield on others / Earthliving out | 94.1% / 90.7% | 0% / 100% | 81.2% / 100% |
+| Mana at P2 / P3 / P4; end (lowest) | 85 / 70 / 44%; 19% (14%) | 82 / 66 / 73%; 51% (50%) | 93 / 55 / 35%; 13% (12%) |
+
+The ticket's three checks reproduce: Healing Stream 13/19, 16/20, 19/22;
+Healing Rain 67, 85, 95%; hold 4.1, 3.0, 1.4 s. Rank 50's hold is 2.96 s per
+proc against the table's 2.84 s, because two stacked procs both wait (the test
+allows 0.2 s). Differences from #69's table:
+
+- **Casts per minute** is 44.4 and 48.9 here against 41.7 and 48.1 there (rank
+  1 matches at 51.3). This counts every finished cast event; #69 didn't record
+  how it counted.
+- **Rank 50 has no Earth Shield 974.** Its caster table (fetched again, 1 point
+  plus 1 for the start time) has Earth Shield 383648 at 100% and no 974: it kept
+  Earth Shield on itself, not on a tank. #69's 100% was that. The ranked Earth
+  Shield is the one on others; the self one is shown.
+
+**Findings, owner against rank 1** (rank 50 in the middle): casts per minute
+(44.4 against 51.3, 13% behind), Stormstream hold (4.1 against 1.4 s, share
+1.95) and Riptide per minute (5.3 against 12.0, share 0.56). The same as rank
+1: mana at the end (19 against 13%, 6 points of 100) and Earthliving (91 against
+100%). Behind but past the three: Ascendance and Spirit Link (50 against 100%),
+Healing Rain (67 against 95), Surging Totem (69 against 92), Healing Stream (68
+against 86), Nature's Swiftness (67 against 83). Earth Shield is ahead.
+
+**Mythic, left for a follow-up.** Picked but not measured: Mythic rank 1
+`nDhy4JNt3kYamjwV` / 1 / source 18 (537.1 s, item level 333) and rank 55
+`jyzp26XbVwga1DZv` / 28 / source 339 (537.2 s), from
+`characterRankings(metric: hps, difficulty: 5, includeCombatantInfo: true)` on
+3429, which cost 2 points with combatant info (the actor lookups 1 each). The
+open question of pairing Heroic logs with Heroic rankings stays open.

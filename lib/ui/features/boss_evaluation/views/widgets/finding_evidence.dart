@@ -48,17 +48,13 @@ class FindingEvidence extends StatelessWidget {
   }
 
   Widget _values() => ComparisonGrid(
-    title: text.metricName(finding.kind),
+    title: text.metricName(finding),
     columns: const ['Value'],
     labelWidth: 100,
     rows: [
       for (var i = 0; i < comparison.logs.length; i++)
         GridRow(comparison.logs[i].label, [
-          GridCell(
-            finding.kind == FindingKind.dotUptime
-                ? '${finding.valuesByLog[i].toStringAsFixed(1)}%'
-                : finding.valuesByLog[i].round().toString(),
-          ),
+          GridCell(text.value(finding, finding.valuesByLog[i])),
         ]),
     ],
   );

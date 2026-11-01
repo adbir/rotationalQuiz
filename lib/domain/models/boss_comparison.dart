@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'finding.dart';
 import 'player_metrics.dart';
 import 'pooling_report.dart';
 
@@ -66,7 +67,11 @@ class BossComparison {
     required this.pooling,
     this.gapsAlsoInRank1 = const [],
     this.eventName,
+    this.findingRules = const FindingRules([]),
   });
+
+  /// The spec's rules for which metrics are ranked against rank 1.
+  final FindingRules findingRules;
 
   final List<ComparedLog> logs;
 

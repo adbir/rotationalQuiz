@@ -24,7 +24,7 @@ class EvaluationResult extends StatelessWidget {
     final report = vm.report!;
     final text = vm.text!;
     final theme = Theme.of(context);
-    final same = text.sameAsRank1(report.sameAsRank1);
+    final same = text.sameAsRank1(report.same);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -49,7 +49,7 @@ class EvaluationResult extends StatelessWidget {
             number: i + 1,
             headline: text.headline(finding),
             where: text.where(finding),
-            whatToTry: finding.kind.whatToTry,
+            whatToTry: finding.whatToTry,
             evidence: FindingEvidence(
               finding: finding,
               comparison: comparison,

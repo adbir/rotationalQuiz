@@ -7,6 +7,7 @@ import '../models/log_rules.dart';
 import '../models/player_metrics.dart';
 import '../models/spec_definition.dart';
 import '../specs/rotation_spec.dart';
+import 'compute_aura_metrics.dart';
 import 'compute_chance_proc_metrics.dart';
 import 'compute_cooldown_metrics.dart';
 import 'compute_gap_metrics.dart';
@@ -35,6 +36,8 @@ class ComputePlayerMetrics {
     final minutes = log.fight.duration.inMilliseconds / 60000;
     double perMinute(num count) => minutes == 0 ? 0 : count / minutes;
     final cooldowns = ComputeCooldownMetrics(spec, log, events);
+    final auras = ComputeAuraMetrics(rules, log);
+    final phaseStarts = _phaseStarts(log.fight);
 
     return PlayerMetrics(
       fightLength: log.fight.duration,
@@ -42,7 +45,7 @@ class ComputePlayerMetrics {
         total: presses.length,
         perMinute: perMinute(presses.length),
         byAbility: _byAbility(log, presses, perMinute),
-        byPhase: _byPhase(log.fight, presses),
+        byPhase: _byPhase(log.fight, phaseStarts, presses),
       ),
       gaps: ComputeGapMetrics(spec, log, cooldowns)(events),
       resource: _resource(log, rules, perMinute),
@@ -51,6 +54,12 @@ class ComputePlayerMetrics {
       raidFreeCasts: cooldowns.raidFreeCasts(),
       windowCasts: ComputeWindowCastMetrics(spec, log)(events),
       dotUptime: _dotUptime(log),
+      upkeep: auras.upkeep(),
+      heldProcs: auras.heldProcs(),
+      resourceLevels: auras.resourceLevels([
+        for (final start in phaseStarts)
+          if (start > Duration.zero) start,
+      ]),
       chanceProcs: [
         for (final rule in rules.chanceProcs)
           if (log.talents.contains(rule.requiredTalent))
@@ -98,11 +107,16 @@ class ComputePlayerMetrics {
     ]..sort((a, b) => b.casts.compareTo(a.casts));
   }
 
-  List<PhaseCasts> _byPhase(LogFight fight, List<LogCast> presses) {
-    final starts = [
-      for (final start in fight.phaseStarts)
-        if (fight.duration - start >= _shortestLastPhase) start,
-    ];
+  List<Duration> _phaseStarts(LogFight fight) => [
+    for (final start in fight.phaseStarts)
+      if (fight.duration - start >= _shortestLastPhase) start,
+  ];
+
+  List<PhaseCasts> _byPhase(
+    LogFight fight,
+    List<Duration> starts,
+    List<LogCast> presses,
+  ) {
     return [
       for (var i = 0; i < starts.length; i++)
         _phase(

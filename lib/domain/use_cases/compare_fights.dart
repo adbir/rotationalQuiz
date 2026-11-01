@@ -97,6 +97,7 @@ class CompareFights {
                 .firstOrNull
                 ?.name
           : null,
+      findingRules: spec.logRules.findings,
     );
   }
 

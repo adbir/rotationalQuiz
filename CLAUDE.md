@@ -291,6 +291,14 @@ anything new the sandbox doesn't model.
   - **Raid support:** `RaidFreeCastMetrics` and
     `CooldownMetrics.raidDependsOn` name it. Don't blend it into a score.
   - **Left out:** damage share, DPS and deaths, because `FightLog` lacks them.
+  - **Healer parts (#78):** `PossibleCastsRule`, `UpkeepAura`, `HeldProcRule`
+    and `readsResourceLevel` in `SpecLogRules` fill `CooldownMetrics.possible`,
+    `upkeep`, `heldProcs` and `resourceLevels`. An aura on others reads
+    `FightLog.appliedBuffs` (the buff table by caster), loaded only for such a
+    rule.
+  - **Findings:** `SpecLogRules.findings` lists the ranked metrics and what
+    "behind" means for each; `RankFindings` has no spec logic. Add a metric
+    there, not a branch in the use case.
 - **APL replay** (`ReplayLog`, `LogStateBuilder`): rebuilds the state at each
   GCD press of a `FightLog` and compares the press with the APL's pick. Domain
   only, no screen yet. Rates, causes and what the log can't show are in

@@ -20,7 +20,8 @@ import 'package:rotational_quiz/utils/result.dart';
 
 import '../test_helpers.dart';
 
-Future<String> _clientToken() async {
+/// A client-credentials token from the credentials in `.env`.
+Future<String> clientToken() async {
   final vars = <String, String>{
     for (final line in File('.env').readAsLinesSync())
       if (line.indexOf('=') case final i when i > 0)
@@ -47,7 +48,7 @@ void main() {
     skip: env['WCL_LIVE'] == null,
     timeout: const Timeout(Duration(minutes: 3)),
     () async {
-      final token = await _clientToken();
+      final token = await clientToken();
       final repo = WarcraftLogsRepository(
         spec: spec,
         service: WarcraftLogsService(accessToken: () async => token),
@@ -98,7 +99,7 @@ void main() {
     skip: env['WCL_LIVE'] == null,
     timeout: const Timeout(Duration(minutes: 3)),
     () async {
-      final token = await _clientToken();
+      final token = await clientToken();
       final repo = WarcraftLogsRepository(
         spec: spec,
         service: WarcraftLogsService(accessToken: () async => token),
@@ -127,7 +128,7 @@ void main() {
     skip: env['WCL_LIVE'] == null,
     timeout: const Timeout(Duration(minutes: 3)),
     () async {
-      final token = await _clientToken();
+      final token = await clientToken();
       final repo = WarcraftLogsRepository(
         spec: spec,
         service: WarcraftLogsService(accessToken: () async => token),
@@ -187,7 +188,7 @@ void main() {
     skip: env['WCL_LIVE'] == null,
     timeout: const Timeout(Duration(minutes: 3)),
     () async {
-      final token = await _clientToken();
+      final token = await clientToken();
       final repo = WarcraftLogsRepository(
         spec: spec,
         service: WarcraftLogsService(accessToken: () async => token),

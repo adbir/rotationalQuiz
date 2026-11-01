@@ -72,6 +72,16 @@ class WarcraftLogsRepository {
         start: start,
         end: WarcraftLogsMapper.fightEnd(fight),
       );
+      // For `Buffs`, `targetID` is the caster: what the player put on others.
+      final appliedTable = spec.logRules.upkeepAuras.any((a) => a.onOthers)
+          ? await _service.buffTable(
+              code: reportCode,
+              fightId: fightId,
+              casterId: id,
+              start: start,
+              end: WarcraftLogsMapper.fightEnd(fight),
+            )
+          : const <String, Object?>{};
       final damage = includeTargetsHit
           ? await events(WclEventType.damageDone)
           : const <JsonMap>[];
@@ -110,6 +120,7 @@ class WarcraftLogsRepository {
               ?WarcraftLogsMapper.buffEvent(row, start),
           ],
           receivedBuffs: WarcraftLogsMapper.receivedBuffs(buffTable),
+          appliedBuffs: WarcraftLogsMapper.receivedBuffs(appliedTable),
         ),
       );
     } on Exception catch (e) {

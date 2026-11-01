@@ -29,7 +29,7 @@ void main() {
     expect(log.fight.duration, const Duration(seconds: 75));
     expect(log.playerName, isEmpty);
     expect(log.talents, containsAll(['riptide', 'surging_totem']));
-    expect(log.talents, containsAll(resto.loadouts.single.talents));
+    expect(log.talents, containsAll(resto.loadouts.first.talents));
   });
 
   test('cast counts of the cooldowns the metrics look at', () {

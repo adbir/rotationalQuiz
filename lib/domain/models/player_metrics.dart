@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'aura_metrics.dart';
 import 'dot_uptime.dart';
 import 'gap_detail.dart';
 import 'window_cast.dart';
@@ -24,6 +25,9 @@ class PlayerMetrics {
     required this.chanceProcs,
     this.windowCasts = const [],
     this.dotUptime = const [],
+    this.upkeep = const [],
+    this.heldProcs = const [],
+    this.resourceLevels,
   });
 
   final Duration fightLength;
@@ -40,6 +44,15 @@ class PlayerMetrics {
 
   /// Each of the spec's DoTs on the boss.
   final List<DotUptime> dotUptime;
+
+  /// Auras the player keeps up, per spec rule.
+  final List<AuraUptime> upkeep;
+
+  /// How long procs waited, per spec rule.
+  final List<HeldProcMetrics> heldProcs;
+
+  /// The resource's level over the fight, when the spec reads it.
+  final ResourceLevelMetrics? resourceLevels;
 }
 
 /// Finished casts, counting each press once.
@@ -187,6 +200,7 @@ class CooldownMetrics {
     this.medianDrift,
     this.shortening,
     this.raidDependsOn = const [],
+    this.possible,
   });
 
   final String id;
@@ -217,6 +231,10 @@ class CooldownMetrics {
 
   /// Raid effects that change this cooldown's numbers.
   final List<String> raidDependsOn;
+
+  /// The most casts the fight allowed, when a spec rule counts them (see
+  /// `PossibleCastsRule`). A cooldown with charges has no drift.
+  final int? possible;
 }
 
 /// How much a proc shortened a cooldown, per gap between uses.
