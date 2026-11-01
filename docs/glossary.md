@@ -359,13 +359,16 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   it, and any [overcap](#overcap-overcapping-capped) during the hold. The event
   time comes from [add wave](#add-wave) or [phase](#phase). Maelstrom at a given
   moment has to be rebuilt from gains and spender costs, checked against
-  `classResources` readings. That rebuild is not done yet (issue #11).
+  `classResources` readings (`RebuildResourceTimeline`).
 - **Status:** `needs checking`
 - **In this repo:** The default APL cannot pool, because it has no fight
   timeline. Its main spender lines fire on
   `buff.master_of_the_elements.up` or `maelstrom.deficit<15`, whatever is coming
   next. So pooling always shows up as a [deviation](#deviation), and that
   deviation can be the right play.
+- **Measured here as:** `DetectPooling`: the mean Maelstrom in the 8 s before
+  an event is at least 15 points above the fight's mean, and a spender is cast
+  in the 8 s after. Both limits are guesses, not tuned on logs.
 - **Not to be confused with:** [overcap](#overcap-overcapping-capped), and with
   holding a resource when nothing is coming, which is a
   [mistake](#mistake).
