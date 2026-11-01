@@ -115,4 +115,29 @@ void main() {
     expect(find.text('Maelstrom at each wave'), findsOneWidget);
     expect(find.text('28 s'), findsOneWidget);
   });
+
+  testWidgets('offers an NSRT note built from the result', (tester) async {
+    await show(tester, FakeWarcraftLogsRepository());
+    await load(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Copy NSRT note'), findsOneWidget);
+    expect(find.text('All waves'), findsOneWidget);
+    final viewModel = tester
+        .widget<BossEvaluationScreen>(find.byType(BossEvaluationScreen))
+        .viewModel;
+    expect(viewModel.nsrtNote, startsWith('EncounterID:'));
+    expect(viewModel.nsrtNote, contains('Difficulty:Mythic;Name:'));
+    expect(viewModel.nsrtNote, contains('ph:1;time:'));
+    expect(
+      viewModel.nsrtNote,
+      'EncounterID:3421;Difficulty:Mythic;Name:The Twin Fangs;\n'
+      'ph:1;time:13.2;tag:Pool for Spawn of Vexhul;spellid:462620;\n'
+      'ph:1;time:27.4;tag:Stormkeeper;spellid:191634;\n'
+      'ph:1;time:30.7;tag:Earthquake;spellid:462620;',
+    );
+
+    await tester.tap(find.byType(Checkbox));
+    expect(viewModel.allWaves, isTrue);
+  });
 }

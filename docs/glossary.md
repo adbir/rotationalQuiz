@@ -1043,6 +1043,32 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 - **Not to be confused with:** [Stormbringer](#stormbringer), which is the hero
   tree.
 
+## Raid notes
+
+### NSRT (Northern Sky Raid Tools) note
+
+- **Meaning:** A text note that the NSRT addon imports to show timed
+  reminders to a raider during a fight.
+- **Format:** One header line, then one line per reminder. `ph` is the phase (1
+  when the fight has no phases), `time` is seconds from the pull with one
+  decimal, `tag` is the label (lorrgs fills it with the player's name), `spellid`
+  is the ability whose icon shows. Every field ends with `;`:
+
+  ```text
+  EncounterID:3421;Difficulty:Mythic;Name:The Twin Fangs;
+  ph:1;time:0.7;tag:Eliance;spellid:191634;
+  ph:1;time:40.2;tag:Eliance;spellid:191634;
+  ```
+
+- **Source:** A lorrgs export for Twin Fangs, pasted by the owner on issue #38
+  (2026-11-01).
+- **Status:** `needs checking`
+- **To check:** Whether the import shows a `tag` that is plain text, such as
+  `Pool for Broodlings`, on a reminder that is not a cooldown. The app writes
+  those with the spender's spell id.
+- **In this repo:** `formatNsrtNote` writes it; `BuildReminders` makes the lines
+  from rank 1's held waves and Stormkeeper presses.
+
 ## SimC and APL terms
 
 ### APL (action priority list)
