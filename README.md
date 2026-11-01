@@ -6,6 +6,9 @@ list (APL) for a spec and lets you poke at it.
 
 First spec: **Elemental Shaman — single target** (Midnight APL).
 
+**Try it:** https://adbir.github.io/rotationalQuiz/ (deployed from `main` by
+GitHub Pages; works on desktop and mobile browsers).
+
 ## Features
 
 - **Sandbox** – set Maelstrom, procs (Master of the Elements, Lava Surge,
@@ -66,8 +69,24 @@ SCREENSHOT_DIR=/tmp/shots flutter test test/screenshots --update-goldens
 The repo is set up for Claude Code with the official Flutter agent plugin
 (`.claude/settings.json`) and the Flutter agent rules in `CLAUDE.md`.
 
+## License
+
+Copyright © 2026 the Rotational Quiz contributors.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License, version 3, as published by the
+Free Software Foundation. See [`LICENSE`](LICENSE).
+
+It includes data from [SimulationCraft](https://github.com/simulationcraft/simc),
+also licensed under the GPL v3:
+
+- `assets/apl/*.simc`: action priority lists, copied verbatim
+  (see `assets/apl/README.md`)
+- `lib/domain/talents/generated/*.g.dart`: talent trees generated from
+  SimulationCraft's `engine/dbc/generated/trait_data.inc`
+
 ## Disclaimer
 
-Not affiliated with Blizzard Entertainment or SimulationCraft. The bundled APL
-is copied from SimulationCraft (GPL-3.0). Spell numbers in the sandbox are
-approximations; the APL decides the priority.
+Not affiliated with Blizzard Entertainment or SimulationCraft. World of
+Warcraft is a trademark of Blizzard Entertainment. Spell numbers in the
+sandbox are approximations; the APL decides the priority.
