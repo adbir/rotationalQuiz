@@ -1,8 +1,11 @@
 import '../models/buff_windows.dart';
+import '../models/debuff_windows.dart';
+import '../models/dot_uptime.dart';
 import '../models/fight_log.dart';
 import '../models/gap_detail.dart';
 import '../models/log_rules.dart';
 import '../models/player_metrics.dart';
+import '../models/spec_definition.dart';
 import '../specs/rotation_spec.dart';
 import 'compute_chance_proc_metrics.dart';
 import 'compute_cooldown_metrics.dart';
@@ -47,6 +50,7 @@ class ComputePlayerMetrics {
       cooldowns: cooldowns.cooldowns(),
       raidFreeCasts: cooldowns.raidFreeCasts(),
       windowCasts: ComputeWindowCastMetrics(spec, log)(events),
+      dotUptime: _dotUptime(log),
       chanceProcs: [
         for (final rule in rules.chanceProcs)
           if (log.talents.contains(rule.requiredTalent))
@@ -54,6 +58,25 @@ class ComputePlayerMetrics {
       ],
     );
   }
+
+  List<DotUptime> _dotUptime(FightLog log) => [
+    for (final aura in spec.auras)
+      if (aura.kind == AuraKind.dot && aura.spellId != null)
+        DotUptime(
+          name: aura.name,
+          windows: DebuffWindows.of(log, aura.spellId!),
+          applications: log.debuffEvents
+              .where(
+                (e) =>
+                    e.abilityId == aura.spellId &&
+                    (log.fight.bossActorId == null ||
+                        e.targetId == log.fight.bossActorId) &&
+                    (e.change == LogBuffChange.apply ||
+                        e.change == LogBuffChange.refresh),
+              )
+              .length,
+        ),
+  ];
 
   List<AbilityCasts> _byAbility(
     FightLog log,

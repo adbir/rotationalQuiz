@@ -921,6 +921,11 @@ the app's, and all the log measures depend on ability ids, so every entry here i
   Stormkeeper before Ascendance. Rule: `SpecLogRules.castsBeforeWindow`. What to
   try: "Cast Stormkeeper first, then Ascendance."
   (`FindingKind.castBeforeWindow`.)
+- **Flame Shock uptime (Boss Evaluation):** the share of the fight Flame Shock
+  (188389) was up on the boss, from its [aura bands](#aura-band), with each
+  stretch of 1 s or more it was down. Ranked when yours is 10% or more below
+  rank 1's. What to try: "Refresh Flame Shock before it falls off."
+  (`FindingKind.dotUptime`, `PlayerMetrics.dotUptime`.)
 
 ### Call of the Ancestors
 
