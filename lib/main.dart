@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,7 +22,9 @@ Future<void> main() async {
     spec: spec,
     assetService: const AplAssetService(),
     remoteService: SimcRemoteService(),
-  )..loadBundled();
+  );
+  // The UI shows a spinner until the APL is in; no need to delay startup.
+  unawaited(aplRepository.loadBundled());
 
   runApp(
     MultiProvider(

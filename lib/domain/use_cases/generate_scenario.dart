@@ -18,7 +18,7 @@ class GenerateScenario {
     Set<String> setBonuses = const {},
     double movingChance = 0.08,
   }) {
-    var state = spec
+    final state = spec
         .defaultState(loadout)
         .copyWith(
           setBonuses: setBonuses,

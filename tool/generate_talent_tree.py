@@ -6,8 +6,9 @@ in-game talent export strings use (ascending node id, entries in SimC's
 selection order), which is what `TalentStringCodec` needs to decode them.
 
 Usage:
-  tool/generate_talent_tree.py --class-id 7 --name shaman \
+  python3 -I tool/generate_talent_tree.py --class-id 7 --name shaman \
       > lib/domain/talents/generated/shaman_talent_tree.g.dart
+  dart format lib/domain/talents/generated
 
 By default the trait data is downloaded from the SimC `midnight` branch;
 pass --trait-data to use a local copy of engine/dbc/generated/trait_data.inc.

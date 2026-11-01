@@ -87,6 +87,8 @@ abstract class RotationSpec {
   SpellAvailability availability(String spellId, CombatState state);
 
   /// Resolves spec-specific scalar identifiers such as `maelstrom.deficit`.
+  /// Generic ones (`buff.*`, `cooldown.*`, `talent.*`, `spell_targets.*`,
+  /// `fight_remains`, `gcd`...) are handled by the evaluator.
   /// Returns `null` for identifiers the spec does not know.
   double? resolveScalar(String identifier, CombatState state);
 

@@ -1,5 +1,7 @@
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
+
 import '../models/combat_state.dart';
 import '../models/spec_definition.dart';
 import '../specs/rotation_spec.dart';
@@ -210,7 +212,13 @@ class AplEvaluator {
   }
 
   /// Resolves `buff.*`, `cooldown.*`, `talent.*` and friends, falling back
-  /// to [RotationSpec.resolveScalar].
+  /// to [RotationSpec.resolveScalar]. Visible for tests that check an APL
+  /// only reads state the sandbox models.
+  @visibleForTesting
+  double? resolveIdentifier(String identifier, CombatState state) =>
+      _resolve(identifier, state);
+
+  /// See [resolveIdentifier].
   double? _resolve(String identifier, CombatState state) {
     final parts = identifier.split('.');
     switch (parts) {
@@ -235,8 +243,16 @@ class AplEvaluator {
         return state.setBonuses.contains(name) ? 1 : 0;
       case ['active_dot', final name]:
         return state.dot(name).isUp ? 1 : 0;
+      case ['spell_targets', _]:
+        return state.targets.toDouble();
     }
-    return spec.resolveScalar(identifier, state);
+    return switch (identifier) {
+      'active_enemies' => state.targets.toDouble(),
+      'fight_remains' || 'target.time_to_die' => state.fightRemains,
+      'gcd' || 'gcd.max' => state.gcd,
+      'movement.distance' => state.moving ? 10 : 0,
+      _ => spec.resolveScalar(identifier, state),
+    };
   }
 
   double? _auraProperty(
