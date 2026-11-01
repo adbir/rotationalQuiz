@@ -32,6 +32,7 @@ abstract final class ElementalTalents {
 const elementalSpells = <String, SpellDefinition>{
   'lava_burst': SpellDefinition(
     id: 'lava_burst',
+    spellId: 51505,
     name: 'Lava Burst',
     abbreviation: 'LvB',
     school: SpellSchool.fire,
@@ -40,6 +41,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'lightning_bolt': SpellDefinition(
     id: 'lightning_bolt',
+    spellId: 188196,
     name: 'Lightning Bolt',
     abbreviation: 'LB',
     school: SpellSchool.nature,
@@ -47,6 +49,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'tempest': SpellDefinition(
     id: 'tempest',
+    spellId: 452201,
     name: 'Tempest',
     abbreviation: 'Tmp',
     school: SpellSchool.nature,
@@ -56,6 +59,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'chain_lightning': SpellDefinition(
     id: 'chain_lightning',
+    spellId: 188443,
     name: 'Chain Lightning',
     abbreviation: 'CL',
     school: SpellSchool.nature,
@@ -63,6 +67,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'flame_shock': SpellDefinition(
     id: 'flame_shock',
+    spellId: 188389,
     name: 'Flame Shock',
     abbreviation: 'FS',
     school: SpellSchool.fire,
@@ -70,6 +75,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'voltaic_blaze': SpellDefinition(
     id: 'voltaic_blaze',
+    spellId: 470057,
     name: 'Voltaic Blaze',
     abbreviation: 'VB',
     school: SpellSchool.fire,
@@ -78,6 +84,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'earth_shock': SpellDefinition(
     id: 'earth_shock',
+    spellId: 8042,
     name: 'Earth Shock',
     abbreviation: 'ES',
     school: SpellSchool.earth,
@@ -86,6 +93,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'elemental_blast': SpellDefinition(
     id: 'elemental_blast',
+    spellId: 117014,
     name: 'Elemental Blast',
     abbreviation: 'EB',
     school: SpellSchool.earth,
@@ -94,6 +102,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'earthquake': SpellDefinition(
     id: 'earthquake',
+    spellId: 61882,
     name: 'Earthquake',
     abbreviation: 'EQ',
     school: SpellSchool.earth,
@@ -101,12 +110,14 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'frost_shock': SpellDefinition(
     id: 'frost_shock',
+    spellId: 196840,
     name: 'Frost Shock',
     abbreviation: 'FrS',
     school: SpellSchool.frost,
   ),
   'stormkeeper': SpellDefinition(
     id: 'stormkeeper',
+    spellId: 191634,
     name: 'Stormkeeper',
     abbreviation: 'SK',
     school: SpellSchool.nature,
@@ -116,6 +127,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'ascendance': SpellDefinition(
     id: 'ascendance',
+    spellId: 114050,
     name: 'Ascendance',
     abbreviation: 'Asc',
     school: SpellSchool.fire,
@@ -124,6 +136,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'ancestral_swiftness': SpellDefinition(
     id: 'ancestral_swiftness',
+    spellId: 443454,
     name: 'Ancestral Swiftness',
     abbreviation: 'AS',
     school: SpellSchool.nature,
@@ -133,6 +146,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'natures_swiftness': SpellDefinition(
     id: 'natures_swiftness',
+    spellId: 378081,
     name: "Nature's Swiftness",
     abbreviation: 'NS',
     school: SpellSchool.nature,
@@ -143,6 +157,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'spiritwalkers_grace': SpellDefinition(
     id: 'spiritwalkers_grace',
+    spellId: 79206,
     name: "Spiritwalker's Grace",
     abbreviation: 'SWG',
     school: SpellSchool.arcane,
@@ -152,6 +167,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'wind_shear': SpellDefinition(
     id: 'wind_shear',
+    spellId: 57994,
     name: 'Wind Shear',
     abbreviation: 'WS',
     school: SpellSchool.nature,
@@ -161,6 +177,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'lightning_shield': SpellDefinition(
     id: 'lightning_shield',
+    spellId: 192106,
     name: 'Lightning Shield',
     abbreviation: 'LS',
     school: SpellSchool.nature,
@@ -171,6 +188,7 @@ const elementalSpells = <String, SpellDefinition>{
 const elementalAuras = <AuraDefinition>[
   AuraDefinition(
     id: 'flame_shock',
+    spellId: 188389,
     name: 'Flame Shock',
     kind: AuraKind.dot,
     duration: _flameShockDuration,
@@ -179,24 +197,28 @@ const elementalAuras = <AuraDefinition>[
   ),
   AuraDefinition(
     id: 'master_of_the_elements',
+    spellId: 260734,
     name: 'Master of the Elements',
     requiredTalent: ElementalTalents.masterOfTheElements,
     description: 'Lava Burst empowers your next spender.',
   ),
   AuraDefinition(
     id: 'lava_surge',
+    spellId: 77762,
     name: 'Lava Surge',
     duration: 10,
     description: 'Next Lava Burst is instant and free.',
   ),
   AuraDefinition(
     id: 'stormkeeper',
+    spellId: 191634,
     name: 'Stormkeeper',
     maxStacks: 3,
     requiredTalent: ElementalTalents.stormkeeperTalent,
   ),
   AuraDefinition(
     id: 'tempest',
+    spellId: 454015,
     name: 'Tempest',
     maxStacks: 2,
     requiredTalent: ElementalTalents.tempestTalent,
@@ -204,6 +226,7 @@ const elementalAuras = <AuraDefinition>[
   ),
   AuraDefinition(
     id: 'call_of_the_ancestors',
+    spellId: 443450,
     name: 'Call of the Ancestors',
     maxStacks: 5,
     requiredTalent: ElementalTalents.callOfTheAncestors,
@@ -211,41 +234,53 @@ const elementalAuras = <AuraDefinition>[
   ),
   AuraDefinition(
     id: 'ascendance',
+    spellId: 114050,
     name: 'Ascendance',
     requiredTalent: ElementalTalents.ascendanceTalent,
   ),
-  AuraDefinition(id: 'fire_elemental', name: 'Fire Elemental', duration: 30),
+  AuraDefinition(
+    id: 'fire_elemental',
+    spellId: 188592,
+    name: 'Fire Elemental',
+    duration: 30,
+  ),
   AuraDefinition(
     id: 'storm_elemental',
+    spellId: 192249,
     name: 'Storm Elemental',
     duration: 30,
     requiredTalent: ElementalTalents.stormElemental,
   ),
   AuraDefinition(
     id: 'wind_gust',
+    spellId: 263806,
     name: 'Wind Gust',
     maxStacks: 4,
     requiredTalent: ElementalTalents.stormElemental,
   ),
   AuraDefinition(
     id: 'purging_flames',
+    spellId: 1259491,
     name: 'Purging Flames',
     requiredTalent: ElementalTalents.purgingFlames,
   ),
   AuraDefinition(
     id: 'flowing_elements',
+    spellId: 1300219,
     name: 'Flowing Elements',
     description: 'Tier set proc.',
     quizChance: 0.1,
   ),
   AuraDefinition(
     id: 'overcharge_tier',
+    spellId: 1251026,
     name: 'Overcharge',
     description: 'Tier set proc.',
     quizChance: 0.1,
   ),
   AuraDefinition(
     id: 'ancestral_swiftness',
+    spellId: 448861,
     name: 'Ancestral Swiftness',
     requiredTalent: ElementalTalents.ancestralSwiftnessTalent,
     description: 'Next cast is instant.',
@@ -253,6 +288,7 @@ const elementalAuras = <AuraDefinition>[
   ),
   AuraDefinition(
     id: 'natures_swiftness',
+    spellId: 378081,
     name: "Nature's Swiftness",
     requiredTalent: ElementalTalents.naturesSwiftnessTalent,
     description: 'Next cast is instant.',
@@ -260,18 +296,21 @@ const elementalAuras = <AuraDefinition>[
   ),
   AuraDefinition(
     id: 'spiritwalkers_grace',
+    spellId: 79206,
     name: "Spiritwalker's Grace",
     description: 'Cast while moving.',
     quizChance: 0,
   ),
   AuraDefinition(
     id: 'bloodlust',
+    spellId: 2825,
     name: 'Bloodlust',
     duration: 40,
     quizChance: 0.15,
   ),
   AuraDefinition(
     id: 'lightning_shield',
+    spellId: 192106,
     name: 'Lightning Shield',
     quizChance: null,
   ),

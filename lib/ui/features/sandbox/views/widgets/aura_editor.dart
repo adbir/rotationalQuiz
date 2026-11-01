@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../domain/models/combat_state.dart';
 import '../../../../../domain/models/spec_definition.dart';
+import '../../../../core/widgets/spell_icon.dart';
 import 'labeled_slider.dart';
 
 /// Checkbox, stack picker and remaining-time slider for one aura.
@@ -39,6 +40,13 @@ class AuraEditor extends StatelessWidget {
                     : AuraState.down,
               ),
             ),
+            SpellIcon(
+              spellId: aura.spellId,
+              size: 24,
+              borderRadius: BorderRadius.circular(4),
+              fallback: const SizedBox.shrink(),
+            ),
+            const SizedBox(width: 8),
             Expanded(
               child: Tooltip(
                 message: aura.description ?? '',

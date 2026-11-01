@@ -22,6 +22,7 @@ class SpellDefinition {
     this.cooldownId,
     this.usesCharges = false,
     this.onActionBar = true,
+    this.spellId,
   });
 
   /// The SimC action name, e.g. `lava_burst`.
@@ -63,6 +64,10 @@ class SpellDefinition {
 
   /// Whether the spell shows up as a button in quiz mode.
   final bool onActionBar;
+
+  /// The in-game spell id, used to look up the spell's icon. Check new ids
+  /// against SimulationCraft's `engine/dbc/generated/sc_spell_data.inc`.
+  final int? spellId;
 }
 
 /// Kinds of state the scenario editor knows how to edit.
@@ -81,6 +86,7 @@ class AuraDefinition {
     this.requiredSetBonus,
     this.description,
     this.quizChance = 0.3,
+    this.spellId,
   });
 
   final String id;
@@ -102,6 +108,9 @@ class AuraDefinition {
   /// Probability that a random quiz scenario has this aura up. `null` keeps
   /// the value from the spec's default state.
   final double? quizChance;
+
+  /// The in-game spell id of the buff or debuff, used to look up its icon.
+  final int? spellId;
 }
 
 /// Editor metadata for a cooldown the APL reads.

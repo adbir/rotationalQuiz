@@ -82,4 +82,14 @@ void main() {
     };
     expect(missing, isEmpty);
   });
+
+  test('every ability and aura has a spell id for its icon', () {
+    final missing = [
+      for (final spell in spec.spells.values)
+        if (spell.spellId == null) 'spell ${spell.id}',
+      for (final aura in spec.auras)
+        if (aura.spellId == null) 'aura ${aura.id}',
+    ];
+    expect(missing, isEmpty);
+  });
 }

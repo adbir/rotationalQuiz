@@ -85,6 +85,9 @@ also licensed under the GPL v3:
 - `lib/domain/talents/generated/*.g.dart`: talent trees generated from
   SimulationCraft's `engine/dbc/generated/trait_data.inc`
 
+Spell and buff icons are Blizzard Entertainment's artwork. They are not part
+of this repository; the app loads them at runtime from Wowhead.
+
 ## Disclaimer
 
 Not affiliated with Blizzard Entertainment or SimulationCraft. World of
