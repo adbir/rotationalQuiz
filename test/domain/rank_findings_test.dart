@@ -29,14 +29,17 @@ Future<BossComparison> compare(List<String> reports) async {
 }
 
 void main() {
-  test('ranks the gaps to rank 1 by share of rank 1, at most three', () async {
+  test('leads with casts per minute, then orders by the difference, at most three', () async {
     final report = const RankFindings()(
       await compare([FakeWarcraftLogsRepository.mine, 'rank53', 'rank1']),
     );
     expect(report.findings.length, lessThanOrEqualTo(3));
     expect(report.findings, isNotEmpty);
+    // Casts per minute leads; the rest follow by how far behind in their unit.
+    expect(report.findings.first.kind, FindingKind.castsPerMinute);
+    final rest = [for (final f in report.findings.skip(1)) f.behind];
+    expect(rest, [...rest]..sort((a, b) => b.compareTo(a)));
     final shares = [for (final f in report.findings) f.share];
-    expect(shares, [...shares]..sort((a, b) => b.compareTo(a)));
     expect(shares.every((s) => s >= RankFindings.sameShare), isTrue);
 
     final casts = report.findings.firstWhere(
@@ -54,7 +57,7 @@ void main() {
   test('a log identical to rank 1 has no findings, all the same', () async {
     final report = const RankFindings()(await compare(['rank1', 'rank1']));
     expect(report.findings, isEmpty);
-    expect(report.sameAsRank1, hasLength(5));
+    expect(report.sameAsRank1, hasLength(4));
     expect(report.stretchShortfall.every((s) => s == 0), isTrue);
   });
 

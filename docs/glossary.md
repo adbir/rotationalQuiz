@@ -226,11 +226,16 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   between neighbouring [cast events](#cast-event), skipping a `begincast` to its
   own `cast`. A cancelled cast counts as stopping where it started. Idle seconds
   per minute would need the [GCD](#gcd-global-cooldown), which is not in the log.
+  Each gap also notes what the log shows then: Ghost Wolf (2645) cast or up,
+  Spiritwalker's Grace (79206) up, a Grace charge off cooldown by the player's own
+  casts, and a gap of rank 1's starting within 3 s (an intermission shows in
+  both). It says what was up, never why.
 - **Status:** `confirmed`
-- **What to try (Boss Evaluation):** for casts per minute: "Keep a cast going
-  while you move, and queue the next spell before this one ends." For gaps:
-  "Queue the next spell before this one ends, and use instant spells while you
-  move." (`FindingKind` in `lib/domain/models/finding.dart`.)
+- **What to try (Boss Evaluation):** for casts per minute, which also carries the
+  gaps as its "where": "Keep a cast going while you move, queue the next spell
+  before this one ends, and use instant spells while you move."
+  (`FindingKind` in `lib/domain/models/finding.dart`.) Gaps are not a finding of
+  their own (#28).
 - **Not to be confused with:** [active time](#active-time-uptime-activity). ABC
   is the habit, active time is the number.
 
@@ -380,7 +385,7 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   253 and 347 s, not at 37 or 408 s (see [warcraft-logs.md](warcraft-logs.md)).
   A test on the mean Maelstrom (15 above the fight's mean) missed those holds\r\n  and was removed.
 - **What to try (Boss Evaluation):** "Let your resource build for about 10 s
-  before a wave, then cast a spender as it arrives."
+  before an add wave, then cast a spender as it arrives."
 - **Not to be confused with:** [overcap](#overcap-overcapping-capped), and with
   holding a resource when nothing is coming, which is a
   [mistake](#mistake).
@@ -565,6 +570,8 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 
 ### Add wave
 
+- **Wording:** say "add wave" when generic and the add's name when known
+  (`EnemyGroup.name`), such as "4 Spawn of Vexhul arrivals".
 - **Meaning:** A group of [adds](#add) that arrive together, often at a
   predictable point in the fight.
 - **In a log:** Spawn time: seconds into the pull of the first record for a new

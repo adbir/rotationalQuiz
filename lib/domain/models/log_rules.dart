@@ -14,6 +14,9 @@ class SpecLogRules {
     this.spenderBuffTalent,
     this.spenderBuffSkipIds = const {},
     this.freeSpenderBuffIds = const {},
+    this.freeSpenderSourceIds = const {},
+    this.movementFormId,
+    this.graceId,
     this.raidFreeCasts = const [],
     this.raidCooldownSupport = const {},
     this.chanceProcs = const [],
@@ -41,6 +44,17 @@ class SpecLogRules {
   /// Buffs that make a spender cost nothing. Refreshing one loses a free
   /// spender.
   final Set<int> freeSpenderBuffIds;
+
+  /// Buffs whose fading eventually gives free spenders, for naming where a
+  /// lost one came from.
+  final Set<int> freeSpenderSourceIds;
+
+  /// A form or buff the player moves in, cast or up. Gaps note it.
+  final int? movementFormId;
+
+  /// The spell that lets the player cast while moving. Its cast and buff share
+  /// this id, and its cooldown comes from the spec's spell table.
+  final int? graceId;
 
   /// Buffs from other players that pay for a cast.
   final List<RaidFreeCast> raidFreeCasts;

@@ -121,7 +121,10 @@ void main() {
     expect(find.text('Casts per minute'), findsOneWidget);
     expect(find.text('Casts per minute by stretch'), findsOneWidget);
     expect(find.text('0-28 s'), findsOneWidget);
-    expect(find.text('Maelstrom at each wave'), findsOneWidget);
+    expect(
+      find.text('Maelstrom at each Spawn of Vexhul arrival'),
+      findsOneWidget,
+    );
     // The pooling header and the fight bar's wave label.
     expect(find.text('28 s'), findsNWidgets(2));
   });
@@ -132,7 +135,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Copy NSRT note'), findsOneWidget);
-    expect(find.text('All waves'), findsOneWidget);
+    expect(find.text('All add waves'), findsOneWidget);
     final viewModel = tester
         .widget<BossEvaluationScreen>(find.byType(BossEvaluationScreen))
         .viewModel;

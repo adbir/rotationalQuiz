@@ -48,6 +48,15 @@ class ComputeCooldownMetrics {
       ),
   ];
 
+  /// When the player pressed [spellId] on their own cooldown, in log order.
+  List<Duration> normalPressTimes(int spellId) {
+    final paid = _paidFor.values.expand((casts) => casts).toSet();
+    return [
+      for (final cast in _presses)
+        if (cast.abilityId == spellId && !paid.contains(cast)) cast.time,
+    ];
+  }
+
   List<CooldownMetrics> cooldowns() => [
     for (final cooldown in spec.cooldowns)
       if (_tracked(cooldown) case final SpellDefinition spell)
