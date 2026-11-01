@@ -30,6 +30,12 @@ abstract final class ElementalTalents {
   static const primordialCapacity = 'primordial_capacity';
   static const echoOfTheElements = 'echo_of_the_elements';
   static const elementalReverb = 'elemental_reverb';
+
+  static const firstAscendant = 'first_ascendant';
+  static const gracefulSpirit = 'graceful_spirit';
+  static const routineCommunication = 'routine_communication';
+  static const ancientFellowship = 'ancient_fellowship';
+  static const offeringFromBeyond = 'offering_from_beyond';
 }
 
 const elementalSpells = <String, SpellDefinition>{

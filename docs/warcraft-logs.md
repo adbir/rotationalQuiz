@@ -101,14 +101,14 @@ All three are Farseers with the same key talents.
 | Kill length | 371 s | 370 s | 288 s |
 | DPS | 200,744 | 264,477 | 288,429 |
 | Item level | 330 | 335 | 336 |
-| Casts per minute | 47.3 | 56.6 | 55.8 |
+| Casts per minute | 44.7 | 53.8 | 53.1 |
 | Gaps over 1.8 s | 18 | 4 | 7 |
 | Maelstrom per minute | 284 | 358 | 352 |
 | Maelstrom wasted | 99 | 11 | 0 |
 | Elemental Blasts with Master of the Elements | 38 of 38 | 34 of 46 | 27 of 37 |
 | Overcharge! lost by refreshing | 2 | 0 | 1 |
 | Ancestors, actual / expected | 44 / 41.6 | 50 / 48.6 | 40 / 37.2 |
-| Stormkeeper median press delay | 2.3 s | 1.9 s | 1.5 s |
+| Stormkeeper median press delay | 2.17 s | 0.76 s | 1.03 s |
 | Free Elemental Blasts | 20 of 38 | 22 of 46 | 19 of 37 |
 | Spiritwalker's Grace, normal + Time Spiral | 4 + 2 | 4 + 6 | 4 + 2 |
 
@@ -118,6 +118,9 @@ all three, so luck wasn't the cause. Buffing every Elemental Blast isn't simply
 better: top players fire without Master of the Elements when both tier buffs are
 up, and waiting for it lost two Overcharge! in that log. All damage went to the
 boss on this fight, so it can't test pooling.
+
+Casts per minute leaves out echo ids. Press delay runs from Stormkeeper coming
+ready to the `begincast`, because a cast time isn't delay.
 
 This is one comparison log, and it doesn't show how much DPS each difference is
 worth.

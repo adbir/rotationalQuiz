@@ -70,8 +70,13 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   Maelstrom gain is there, with `resourceChangeType` 11.
 - Maelstrom is `type` 11 in `classResources`, on about a quarter of casts. Most
   other casts show Mana, `type` 0. `cost` is 90 on Elemental Blast.
-- `dataType: Buffs` returns `applybuff` and `removebuff` events. Buff ids can
-  differ from cast ids: Ascendance is cast as 114050 but its buff is 1219480.
+- `dataType: Buffs` returns `applybuff`, `refreshbuff`, `applybuffstack`,
+  `removebuffstack` and `removebuff` events, the stack ones with `stack`. Buff
+  ids can differ from cast ids: Ascendance is cast as 114050 but its buff is
+  1219480. A buff that goes up before the pull and lasts the fight, such as
+  Blessing of the Bronze, has no events.
+- Events from one action can land milliseconds apart, in either order. A buff
+  can end 1 ms before the cast that spent it, so allow about 60 ms.
 - `dataType: CombatantInfo` has `talentTree: [{id, rank, nodeID}]`, whose ids
   match `TalentEntry.id` in the generated tree (80 of 80), plus `specID`, `gear`
   and stats such as `hasteSpell` and `intellect`.
@@ -84,8 +89,8 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - The raw units of `x` and `y`.
 - What `amount` holds for any `metric` other than `dps`.
 - The fields inside `playerDetails`, `graph` and `phases`.
-- Damage, healing and debuff events, and buff stack events. Their field names
-  are unknown, so this file doesn't name any.
+- Damage, healing and debuff events. Their field names are unknown, so this
+  file doesn't name any.
 - A way to measure enemy debuff uptime. `table(dataType: Debuffs,
   hostilityType: Enemies)` with a `sourceID` returned no auras.
 - Whether `includeResources` is what adds `classResources`, `x` and `y` to cast
@@ -217,10 +222,11 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 
 - **Meaning:** The habit of always having a spell in progress, because time
   spent doing nothing is lost damage.
-- **In a log:** Idle seconds per minute: the gaps between one cast ending and
-  the next starting, minus one [GCD](#gcd-global-cooldown) where the last cast
-  was instant. The GCD length is not in the log.
-- **Status:** `needs checking`
+- **In a log:** Gaps over 1.8 seconds (count) and the longest gap (seconds): time
+  between neighbouring [cast events](#cast-event), skipping a `begincast` to its
+  own `cast`. A cancelled cast counts as stopping where it started. Idle seconds
+  per minute would need the [GCD](#gcd-global-cooldown), which is not in the log.
+- **Status:** `confirmed`
 - **Not to be confused with:** [active time](#active-time-uptime-activity). ABC
   is the habit, active time is the number.
 
@@ -393,10 +399,12 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - **Meaning:** A temporary helpful effect on a player. "Aura" covers both buffs
   and [debuffs](#debuff).
 - **In a log:** Buff uptime: percent of [kill time](#kill-time) the buff was
-  active. Stack count at a given cast is a second metric. Both need buff events,
-  which have not been sampled.
-- **Status:** `needs checking`
-- **In this repo:** `buff.<name>.up`, `.stack`, `.remains`, `.react`.
+  active, from `applybuff` and `removebuff` events for the player. Stack count at
+  a given cast is a second metric. Whether a buff was up for a cast needs the
+  roughly 60 ms allowance in the [verified list](#verified-wcl-api-facts).
+- **Status:** `confirmed`
+- **In this repo:** `buff.<name>.up`, `.stack`, `.remains`, `.react`, and
+  `BuffWindows` for logs.
 - **Not to be confused with:** [active time](#active-time-uptime-activity).
 
 ### Debuff
@@ -491,7 +499,8 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   store as charges. "CDs" often means just the big ones.
 - **In a log:** Cast interval: seconds between `cast` events with the same
   `abilityGameID` and `sourceID`. This shows when the ability was used, not when
-  it became ready.
+  it became ready. Drift is how long after it came ready the next use started,
+  which needs the cooldown from game data.
 - **Status:** `confirmed`
 - **In this repo:** `cooldown.<name>.remains`, `.ready`, `.charges`,
   `.charges_fractional`.
@@ -724,6 +733,21 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   comment "Use Power Infusion on Cooldown." The app lists it as unmodelled.
 - **To check:** Its effect in Midnight.
 
+### Time Spiral
+
+- **Meaning:** An Evoker spell that gives raid members one free use of a movement
+  ability, so raids with more Evokers get more casts. Elemental can spend it on
+  Spiritwalker's Grace or Gust of Wind.
+- **In a log:** Uses available, and uses spent, from buff id 375256. A buff ending
+  on a cast paid for that cast. Overlapping buffs end with a new one starting on
+  the same moment, so they count as one use. A normal cast straight after a free
+  one only refreshes the buff. Report these apart from normal casts, and name
+  them as raid support.
+- **Status:** `confirmed`
+- **In this repo:** `RaidFreeCastMetrics`. Blessing of the Bronze, also from
+  Evokers, takes 15% off Spiritwalker's Grace. It has no buff events in a fight,
+  but gaps under 90 seconds show it.
+
 ## Character setup and difficulty
 
 ### Hero talent (hero tree)
@@ -794,7 +818,7 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 - **In a log:** [Cooldown efficiency](#cooldown-efficiency), percent.
 - **Status:** `needs checking`
 - **In this repo:** `ancestral_swiftness`, `talent.ancestral_swiftness`,
-  `buff.ancestral_swiftness.up`. Cooldown 60 seconds. The APL has no condition on
+  `buff.ancestral_swiftness.up`. Cooldown 30 seconds. The APL has no condition on
   it, so it is used whenever ready.
 - **To check:** Whether "next cast" covers every spell.
 - **Not to be confused with:** [Call of the Ancestors](#call-of-the-ancestors).
@@ -808,7 +832,7 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 - **Status:** `needs checking`
 - **In this repo:** `ascendance`, `talent.ascendance`, `buff.ascendance.up`,
   `cooldown.ascendance.remains`, `cooldown.ascendance.ready`. Cooldown 180
-  seconds, and spell id 114050.
+  seconds, or 120 with First Ascendant. Cast id 114050, buff id 1219480.
 - **To check:** What it does while active, and for how long. The app doesn't
   model that. Enhancement and Restoration have their own Ascendance talents, so
   confirm the ability id.
@@ -817,13 +841,18 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 
 - **Meaning:** A [Farseer](#farseer) talent that brings Ancestors to fight
   alongside you. The app tracks how many are active.
-- **In a log:** Percent of the fight with an Ancestor active, and stacks at each
-  [spender](#spender). Needs buff events.
-- **Status:** `needs checking`
+- **In a log:** Ancestors called (count): `applybuff` and `applybuffstack` events
+  for buff ids 447244 and 445624. Expected is `(guaranteed + 0.08 × eligible casts)
+  / 0.8`, using only terms for talents taken. Actual minus expected is luck: read
+  it next to its spread, not as a verdict.
+- **Status:** `confirmed`
 - **In this repo:** `talent.call_of_the_ancestors`,
   `buff.call_of_the_ancestors.up`, `.stack` (up to 5 in the app). The APL often
-  uses the talent to mean "this is a Farseer build".
-- **To check:** What summons Ancestors and how long they stay.
+  uses the talent to mean "this is a Farseer build". The log rule is in
+  `elemental_shaman_log_data.dart`.
+- **To check:** How long Ancestors stay, whether rolls are shuffled as in SimC, and
+  why expected runs 1.4 to 2.8 under actual. Ascendance's rolls are the likely
+  reason.
 - **Not to be confused with:** `ancestral_call`, a racial action in the APL, and
   [Ancestral Swiftness](#ancestral-swiftness).
 
@@ -881,7 +910,8 @@ the app's, and all the log measures depend on ability ids, so every entry here i
   most of the fight.
 - **In a log:** DoT uptime on the boss, percent of [kill time](#kill-time), and
   early refreshes per minute (see [pandemic](#pandemic)). Counting Flame Shock
-  casts isn't enough, because the APL also maintains it with Voltaic Blaze.
+  casts isn't enough, because the APL also maintains it with Voltaic Blaze. Count
+  id 188389 only: 470411 fires with every cast and isn't a press.
 - **Status:** `needs checking`
 - **In this repo:** `flame_shock`, `dot.flame_shock.refreshable`, `.remains`,
   `active_dot.flame_shock`. Duration 18 seconds and cooldown 6 seconds in the app.
@@ -937,7 +967,9 @@ the app's, and all the log measures depend on ability ids, so every entry here i
   next Nature, Physical or Frost spell. The aim is to always make that spell a
   [spender](#spender). It shares a choice node with Molten Wrath.
 - **In a log:** Percent of spenders cast with the buff up, from `applybuff` and
-  `removebuff` events for buff id 260734.
+  `removebuff` events for buff id 260734. Allow about 60 ms around the cast, but
+  the buff must be up before it. A higher percent isn't simply better: a spender
+  without the buff is right while Flowing Elements and Overcharge! are both up.
 - **Status:** `confirmed`
 - **In this repo:** `talent.master_of_the_elements`,
   `buff.master_of_the_elements.up`. The APL also spends it on Tempest and on
@@ -973,12 +1005,15 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 
 - **Meaning:** A talent you cast to gain stacks that make Lightning Bolt and Chain
   Lightning instant.
-- **In a log:** [Cooldown efficiency](#cooldown-efficiency) (percent), and stacks
-  that ended unused (count). Needs buff events for the stacks.
-- **Status:** `needs checking`
+- **In a log:** Press delay (seconds): from a cast, take 3 seconds off the 60 for
+  each Ancestor called before it comes ready, including the one it calls itself,
+  then measure to the next `begincast`. Luck moves the raw gap, and this is the
+  part the player controls. Also stacks that ended unused (count).
+- **Status:** `confirmed`
 - **In this repo:** `stormkeeper`, `talent.stormkeeper`, `buff.stormkeeper.up`,
   `.stack`, `cooldown.stormkeeper.remains`. Cast 1.5 seconds, cooldown 60 seconds.
-  It is also in `actions.precombat`, so a log may show it before the fight starts.
+  It is also in `actions.precombat`, so a log may show it as the pull starts, with
+  no `begincast`.
 - **To check:** Whether it does more than make those spells instant. It gives 2
   stacks, so the APL's `buff.stormkeeper.stack<4` passes at any stack count.
 - **Not to be confused with:** [Stormbringer](#stormbringer).

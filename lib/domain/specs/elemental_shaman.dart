@@ -1,8 +1,10 @@
 import '../models/combat_state.dart';
+import '../models/log_rules.dart';
 import '../models/spec_definition.dart';
 import '../talents/generated/shaman_talent_tree.g.dart';
 import '../talents/talent_tree.dart';
 import 'elemental_shaman_data.dart';
+import 'elemental_shaman_log_data.dart';
 import 'rotation_spec.dart';
 
 /// Elemental Shaman, modelled for the single-target sandbox.
@@ -79,6 +81,23 @@ class ElementalShaman extends RotationSpec {
 
   @override
   Set<String> get unmodelledActions => elementalUnmodelledActions;
+
+  @override
+  SpecLogRules get logRules => elementalLogRules;
+
+  /// The cooldown table assumes First Ascendant (60 s off) and Graceful Spirit
+  /// (30 s off), which not every log has.
+  @override
+  double cooldownDuration(CooldownDefinition cooldown, Set<String> talents) =>
+      cooldown.duration +
+      switch (cooldown.id) {
+        'ascendance' when !talents.contains(ElementalTalents.firstAscendant) =>
+          60,
+        'spiritwalkers_grace'
+            when !talents.contains(ElementalTalents.gracefulSpirit) =>
+          30,
+        _ => 0,
+      };
 
   /// Swelling Maelstrom adds 50 and Primordial Capacity adds 25 (in-game
   /// tooltips; a rank-1 Farseer log shows a cap of 125).
