@@ -26,6 +26,10 @@ abstract class RotationSpec {
   /// Display name, e.g. `Elemental Shaman`.
   String get name;
 
+  /// Class and spec names as Warcraft Logs rankings spell them.
+  String get logClassName;
+  String get logSpecName;
+
   /// Blizzard specialization id (e.g. `262` for Elemental), used to check
   /// imported talent strings.
   int get specId;

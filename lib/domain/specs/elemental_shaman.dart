@@ -20,6 +20,12 @@ class ElementalShaman extends RotationSpec {
   String get name => 'Elemental Shaman';
 
   @override
+  String get logClassName => 'Shaman';
+
+  @override
+  String get logSpecName => 'Elemental';
+
+  @override
   int get specId => 262;
 
   @override

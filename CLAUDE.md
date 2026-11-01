@@ -82,15 +82,15 @@ lib/
 │   │   ├── apl_document.dart     # `actions.<list>+=/...` line parser
 │   │   ├── apl_evaluator.dart    # Walks lists like SimC; produces a trace
 │   │   └── apl_state_resolver.dart  # buff./cooldown./talent./… → numbers
-│   ├── models/             # CombatState (scenario), Keybind, spec metadata types
+│   ├── models/             # CombatState (scenario), Keybind, FightLog, spec metadata
 │   ├── specs/              # RotationSpec + per spec: <spec>.dart (behaviour)
 │   │                       #   and <spec>_data.dart (spell/aura/talent tables)
 │   ├── talents/            # Talent tree types + in-game export string decoder
 │   │   └── generated/      # *.g.dart from tool/generate_talent_tree.py
 │   └── use_cases/          # GenerateScenario (quiz states), PickAnswerOptions
 ├── data/
-│   ├── services/           # Asset loading, SimC download, LocalStore (prefs)
-│   └── repositories/       # AplRepository, TalentBuildRepository, KeybindRepository
+│   ├── services/           # Asset loading, SimC + Warcraft Logs APIs, LocalStore
+│   └── repositories/       # Apl, TalentBuild, Keybind, SpellIcon, WarcraftLogs…
 ├── ui/
 │   ├── core/               # theme.dart, keybind_input.dart (key/mouse → Keybind)
 │   │   └── widgets/        # SpellButton, ConditionView, TraceList, RecommendationCard…
@@ -253,6 +253,22 @@ anything new the sandbox doesn't model.
   Without a `SpellIconScope`, offline, or on any error, buttons show their
   coloured abbreviation and chips show text only. The cloud container
   can't reach these hosts, so check icons on the live site.
+- **Warcraft Logs** (`WarcraftLogsRepository`): loads one player's fight
+  (`FightLog`) and a boss's rankings (`RankedLog`) from the v2 GraphQL API. Not
+  on any screen yet; #13 adds one.
+  - **Sign-in:** the site is public, so it can't hold a client secret. The API
+    allows browser calls from our origin, including `oauth/token` and
+    `api/v2/user`, so no backend is needed: each user will sign in through the
+    PKCE flow. `WarcraftLogsService` takes its token from an
+    `AccessTokenSource`, so sign-in plugs in there. PKCE hasn't been run end to
+    end yet.
+  - **Local testing:** a client ID and secret go in the git-ignored `.env` as
+    `WCL_CLIENT_ID` and `WCL_CLIENT_SECRET`. Never commit or print them.
+  - **Live check:** normal test runs make no network calls. To test against the
+    real API, which spends a few of the 1,000 hourly points:
+    `WCL_LIVE=1 flutter test test/data/warcraft_logs_live_test.dart`.
+  - **Time:** domain models measure time from the pull, not from the start of
+    the report.
 - **Persistence:** `LocalStore`, backed by `shared_preferences`
   (localStorage on the web). Keys are `keybinds.<spec>`,
   `talent_builds.<spec>`, `active_talent_build.<spec>` and `spell_icons`. Imported builds
@@ -267,7 +283,7 @@ test/
 ├── code_organisation_test.dart  # file-size limit, domain/ import rules
 ├── domain/             # parser, evaluator, real-APL behaviour, coverage,
 │                       # codec, scenario generator, answer options
-├── data/               # repository persistence
+├── data/               # repository persistence, Warcraft Logs (mocked + opt-in live)
 ├── ui/                 # view models, quiz key handling, app navigation
 └── screenshots/        # opt-in PNG renders (see above)
 ```
@@ -353,7 +369,8 @@ Fix what it flags; don't `// ignore:` it without a comment explaining why.
     (First Ascendant, Graceful Spirit). Stormkeeper stays at its 60 s base:
     Offering from Beyond shortens it during play.
   - Spiritwalker's Grace has one charge. Logs show casts seconds apart because
-    an Evoker's Time Spiral allows a free cast, so count those separately.
+    an Evoker's Time Spiral allows a free cast, so count those separately. An
+    Evoker's Blessing of the Bronze also takes 15% off its cooldown (76.5 s).
   - Lava Burst has 1 charge, +1 from Echo of the Elements and +1 from Elemental
     Reverb (`ElementalShaman.maxCharges`).
   - Stormkeeper gives 2 stacks (tooltip, three logs and the project owner).
