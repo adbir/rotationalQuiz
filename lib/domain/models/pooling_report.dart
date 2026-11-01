@@ -1,41 +1,21 @@
 import 'package:flutter/foundation.dart';
 
-/// What the resource and spenders did around one known event.
+/// What the resource and spenders did around one known event. It says what\r\n/// happened, not why.
 @immutable
 class PoolingReport {
   const PoolingReport({
     required this.eventTime,
-    required this.meanBefore,
-    required this.normalLevel,
-    required this.spendersBefore,
-    required this.spendersAfter,
-    required this.isPooled,
-    this.levelAtEvent = 0,
-    this.lowestBefore = 0,
-    this.highestBefore = 0,
-    this.gapSinceLastSpender = Duration.zero,
+    required this.levelAtEvent,
+    required this.lowestBefore,
+    required this.highestBefore,
+    required this.gapSinceLastSpender,
     this.medianSpenderGap,
     this.firstSpenderAfter,
     this.firstSpenderAfterName,
-    this.isHeld = false,
+    required this.isHeld,
   });
 
   final Duration eventTime;
-
-  /// Mean resource over the lead-up window.
-  final double meanBefore;
-
-  /// Mean resource over the whole fight.
-  final double normalLevel;
-
-  /// Spender casts in the lead-up window and in the follow window.
-  final int spendersBefore;
-  final int spendersAfter;
-
-  /// The resource sat [meanBefore] above [normalLevel] by the margin, and
-  /// spenders came after the event. This misses a hold that starts from a low
-  /// level or ends in a spend; see [isHeld].
-  final bool isPooled;
 
   /// The resource at the event, and the lowest and highest in the lead-up
   /// window.

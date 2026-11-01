@@ -112,7 +112,7 @@ void main() {
     expect(find.text('Casts per minute'), findsOneWidget);
     expect(find.text('Casts per minute by stretch'), findsOneWidget);
     expect(find.text('0-28 s'), findsOneWidget);
-    expect(find.text('Maelstrom before each wave'), findsOneWidget);
+    expect(find.text('Maelstrom at each wave'), findsOneWidget);
     expect(find.text('28 s'), findsOneWidget);
   });
 }

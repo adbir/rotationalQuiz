@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../domain/models/boss_comparison.dart';
+import '../../../../../domain/models/pooling_report.dart';
 import 'comparison_grid.dart';
 
-/// The resource held in the lead-up to each wave, and the spenders cast
-/// after it.
+/// For each wave: the resource at the spawn, the time since the last spender,
+/// and the first spender after it.
 class PoolingTable extends StatelessWidget {
   const PoolingTable({
     super.key,
@@ -28,30 +29,43 @@ class PoolingTable extends StatelessWidget {
         rows: const [],
       );
     }
-    final waves = comparison.pooling.first;
     return ComparisonGrid(
-      title: '$resourceLabel before each $event',
+      title: '$resourceLabel at each $event',
       caption:
-          'Mean $resourceLabel in the 8 s before, then spenders cast in the 8 '
-          's after. Red means held back: well above the fight mean (in '
-          'brackets) with spenders after. It says what happened, not why.',
-      columns: [for (final w in waves) '${w.eventTime.inSeconds} s'],
+          '$resourceLabel at the spawn, seconds since the last spender, and '
+          'the first spender after. Red means a spender was held back for '
+          'the $event: no spender for over 10 s or twice the player\'s '
+          'median gap, and one cast within 5 s after. Brackets are the '
+          'median gap.',
+      columns: [
+        for (final w in comparison.pooling.first) '${w.eventTime.inSeconds} s',
+      ],
       labelWidth: 100,
-      cellWidth: 72,
+      cellWidth: 104,
       rows: [
         for (var i = 0; i < comparison.logs.length; i++)
           GridRow(
-            '${comparison.logs[i].label} '
-            '(${comparison.pooling[i].first.normalLevel.round()})',
-            [
-              for (final w in comparison.pooling[i])
-                GridCell(
-                  '${w.meanBefore.round()} / ${w.spendersAfter}',
-                  flag: w.isPooled,
-                ),
-            ],
+            '${comparison.logs[i].label} (${_median(comparison.pooling[i])})',
+            [for (final w in comparison.pooling[i]) _cell(w)],
           ),
       ],
     );
   }
+
+  static String _median(List<PoolingReport> waves) {
+    final median = waves.first.medianSpenderGap;
+    return median == null ? '–' : '${_seconds(median)} s';
+  }
+
+  static GridCell _cell(PoolingReport w) {
+    final next = w.firstSpenderAfter;
+    return GridCell(
+      '${w.levelAtEvent.round()} · ${_seconds(w.gapSinceLastSpender)} s\n'
+      '${next == null ? 'none after' : '+${_seconds(next)} s ${w.firstSpenderAfterName}'}',
+      flag: w.isHeld,
+    );
+  }
+
+  static String _seconds(Duration d) =>
+      (d.inMilliseconds / 1000).toStringAsFixed(1);
 }
