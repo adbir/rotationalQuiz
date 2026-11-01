@@ -20,6 +20,7 @@ class SpecLogRules {
     this.castsBeforeWindow = const [],
     this.raidFreeCasts = const [],
     this.raidCooldownSupport = const {},
+    this.raidSupportIds = const {},
     this.chanceProcs = const [],
     this.auraLogIds = const {},
     this.unobservableAuras = const {},
@@ -69,6 +70,10 @@ class SpecLogRules {
   /// Names of raid effects that change a cooldown, by cooldown id. They can't
   /// be told from a player's own timing, so results name them.
   final Map<String, List<String>> raidCooldownSupport;
+
+  /// Buffs from other players worth showing beside a comparison, by logged id
+  /// to display name. Shown, never blended into a score.
+  final Map<int, String> raidSupportIds;
 
   final List<ChanceProcRule> chanceProcs;
 

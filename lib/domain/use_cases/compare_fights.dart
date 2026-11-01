@@ -72,6 +72,7 @@ class CompareFights {
             itemLevel: (f.ranked?.itemLevel ?? 0) > 0
                 ? f.ranked!.itemLevel
                 : null,
+            raidSupport: _raidSupport(f.log),
           ),
       ],
       fought: fought,
@@ -97,6 +98,17 @@ class CompareFights {
                 ?.name
           : null,
     );
+  }
+
+  /// What the log received of the rule's raid buffs, over its whole fight.
+  List<RaidSupport> _raidSupport(FightLog log) {
+    final length = log.fight.duration.inMilliseconds;
+    return [
+      for (final MapEntry(key: id, value: name)
+          in spec.logRules.raidSupportIds.entries)
+        for (final b in log.receivedBuffs.where((b) => b.abilityId == id))
+          RaidSupport(name, 100 * b.uptime.inMilliseconds / length, b.uses),
+    ];
   }
 
   List<double> _castsPerMinute(FightLog log, List<Stretch> stretches) {

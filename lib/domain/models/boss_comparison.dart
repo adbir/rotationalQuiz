@@ -6,6 +6,16 @@ import 'pooling_report.dart';
 /// What the stretches of a comparison are cut at.
 enum StretchSource { waves, phases, wholeFight }
 
+/// One raid buff a log received: how much of the fight it was up, and how often.
+@immutable
+class RaidSupport {
+  const RaidSupport(this.name, this.uptimePercent, this.uses);
+
+  final String name;
+  final double uptimePercent;
+  final int uses;
+}
+
 /// One log in a comparison, with the numbers the rankings add when they have
 /// them. A missing [dps] or [itemLevel] is blank, never a guess.
 @immutable
@@ -16,6 +26,7 @@ class ComparedLog {
     required this.kill,
     this.dps,
     this.itemLevel,
+    this.raidSupport = const [],
   });
 
   /// "You", "Rank 53" or "Rank 1".
@@ -24,6 +35,10 @@ class ComparedLog {
   final bool kill;
   final double? dps;
   final int? itemLevel;
+
+  /// Raid buffs the log received, in the order of the spec's rule. Context for
+  /// a comparison, never part of a score.
+  final List<RaidSupport> raidSupport;
 
   Duration get fought => metrics.fightLength;
 }

@@ -100,6 +100,15 @@ query ($code: String!, $fight: Int!, $source: Int, $type: EventDataType!, $start
   }
 }''';
 
+  static const _buffTableQuery = r'''
+query ($code: String!, $fight: Int!, $source: Int!, $start: Float!, $end: Float!) {
+  reportData {
+    report(code: $code) {
+      table(dataType: Buffs, fightIDs: [$fight], sourceID: $source, startTime: $start, endTime: $end)
+    }
+  }
+}''';
+
   final AccessTokenSource _accessToken;
   final http.Client _client;
   final Uri _endpoint;
@@ -178,6 +187,27 @@ query ($code: String!, $fight: Int!, $source: Int, $type: EventDataType!, $start
       cursor = result?['nextPageTimestamp'] as num?;
     }
     return events;
+  }
+
+  /// Every buff the player held in the window, with uptime and uses but no
+  /// caster. It is the only place a buff that began before the pull shows.
+  /// For `Buffs`, `sourceID` is the holder, not the caster.
+  Future<JsonMap> buffTable({
+    required String code,
+    required int fightId,
+    required int sourceId,
+    required num start,
+    required num end,
+  }) async {
+    final data = await _query(_buffTableQuery, {
+      'code': code,
+      'fight': fightId,
+      'source': sourceId,
+      'start': start,
+      'end': end,
+    });
+    final report = _map(_map(data['reportData'])?['report']);
+    return _map(_map(report?['table'])?['data']) ?? const {};
   }
 
   Future<JsonMap> _query(String query, JsonMap variables) async {
