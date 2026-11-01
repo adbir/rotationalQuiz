@@ -290,6 +290,14 @@ anything new the sandbox doesn't model.
     Use `isSameMoment` and `BuffWindows.isUpFor`, not exact comparisons.
   - **Raid support:** `RaidFreeCastMetrics` and
     `CooldownMetrics.raidDependsOn` name it. Don't blend it into a score.
+  - **Guides propose, logs confirm.** A metric is ranked (a `RankedMetric` in
+    `SpecLogRules.findings`) only when the player controls it whatever the
+    raid does, the top 20 logs do it consistently, and they clearly beat
+    mid-rank logs on it. A metric a guide names but the logs don't confirm is
+    shown for honesty, never ranked. Every number in `docs/` cites its report,
+    fight and player; every ranked metric cites the guide that names it and
+    the log evidence that confirms it (the "Log evidence" column of the spec's
+    must-do table).
   - **Left out:** damage share, DPS and deaths, because `FightLog` lacks them.
   - **Healer parts (#78):** `PossibleCastsRule`, `UpkeepAura`, `HeldProcRule`
     and `readsResourceLevel` in `SpecLogRules` fill `CooldownMetrics.possible`,

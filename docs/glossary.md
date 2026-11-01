@@ -1246,7 +1246,7 @@ Measured on three Heroic Coiled Altar logs: see "Restoration Shaman" in
   done; running out early stops healing.
 - **In a log:** Mana percent over time: `classResources` type 0 `amount` over
   `max` on each cast, from `events(dataType: Casts, includeResources: true)`.
-  Mana from others (Innervate 29166, Source of Magic 369459) is raid support.
+  Mana from others (Innervate 29166, Source of Magic 372571 as the buff on the Shaman; 369459 is the Evoker's cast) is raid support.
   In the app: `ResourceLevelMetrics` (at each phase change, at the end, the
   lowest), when `SpecLogRules.readsResourceLevel` is set (#78).
 - **What to try (Boss Evaluation), on mana at the end:** "Spend your mana so
