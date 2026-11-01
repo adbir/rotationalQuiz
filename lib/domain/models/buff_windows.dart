@@ -57,6 +57,9 @@ class BuffWindows {
 
   const BuffWindows._(this.windows);
 
+  /// Windows worked out some other way than from buff events.
+  const BuffWindows.fromWindows(this.windows);
+
   final List<BuffWindow> windows;
 
   /// Whether the buff was up just before [time], so that something happening

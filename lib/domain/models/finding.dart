@@ -14,7 +14,8 @@ enum FindingKind {
   heldSpenders(
     'Let your resource build for about 10 s before an add wave, then cast a '
     'spender as it arrives.',
-  );
+  ),
+  castBeforeWindow('Cast Stormkeeper first, then Ascendance.');
 
   const FindingKind(this.whatToTry);
 

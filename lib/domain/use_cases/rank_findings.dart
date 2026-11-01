@@ -25,6 +25,10 @@ class RankFindings {
     }
     final all = [for (final log in logs) log.metrics];
 
+    final windowCasts = [
+      for (final m in all)
+        m.windowCasts.fold(0, (n, w) => n + w.count).toDouble(),
+    ];
     final casts = _shortfalls(comparison);
     final candidates = <Finding>[
       _finding(
@@ -42,6 +46,8 @@ class RankFindings {
       _finding(FindingKind.lostFreeSpenders, [
         for (final m in all) m.spenders.lostFree.toDouble(),
       ]),
+      if (windowCasts.any((n) => n > 0))
+        _finding(FindingKind.castBeforeWindow, windowCasts),
       if (comparison.pooling.isNotEmpty) _held(comparison),
     ];
 

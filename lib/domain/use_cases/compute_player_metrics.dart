@@ -7,6 +7,7 @@ import '../specs/rotation_spec.dart';
 import 'compute_chance_proc_metrics.dart';
 import 'compute_cooldown_metrics.dart';
 import 'compute_gap_metrics.dart';
+import 'compute_window_cast_metrics.dart';
 
 /// Turns one player's fight into [PlayerMetrics], from the spec's tables.
 class ComputePlayerMetrics {
@@ -45,6 +46,7 @@ class ComputePlayerMetrics {
       spenders: _spenders(log, rules, presses),
       cooldowns: cooldowns.cooldowns(),
       raidFreeCasts: cooldowns.raidFreeCasts(),
+      windowCasts: ComputeWindowCastMetrics(spec, log)(events),
       chanceProcs: [
         for (final rule in rules.chanceProcs)
           if (log.talents.contains(rule.requiredTalent))
