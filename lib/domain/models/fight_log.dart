@@ -15,6 +15,7 @@ class LogFight {
     required this.difficulty,
     required this.size,
     this.phaseStarts = const [],
+    this.bossActorId,
   });
 
   final int id;
@@ -29,6 +30,10 @@ class LogFight {
 
   /// When each phase began, measured from the pull.
   final List<Duration> phaseStarts;
+
+  /// The boss's id within the report, to tell debuffs on it from those on
+  /// adds. `null` when the report doesn't say.
+  final int? bossActorId;
 }
 
 /// A resource reading attached to a cast.
@@ -137,6 +142,7 @@ class FightLog {
     required this.resourceGains,
     required this.buffEvents,
     required this.talents,
+    this.debuffEvents = const [],
   });
 
   final String reportCode;
@@ -152,6 +158,10 @@ class FightLog {
   final List<LogCast> casts;
   final List<LogResourceGain> resourceGains;
   final List<LogBuffEvent> buffEvents;
+
+  /// The player's damage-over-time debuffs on enemies, as the spec lists them.
+  /// `targetId` is the enemy hit.
+  final List<LogBuffEvent> debuffEvents;
 
   /// SimC talent tokens.
   final Set<String> talents;

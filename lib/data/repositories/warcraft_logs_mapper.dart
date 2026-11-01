@@ -15,6 +15,7 @@ abstract final class WarcraftLogsMapper {
   static LogFight fight(JsonMap json) {
     final start = fightStart(json);
     final phases = json['phaseTransitions'];
+    final enemies = json['enemyNPCs'];
     return LogFight(
       id: _int(json['id']) ?? 0,
       name: json['name'] as String? ?? '',
@@ -28,6 +29,16 @@ abstract final class WarcraftLogsMapper {
           for (final phase in phases.whereType<JsonMap>())
             if (phase['startTime'] case final num time) _since(time, start),
       ],
+      // ponytail: the first enemy with a single copy. Twin Fangs has two
+      // bosses; the first listed (Vexhul) stands for both.
+      bossActorId: enemies is List
+          ? _int(
+              enemies
+                  .whereType<JsonMap>()
+                  .where((e) => e['instanceCount'] == 1)
+                  .firstOrNull?['id'],
+            )
+          : null,
     );
   }
 
@@ -82,11 +93,11 @@ abstract final class WarcraftLogsMapper {
 
   static LogBuffEvent? buffEvent(JsonMap json, num start) {
     final change = switch (json['type']) {
-      'applybuff' => LogBuffChange.apply,
+      'applybuff' || 'applydebuff' => LogBuffChange.apply,
       'applybuffstack' => LogBuffChange.applyStack,
-      'refreshbuff' => LogBuffChange.refresh,
+      'refreshbuff' || 'refreshdebuff' => LogBuffChange.refresh,
       'removebuffstack' => LogBuffChange.removeStack,
-      'removebuff' => LogBuffChange.remove,
+      'removebuff' || 'removedebuff' => LogBuffChange.remove,
       _ => null,
     };
     final time = json['timestamp'];
