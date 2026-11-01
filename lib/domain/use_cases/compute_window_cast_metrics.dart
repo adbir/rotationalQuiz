@@ -18,7 +18,7 @@ class ComputeWindowCastMetrics {
   ];
 
   List<WindowCastDetail> _inside(CastBeforeWindow rule, List<LogCast> events) {
-    final windows = BuffWindows.of(log, rule.windowBuffId);
+    final windows = _windows(rule, events);
     final spell = spec.spells.values
         .where((s) => s.spellId == rule.castId)
         .firstOrNull;
@@ -51,6 +51,24 @@ class ComputeWindowCastMetrics {
       );
     }
     return details;
+  }
+
+  /// The buff's windows, or when the log has no events of it, each cast of the
+  /// window's ability plus the aura's duration.
+  // ponytail: haste or talents that extend the window aren't seen.
+  BuffWindows _windows(CastBeforeWindow rule, List<LogCast> events) {
+    if (log.buffEvents.any((e) => e.abilityId == rule.windowBuffId)) {
+      return BuffWindows.of(log, rule.windowBuffId);
+    }
+    final aura = spec.auras
+        .where((a) => a.spellId == rule.windowBuffId)
+        .firstOrNull;
+    if (aura == null) return const BuffWindows.fromWindows([]);
+    return BuffWindows.fromWindows([
+      for (final c in events)
+        if (!c.isBegin && c.abilityId == rule.windowBuffId)
+          BuffWindow(c.time, c.time + _span(aura.duration)),
+    ]);
   }
 
   static Duration _span(double seconds) =>

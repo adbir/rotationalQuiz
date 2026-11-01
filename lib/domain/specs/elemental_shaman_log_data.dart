@@ -36,11 +36,12 @@ const elementalLogRules = SpecLogRules(
   movementFormId: _ghostWolf,
   graceId: _spiritwalkersGrace,
   // Stormkeeper's cast time burns Ascendance's window (the APL pre-spends its
-  // charges). The buff is 1219480, the cast 114050.
+  // charges). The window is the aura's own id (114050), as the buff events of
+  // 1219480 are missing from some logs; a replay then uses the cast.
   castsBeforeWindow: [
     CastBeforeWindow(
       castId: _stormkeeper,
-      windowBuffId: 1219480,
+      windowBuffId: _ascendance,
       name: 'Stormkeeper during Ascendance',
     ),
   ],

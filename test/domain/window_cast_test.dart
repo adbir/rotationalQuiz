@@ -11,7 +11,7 @@ import 'compute_player_metrics_test.dart'
     show at, begin, cast, metrics, off, on, stormkeeper;
 import 'player_metrics_fixture_test.dart' show loadFixture;
 
-const _ascendanceBuff = 1219480;
+const _ascendanceBuff = 114050;
 
 /// [log] with two Ascendance windows, and a Stormkeeper cast of 1.3 s inside
 /// each.
@@ -87,15 +87,17 @@ void main() {
       expect(result.windowCasts.single.count, 0);
     });
 
-    // Both fixtures hold no events of the Ascendance buff (1219480): Sszorak
-    // has one Ascendance cast at 19.3 s and Stormkeeper at 24.0 s, 4.7 s
-    // later, which the buff-based metric cannot see; Twin Fangs has no
-    // Ascendance at all.
-    test('the fixtures show none, as they hold no Ascendance buff', () {
-      for (final name in ['sszorak_window', 'twin_fangs_window']) {
-        final result = ComputePlayerMetrics(spec)(loadFixture(name));
-        expect(result.windowCasts.single.count, 0, reason: name);
-      }
+    // Neither fixture holds events of the Ascendance buff, so the window is
+    // the Ascendance cast plus 15 s. Sszorak casts Ascendance at 19.3 s and
+    // begins Stormkeeper at 23.986 s, finishing at 24.968 s; Twin Fangs has no
+    // Ascendance.
+    test('the Sszorak fixture shows the cast, Twin Fangs none', () {
+      final sszorak = ComputePlayerMetrics(spec)(loadFixture()).windowCasts;
+      expect(sszorak.single.count, 1);
+      expect(sszorak.single.details.single.time, at(23.986));
+      expect(sszorak.single.timeLost, at(0.982));
+      final fangs = loadFixture('twin_fangs_window');
+      expect(ComputePlayerMetrics(spec)(fangs).windowCasts.single.count, 0);
     });
 
     test('is a finding with its text, when you do it and rank 1 does not', () {

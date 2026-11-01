@@ -911,12 +911,13 @@ the app's, and all the log measures depend on ability ids, so every entry here i
   model that. Enhancement and Restoration have their own Ascendance talents, so
   confirm the ability id.
 - **Stormkeeper during Ascendance (Boss Evaluation):** casts of Stormkeeper
-  (191634) whose `begincast` falls while the Ascendance buff (1219480) is up,
-  with the time they took (`begincast` to `cast`, else the 1.5 s cast time, which
-  haste shortens) and the window left. The APL pre-spends Stormkeeper before
-  Ascendance. Rule: `SpecLogRules.castsBeforeWindow`. Needs the buff events of
-  1219480, which neither committed fixture holds. What to try: "Cast Stormkeeper
-  first, then Ascendance." (`FindingKind.castBeforeWindow`.)
+  (191634) whose `begincast` falls inside an Ascendance window, with the time
+  they took (`begincast` to `cast`, else the 1.5 s cast time, which haste
+  shortens) and the window left. The window is the buff (114050) events, or when
+  the log has none, the Ascendance cast plus 15 s. The APL pre-spends
+  Stormkeeper before Ascendance. Rule: `SpecLogRules.castsBeforeWindow`. What to
+  try: "Cast Stormkeeper first, then Ascendance."
+  (`FindingKind.castBeforeWindow`.)
 
 ### Call of the Ancestors
 
