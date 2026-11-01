@@ -11,7 +11,8 @@ import 'pooling_table.dart';
 import 'stretch_table.dart';
 
 /// A loaded result: the findings first, then what is the same as rank 1, then
-/// the tables folded away, then the NSRT note.
+/// the tables folded away, then the NSRT note. A spec without a spender buff
+/// has no pooling table and no NSRT note.
 class EvaluationResult extends StatelessWidget {
   const EvaluationResult({super.key, required this.viewModel});
 
@@ -37,7 +38,8 @@ class EvaluationResult extends StatelessWidget {
         const SizedBox(height: 16),
         if (report.findings.isNotEmpty) ...[
           Text(
-            'Ordered by what usually costs most, not by measured DPS.',
+            'Ordered by what usually costs most, not by measured '
+            '${vm.rankingLabel}.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -54,6 +56,8 @@ class EvaluationResult extends StatelessWidget {
               finding: finding,
               comparison: comparison,
               text: text,
+              details: vm.details,
+              showMovement: vm.tracksMovement,
             ),
           ),
           const SizedBox(height: 12),
@@ -66,19 +70,25 @@ class EvaluationResult extends StatelessWidget {
           onExpansionChanged: (open) => vm.showAll = open,
           title: const Text('All numbers'),
           children: [
-            LogHeaderTable(comparison: comparison, bossName: vm.bossName),
+            LogHeaderTable(
+              comparison: comparison,
+              bossName: vm.bossName,
+              rankingLabel: vm.rankingLabel,
+            ),
             MetricsTable(
               comparison: comparison,
               resourceLabel: vm.resourceLabel,
+              tracksSpenders: vm.tracksSpenders,
             ),
             StretchTable(comparison: comparison),
-            PoolingTable(
-              comparison: comparison,
-              resourceLabel: vm.resourceLabel,
-            ),
+            if (vm.tracksSpenders)
+              PoolingTable(
+                comparison: comparison,
+                resourceLabel: vm.resourceLabel,
+              ),
           ],
         ),
-        NsrtNoteBar(viewModel: vm),
+        if (vm.tracksSpenders) NsrtNoteBar(viewModel: vm),
       ],
     );
   }
