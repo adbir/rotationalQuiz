@@ -1,8 +1,12 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:provider/provider.dart';
+import 'package:rotational_quiz/app.dart';
+import 'package:rotational_quiz/data/repositories/active_spec_repository.dart';
 import 'package:rotational_quiz/data/repositories/apl_repository.dart';
 import 'package:rotational_quiz/data/repositories/keybind_repository.dart';
 import 'package:rotational_quiz/data/repositories/talent_build_repository.dart';
@@ -12,9 +16,15 @@ import 'package:rotational_quiz/data/services/local_store.dart';
 import 'package:rotational_quiz/data/services/pkce_access_token_source.dart';
 import 'package:rotational_quiz/data/services/simc_remote_service.dart';
 import 'package:rotational_quiz/domain/specs/elemental_shaman.dart';
+import 'package:rotational_quiz/domain/specs/restoration_shaman.dart';
+import 'package:rotational_quiz/ui/features/home/views/spec_host.dart';
 
 /// Serves assets straight from the project directory.
 class FileAssetBundle extends CachingAssetBundle {
+  @override
+  Future<String> loadString(String key, {bool cache = true}) async =>
+      File(key).readAsStringSync();
+
   @override
   Future<ByteData> load(String key) async {
     final bytes = await File(key).readAsBytes();
@@ -87,3 +97,22 @@ class FakeNavigation implements BrowserNavigation {
   @override
   void replaceUrl(Uri url) => current = url;
 }
+
+/// The whole app with a spec picker, as `main` wires it. Elemental is the
+/// default; seed the store with `ActiveSpecRepository.storeKey` for another.
+Widget specApp(TestRepositories repos) => MultiProvider(
+  providers: [
+    ChangeNotifierProvider.value(value: repos.warcraftLogs),
+    Provider<LocalStore>.value(value: repos.store),
+    ChangeNotifierProvider(
+      create: (_) => ActiveSpecRepository(
+        specs: const [ElementalShaman(), RestorationShaman()],
+        store: repos.store,
+      ),
+    ),
+  ],
+  child: SpecHost(
+    aplAssets: AplAssetService(bundle: FileAssetBundle()),
+    child: const RotationalQuizApp(),
+  ),
+);
