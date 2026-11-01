@@ -54,7 +54,9 @@ https://adbir.github.io/rotationalQuiz/ (built with
 `main` green. The title bar shows what's deployed: the `version:` from
 `pubspec.yaml`, the workflow run number and the commit (`appVersion` in
 `lib/app.dart`, passed as `--dart-define=APP_VERSION`; local runs show `dev`).
-Bump `version:` when a feature ships; the build number is automatic. Pages
+Bump `version:` when a feature ships; the build number is automatic. The build
+uses `--pwa-strategy=none`, so there is no service worker and a reload shows
+the new build as soon as Pages serves it (its cache is 10 minutes). Pages
 needs the repository to be public, with Settings → Pages → Source set to
 "GitHub Actions".
 
