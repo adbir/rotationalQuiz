@@ -84,9 +84,6 @@ void main() {
       final log = _syntheticLog([37, 38, 50]);
       final report = detect(log, rebuild(log, startAmount: 0), [_s(36)]).single;
 
-      expect(report.meanBefore, greaterThan(report.normalLevel + 15));
-      expect(report.spendersAfter, 2);
-      expect(report.isPooled, isTrue);
       expect(report.isHeld, isTrue);
       expect(report.firstSpenderAfter, _s(1));
     });
@@ -95,8 +92,6 @@ void main() {
       final log = _syntheticLog([10, 20, 30, 40, 45, 50, 55]);
       final report = detect(log, rebuild(log, startAmount: 0), [_s(36)]).single;
 
-      expect(report.spendersBefore, 1);
-      expect(report.isPooled, isFalse);
       expect(report.isHeld, isFalse);
     });
 
@@ -104,8 +99,7 @@ void main() {
       final log = _syntheticLog([]);
       final report = detect(log, rebuild(log, startAmount: 0), [_s(36)]).single;
 
-      expect(report.spendersAfter, 0);
-      expect(report.isPooled, isFalse);
+      expect(report.firstSpenderAfter, isNull);
       expect(report.isHeld, isFalse);
     });
   });

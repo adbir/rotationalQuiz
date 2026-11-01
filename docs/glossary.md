@@ -372,8 +372,7 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   report also gives Maelstrom at the event, its low and high in the 10 s before,
   and the first spender after. Checked on Twin Fangs: rank 1 held at 98, 192,
   253 and 347 s, not at 37 or 408 s (see [warcraft-logs.md](warcraft-logs.md)).
-  The older `isPooled` (mean Maelstrom 15 above the fight's mean) missed those
-  holds and stays only for comparison.
+  A test on the mean Maelstrom (15 above the fight's mean) missed those holds\r\n  and was removed.
 - **Not to be confused with:** [overcap](#overcap-overcapping-capped), and with
   holding a resource when nothing is coming, which is a
   [mistake](#mistake).

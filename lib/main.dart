@@ -9,12 +9,14 @@ import 'data/repositories/apl_repository.dart';
 import 'data/repositories/keybind_repository.dart';
 import 'data/repositories/spell_icon_repository.dart';
 import 'data/repositories/talent_build_repository.dart';
+import 'data/repositories/warcraft_logs_repository.dart';
 import 'data/services/apl_asset_service.dart';
 import 'data/services/browser_navigation.dart';
 import 'data/services/local_store.dart';
 import 'data/services/pkce_access_token_source.dart';
 import 'data/services/simc_remote_service.dart';
 import 'data/services/spell_icon_service.dart';
+import 'data/services/warcraft_logs_service.dart';
 import 'domain/specs/elemental_shaman.dart';
 import 'ui/core/widgets/spell_icon.dart';
 
@@ -46,6 +48,15 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider.value(value: aplRepository),
         ChangeNotifierProvider.value(value: warcraftLogs),
+        Provider(
+          create: (_) => WarcraftLogsRepository(
+            spec: spec,
+            service: WarcraftLogsService(
+              accessToken: warcraftLogs.call,
+              endpoint: WarcraftLogsService.userEndpoint,
+            ),
+          ),
+        ),
         ChangeNotifierProvider(
           create: (_) => TalentBuildRepository(spec: spec, store: store),
         ),

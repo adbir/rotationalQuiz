@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 import '../../../../data/repositories/apl_repository.dart';
 import '../../../../data/repositories/keybind_repository.dart';
 import '../../../../data/repositories/talent_build_repository.dart';
+import '../../../../data/repositories/warcraft_logs_repository.dart';
 import '../../../../data/services/pkce_access_token_source.dart';
 import '../../apl_viewer/view_models/apl_viewer_view_model.dart';
 import '../../apl_viewer/views/apl_viewer_screen.dart';
+import '../../boss_evaluation/view_models/boss_evaluation_view_model.dart';
+import '../../boss_evaluation/views/boss_evaluation_screen.dart';
 import '../../quiz/view_models/quiz_view_model.dart';
 import '../../quiz/views/quiz_screen.dart';
 import '../../sandbox/view_models/sandbox_view_model.dart';
@@ -14,7 +17,7 @@ import '../../sandbox/views/sandbox_screen.dart';
 import '../../setup/view_models/setup_view_model.dart';
 import '../../setup/views/setup_screen.dart';
 
-/// Top-level navigation between Sandbox, Quiz and the APL viewer.
+/// Top-level navigation between the screens.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -27,6 +30,7 @@ class _HomeShellState extends State<HomeShell> {
   late final QuizViewModel _quiz;
   late final AplViewerViewModel _aplViewer;
   late final SetupViewModel _setup;
+  late final BossEvaluationViewModel _bossEvaluation;
   var _index = 0;
 
   static const _quizTab = 1;
@@ -37,6 +41,7 @@ class _HomeShellState extends State<HomeShell> {
     (icon: Icons.quiz_outlined, selected: Icons.quiz, label: 'Quiz'),
     (icon: Icons.list_alt_outlined, selected: Icons.list_alt, label: 'APL'),
     (icon: Icons.tune_outlined, selected: Icons.tune, label: 'Setup'),
+    (icon: Icons.insights_outlined, selected: Icons.insights, label: 'Boss'),
   ];
 
   @override
@@ -60,6 +65,10 @@ class _HomeShellState extends State<HomeShell> {
       keybinds: keybinds,
       warcraftLogs: context.read<PkceAccessTokenSource>(),
     );
+    _bossEvaluation = BossEvaluationViewModel(
+      repository: context.read<WarcraftLogsRepository>(),
+      signIn: context.read<PkceAccessTokenSource>(),
+    );
   }
 
   @override
@@ -68,6 +77,7 @@ class _HomeShellState extends State<HomeShell> {
     _quiz.dispose();
     _aplViewer.dispose();
     _setup.dispose();
+    _bossEvaluation.dispose();
     super.dispose();
   }
 
@@ -88,6 +98,10 @@ class _HomeShellState extends State<HomeShell> {
         ),
         AplViewerScreen(viewModel: _aplViewer),
         SetupScreen(viewModel: _setup),
+        BossEvaluationScreen(
+          viewModel: _bossEvaluation,
+          onOpenSetup: () => setState(() => _index = _setupTab),
+        ),
       ],
     );
 

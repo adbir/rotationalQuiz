@@ -218,43 +218,43 @@ log. There are no phase changes in the log.
 
 Per wave (the Broodlings' first cast, about 0.5 s after the spawn): the
 rebuilt Maelstrom at the spawn, the lowest and highest in the 10 s before,
-spenders cast in those 10 s, seconds since the last spender, and the first
+seconds since the last spender, and the first
 spender after with its offset (Earthquake is EQ, Elemental Blast EB). A wave
 reads as held when the gap since the last spender is over 10 s or twice the
 player's median gap, and a spender follows within 5 s. Held waves are marked *.
 
 Rank 1 (median gap between spenders 5.2 s):
 
-| Wave (s) | At spawn | Low / high | Spenders | Since last | First after |
-| --- | --- | --- | --- | --- | --- |
-| 37 | 40 | 11 / 101 | 1 | 4.6 s | +5.1 s EQ |
-| 98 * | 103 | 50 / 103 | 0 | 17.8 s | +3.3 s EQ |
-| 192 * | 125 | 30 / 125 | 0 | 17.0 s | +0.5 s EQ |
-| 253 * | 100 | 29 / 100 | 0 | 15.3 s | +2.1 s EQ |
-| 347 * | 76 | 26 / 76 | 0 | 11.6 s | +2.7 s EQ |
-| 408 | 22 | 22 / 112 | 3 | 0.6 s | +10.2 s EB |
+| Wave (s) | At spawn | Low / high | Since last | First after |
+| --- | --- | --- | --- | --- |
+| 37 | 40 | 11 / 101 | 4.6 s | +5.1 s EQ |
+| 98 * | 103 | 50 / 103 | 17.8 s | +3.3 s EQ |
+| 192 * | 125 | 30 / 125 | 17.0 s | +0.5 s EQ |
+| 253 * | 100 | 29 / 100 | 15.3 s | +2.1 s EQ |
+| 347 * | 76 | 26 / 76 | 11.6 s | +2.7 s EQ |
+| 408 | 22 | 22 / 112 | 0.6 s | +10.2 s EB |
 
 Rank 53 (median 5.9 s):
 
-| Wave (s) | At spawn | Low / high | Spenders | Since last | First after |
-| --- | --- | --- | --- | --- | --- |
-| 37 | 106 | 48 / 106 | 1 | 9.3 s | +2.0 s EQ |
-| 98 * | 89 | 55 / 89 | 0 | 19.4 s | +2.3 s EQ |
-| 192 | 125 | 34 / 125 | 1 | 8.8 s | +2.2 s EQ |
-| 253 | 19 | 13 / 103 | 1 | 1.8 s | +4.8 s EQ |
-| 347 | 12 | 6 / 96 | 1 | 2.2 s | +4.6 s EQ |
-| 408 | 51 | 35 / 125 | 3 | 3.3 s | none before the kill |
+| Wave (s) | At spawn | Low / high | Since last | First after |
+| --- | --- | --- | --- | --- |
+| 37 | 106 | 48 / 106 | 9.3 s | +2.0 s EQ |
+| 98 * | 89 | 55 / 89 | 19.4 s | +2.3 s EQ |
+| 192 | 125 | 34 / 125 | 8.8 s | +2.2 s EQ |
+| 253 | 19 | 13 / 103 | 1.8 s | +4.8 s EQ |
+| 347 | 12 | 6 / 96 | 2.2 s | +4.6 s EQ |
+| 408 | 51 | 35 / 125 | 3.3 s | none before the kill |
 
 Owner, 394 s wipe (median 6.9 s; the build's cap is above 125, so levels pass
 it):
 
-| Wave (s) | At spawn | Low / high | Spenders | Since last | First after |
-| --- | --- | --- | --- | --- | --- |
-| 37 | 69 | 16 / 106 | 1 | 7.7 s | +1.1 s EQ |
-| 98 | 33 | 9 / 99 | 1 | 8.9 s | +4.7 s EB |
-| 192 * | 155 | 66 / 155 | 0 | 15.0 s | +1.6 s EQ |
-| 253 * | 133 | 85 / 133 | 0 | 11.0 s | +1.8 s EQ |
-| 347 | 50 | 34 / 124 | 1 | 4.5 s | +15.2 s EB |
+| Wave (s) | At spawn | Low / high | Since last | First after |
+| --- | --- | --- | --- | --- |
+| 37 | 69 | 16 / 106 | 7.7 s | +1.1 s EQ |
+| 98 | 33 | 9 / 99 | 8.9 s | +4.7 s EB |
+| 192 * | 155 | 66 / 155 | 15.0 s | +1.6 s EQ |
+| 253 * | 133 | 85 / 133 | 11.0 s | +1.8 s EQ |
+| 347 | 50 | 34 / 124 | 4.5 s | +15.2 s EB |
 
 Do top players hold a spender for the waves? Yes, about every other one. Rank
 1 goes 11 to 18 s without a spender before the waves at 98, 192, 253 and 347 s
@@ -265,11 +265,7 @@ spent) or 408 s. Rank 53 does at 98 s, and sits at 125 with an 8.8 s gap at
 a spender is simply cast soon after, such as 37 s, are ordinary play, which is
 why the gap since the last spender is the test and not the spenders after.
 
-The earlier mean test (`isPooled`: the mean of the 8 s before, 15 above the
-fight mean) read these holds as 52 to 80 against a fight mean of 65 and
-flagged only 2 of 16 waves, no better than moments away from any wave, so this
-section first said wrongly that top players don't pool. The mean still comes
-out in the report, but the held-spender rule (`isHeld`) is the test.
+A test on the mean of the 8 s before (15 above the fight mean) read these holds as 52 to 80 against a fight mean of 65 and flagged only 2 of 16 waves, no better than moments away from any wave, so this section first said wrongly that top players don't pool. The held-spender rule (`isHeld`) is the test.
 
 ### Rebuild check
 
