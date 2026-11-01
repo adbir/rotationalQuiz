@@ -121,6 +121,7 @@ class ElementalShaman extends RotationSpec {
       resource: 40,
       maxResource: maxResource(loadout.talents),
       talents: loadout.talents,
+      setBonuses: {for (final bonus in setBonuses) bonus.id},
       buffs: const {'lightning_shield': AuraState.up(remains: 3600)},
       dots: const {'flame_shock': AuraState.up(remains: 12)},
       cooldowns: const {
@@ -133,7 +134,7 @@ class ElementalShaman extends RotationSpec {
 
   @override
   double costOf(SpellDefinition spell, CombatState state) {
-    if (spell.cost == 0) return 0;
+    if (spell.cost == 0 || state.buff('overcharge_tier').isUp) return 0;
     var cost = spell.cost;
     if (state.hasTalent(ElementalTalents.eyeOfTheStorm)) {
       cost -= spell.id == 'elemental_blast' ? 10 : 5;
