@@ -122,7 +122,8 @@ void main() {
     expect(find.text('Casts per minute by stretch'), findsOneWidget);
     expect(find.text('0-28 s'), findsOneWidget);
     expect(find.text('Maelstrom at each wave'), findsOneWidget);
-    expect(find.text('28 s'), findsOneWidget);
+    // The pooling header and the fight bar's wave label.
+    expect(find.text('28 s'), findsNWidgets(2));
   });
 
   testWidgets('offers an NSRT note built from the result', (tester) async {
@@ -166,6 +167,8 @@ void main() {
     expect(find.text('All numbers'), findsOneWidget);
     expect(find.text('Metrics'), findsNothing);
     expect(find.byType(FightBar), findsOneWidget);
+    expect(find.text('28 s'), findsOneWidget);
+    expect(find.textContaining('Darker amber'), findsOneWidget);
   });
 
   testWidgets('remembers whether All numbers is open', (tester) async {

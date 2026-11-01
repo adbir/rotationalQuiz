@@ -37,12 +37,12 @@ class FightBar extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('0 s', style: style),
-              Text('${stretches.last.end.inSeconds} s', style: style),
-            ],
+          _TimeLabels(stretches: stretches, style: style),
+          const SizedBox(height: 4),
+          Text(
+            'Darker amber: further behind rank 1 in buttons per minute. '
+            'Clear: on par or ahead.',
+            style: style,
           ),
         ],
       ),
@@ -89,4 +89,52 @@ class _FightBarPainter extends CustomPainter {
       old.stretches != stretches ||
       old.shortfall != shortfall ||
       old.base != base;
+}
+
+/// "0 s", each wave's time and the end, left to right. A label that would
+/// overlap the one before it is skipped; the end label always stays.
+class _TimeLabels extends StatelessWidget {
+  const _TimeLabels({required this.stretches, required this.style});
+
+  final List<Stretch> stretches;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, box) {
+        final total = stretches.last.end.inMilliseconds;
+        double width(String t) => (TextPainter(
+          text: TextSpan(text: t, style: style),
+          textDirection: TextDirection.ltr,
+        )..layout()).width;
+        final end = '${stretches.last.end.inSeconds} s';
+        final endLeft = box.maxWidth - width(end);
+        final labels = <(double, String)>[(0, '0 s')];
+        var right = width('0 s');
+        for (final s in stretches.skip(1)) {
+          final t = '${s.start.inSeconds} s';
+          final left =
+              (s.start.inMilliseconds / total * box.maxWidth - width(t) / 2)
+                  .clamp(0.0, box.maxWidth);
+          if (left < right + 6 || left + width(t) + 6 > endLeft) continue;
+          labels.add((left, t));
+          right = left + width(t);
+        }
+        return SizedBox(
+          height: 16,
+          child: Stack(
+            children: [
+              for (final (left, t) in labels)
+                Positioned(
+                  left: left,
+                  child: Text(t, style: style),
+                ),
+              Positioned(right: 0, child: Text(end, style: style)),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
