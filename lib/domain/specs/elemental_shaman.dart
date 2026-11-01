@@ -1,38 +1,9 @@
 import '../models/combat_state.dart';
 import '../models/spec_definition.dart';
 import '../talents/generated/shaman_talent_tree.g.dart';
-import '../talents/talent_string_codec.dart';
 import '../talents/talent_tree.dart';
+import 'elemental_shaman_data.dart';
 import 'rotation_spec.dart';
-
-/// Builds from SimulationCraft's `profiles/MID2` directory.
-const _simcFarseer =
-    'CYQAAAAAAAAAAAAAAAAAAAAAAAAAAAzMbbzMmZmZZbZMMjBAAAAsYmNYADY2YCZWAgZbmZGjtF'
-    'TYmxYxMzMmZWsMjFzMMzyAAGGAzMGGGA';
-const _simcStormbringer =
-    'CYQAAAAAAAAAAAAAAAAAAAAAAAAAAAzMbbzMmZmZZbZgxMDAAAAAWMjhNYBmRDN2AgZbmZGjtF'
-    'TYmxYxMzMmZWsMjFzMjZWAAGGYmBGGGA';
-
-final _defaultLoadouts = [
-  TalentLoadout(
-    id: 'simc_farseer',
-    name: 'Farseer',
-    description: 'SimulationCraft MID2 Farseer profile.',
-    exportString: _simcFarseer,
-    talents: const TalentStringCodec(shamanTalentTree)
-        .decode(_simcFarseer)
-        .tokens,
-  ),
-  TalentLoadout(
-    id: 'simc_stormbringer',
-    name: 'Stormbringer',
-    description: 'SimulationCraft MID2 Stormbringer profile.',
-    exportString: _simcStormbringer,
-    talents: const TalentStringCodec(shamanTalentTree)
-        .decode(_simcStormbringer)
-        .tokens,
-  ),
-];
 
 /// Elemental Shaman, modelled for the single-target sandbox.
 ///
@@ -41,29 +12,6 @@ final _defaultLoadouts = [
 /// from the SimC APL, so keep these in sync with the game when patches land.
 class ElementalShaman extends RotationSpec {
   const ElementalShaman();
-
-  // Talent ids, as used by `talent.<id>` in the APL.
-  static const callOfTheAncestors = 'call_of_the_ancestors';
-  static const tempestTalent = 'tempest';
-  static const masterOfTheElements = 'master_of_the_elements';
-  static const eyeOfTheStorm = 'eye_of_the_storm';
-  static const elementalBlastTalent = 'elemental_blast';
-  static const earthShockTalent = 'earth_shock';
-  static const stormkeeperTalent = 'stormkeeper';
-  static const ascendanceTalent = 'ascendance';
-  static const stormElemental = 'storm_elemental';
-  static const infernoArc = 'inferno_arc';
-  static const flametongueWeapon = 'flametongue_weapon';
-  static const voltaicBlazeTalent = 'voltaic_blaze';
-  static const purgingFlames = 'purging_flames';
-  static const moltenWrath = 'molten_wrath';
-  static const cracklingFury = 'crackling_fury';
-  static const ancestralSwiftnessTalent = 'ancestral_swiftness';
-  static const naturesSwiftnessTalent = 'natures_swiftness';
-
-  static const swellingMaelstrom = 'swelling_maelstrom';
-
-  static const flameShockDuration = 18.0;
 
   @override
   String get id => 'shaman_elemental';
@@ -106,392 +54,31 @@ class ElementalShaman extends RotationSpec {
   String get focusList => 'single_target';
 
   @override
-  Map<String, SpellDefinition> get spells => const {
-    'lava_burst': SpellDefinition(
-      id: 'lava_burst',
-      name: 'Lava Burst',
-      abbreviation: 'LvB',
-      school: SpellSchool.fire,
-      castTime: 2,
-      usesCharges: true,
-    ),
-    'lightning_bolt': SpellDefinition(
-      id: 'lightning_bolt',
-      name: 'Lightning Bolt',
-      abbreviation: 'LB',
-      school: SpellSchool.nature,
-      castTime: 2,
-    ),
-    'tempest': SpellDefinition(
-      id: 'tempest',
-      name: 'Tempest',
-      abbreviation: 'Tmp',
-      school: SpellSchool.nature,
-      castTime: 2,
-      requiredTalent: tempestTalent,
-      requiredBuff: 'tempest',
-    ),
-    'chain_lightning': SpellDefinition(
-      id: 'chain_lightning',
-      name: 'Chain Lightning',
-      abbreviation: 'CL',
-      school: SpellSchool.nature,
-      castTime: 2,
-    ),
-    'flame_shock': SpellDefinition(
-      id: 'flame_shock',
-      name: 'Flame Shock',
-      abbreviation: 'FS',
-      school: SpellSchool.fire,
-      cooldownId: 'flame_shock',
-    ),
-    'voltaic_blaze': SpellDefinition(
-      id: 'voltaic_blaze',
-      name: 'Voltaic Blaze',
-      abbreviation: 'VB',
-      school: SpellSchool.fire,
-      requiredTalent: voltaicBlazeTalent,
-      cooldownId: 'voltaic_blaze',
-    ),
-    'earth_shock': SpellDefinition(
-      id: 'earth_shock',
-      name: 'Earth Shock',
-      abbreviation: 'ES',
-      school: SpellSchool.earth,
-      cost: 60,
-      requiredTalent: earthShockTalent,
-    ),
-    'elemental_blast': SpellDefinition(
-      id: 'elemental_blast',
-      name: 'Elemental Blast',
-      abbreviation: 'EB',
-      school: SpellSchool.earth,
-      cost: 90,
-      requiredTalent: elementalBlastTalent,
-    ),
-    'earthquake': SpellDefinition(
-      id: 'earthquake',
-      name: 'Earthquake',
-      abbreviation: 'EQ',
-      school: SpellSchool.earth,
-      cost: 60,
-    ),
-    'frost_shock': SpellDefinition(
-      id: 'frost_shock',
-      name: 'Frost Shock',
-      abbreviation: 'FrS',
-      school: SpellSchool.frost,
-    ),
-    'stormkeeper': SpellDefinition(
-      id: 'stormkeeper',
-      name: 'Stormkeeper',
-      abbreviation: 'SK',
-      school: SpellSchool.nature,
-      castTime: 1.5,
-      requiredTalent: stormkeeperTalent,
-      cooldownId: 'stormkeeper',
-    ),
-    'ascendance': SpellDefinition(
-      id: 'ascendance',
-      name: 'Ascendance',
-      abbreviation: 'Asc',
-      school: SpellSchool.fire,
-      requiredTalent: ascendanceTalent,
-      cooldownId: 'ascendance',
-    ),
-    'ancestral_swiftness': SpellDefinition(
-      id: 'ancestral_swiftness',
-      name: 'Ancestral Swiftness',
-      abbreviation: 'AS',
-      school: SpellSchool.nature,
-      offGcd: true,
-      requiredTalent: ancestralSwiftnessTalent,
-      cooldownId: 'ancestral_swiftness',
-    ),
-    'natures_swiftness': SpellDefinition(
-      id: 'natures_swiftness',
-      name: "Nature's Swiftness",
-      abbreviation: 'NS',
-      school: SpellSchool.nature,
-      offGcd: true,
-      requiredTalent: naturesSwiftnessTalent,
-      replacedByTalent: ancestralSwiftnessTalent,
-      cooldownId: 'natures_swiftness',
-    ),
-    'spiritwalkers_grace': SpellDefinition(
-      id: 'spiritwalkers_grace',
-      name: "Spiritwalker's Grace",
-      abbreviation: 'SWG',
-      school: SpellSchool.arcane,
-      offGcd: true,
-      cooldownId: 'spiritwalkers_grace',
-      onActionBar: false,
-    ),
-    'wind_shear': SpellDefinition(
-      id: 'wind_shear',
-      name: 'Wind Shear',
-      abbreviation: 'WS',
-      school: SpellSchool.nature,
-      offGcd: true,
-      cooldownId: 'wind_shear',
-      onActionBar: false,
-    ),
-    'lightning_shield': SpellDefinition(
-      id: 'lightning_shield',
-      name: 'Lightning Shield',
-      abbreviation: 'LS',
-      school: SpellSchool.nature,
-      onActionBar: false,
-    ),
-  };
+  Map<String, SpellDefinition> get spells => elementalSpells;
 
   @override
-  List<AuraDefinition> get auras => const [
-    AuraDefinition(
-      id: 'flame_shock',
-      name: 'Flame Shock',
-      kind: AuraKind.dot,
-      duration: flameShockDuration,
-      description: 'Refreshable below 30% duration (pandemic).',
-      quizChance: 0.85,
-    ),
-    AuraDefinition(
-      id: 'master_of_the_elements',
-      name: 'Master of the Elements',
-      requiredTalent: masterOfTheElements,
-      description: 'Lava Burst empowers your next spender.',
-    ),
-    AuraDefinition(
-      id: 'lava_surge',
-      name: 'Lava Surge',
-      duration: 10,
-      description: 'Next Lava Burst is instant and free.',
-    ),
-    AuraDefinition(
-      id: 'stormkeeper',
-      name: 'Stormkeeper',
-      maxStacks: 3,
-      requiredTalent: stormkeeperTalent,
-    ),
-    AuraDefinition(
-      id: 'tempest',
-      name: 'Tempest',
-      maxStacks: 2,
-      requiredTalent: tempestTalent,
-      description: 'Stormbringer: Lightning Bolt becomes Tempest.',
-    ),
-    AuraDefinition(
-      id: 'call_of_the_ancestors',
-      name: 'Call of the Ancestors',
-      maxStacks: 5,
-      requiredTalent: callOfTheAncestors,
-      description: 'Farseer: number of active Ancestors.',
-    ),
-    AuraDefinition(
-      id: 'ascendance',
-      name: 'Ascendance',
-      requiredTalent: ascendanceTalent,
-    ),
-    AuraDefinition(id: 'fire_elemental', name: 'Fire Elemental', duration: 30),
-    AuraDefinition(
-      id: 'storm_elemental',
-      name: 'Storm Elemental',
-      duration: 30,
-      requiredTalent: stormElemental,
-    ),
-    AuraDefinition(
-      id: 'wind_gust',
-      name: 'Wind Gust',
-      maxStacks: 4,
-      requiredTalent: stormElemental,
-    ),
-    AuraDefinition(
-      id: 'purging_flames',
-      name: 'Purging Flames',
-      requiredTalent: purgingFlames,
-    ),
-    AuraDefinition(
-      id: 'flowing_elements',
-      name: 'Flowing Elements',
-      description: 'Tier set proc.',
-      quizChance: 0.1,
-    ),
-    AuraDefinition(
-      id: 'overcharge_tier',
-      name: 'Overcharge',
-      description: 'Tier set proc.',
-      quizChance: 0.1,
-    ),
-    AuraDefinition(
-      id: 'ancestral_swiftness',
-      name: 'Ancestral Swiftness',
-      requiredTalent: ancestralSwiftnessTalent,
-      description: 'Next cast is instant.',
-      quizChance: 0.1,
-    ),
-    AuraDefinition(
-      id: 'natures_swiftness',
-      name: "Nature's Swiftness",
-      requiredTalent: naturesSwiftnessTalent,
-      description: 'Next cast is instant.',
-      quizChance: 0.1,
-    ),
-    AuraDefinition(
-      id: 'spiritwalkers_grace',
-      name: "Spiritwalker's Grace",
-      description: 'Cast while moving.',
-      quizChance: 0,
-    ),
-    AuraDefinition(
-      id: 'bloodlust',
-      name: 'Bloodlust',
-      duration: 40,
-      quizChance: 0.15,
-    ),
-    AuraDefinition(
-      id: 'lightning_shield',
-      name: 'Lightning Shield',
-      quizChance: null,
-    ),
-  ];
+  List<AuraDefinition> get auras => elementalAuras;
 
   @override
-  List<CooldownDefinition> get cooldowns => const [
-    CooldownDefinition(
-      id: 'lava_burst',
-      name: 'Lava Burst',
-      duration: 8,
-      maxCharges: 2,
-    ),
-    CooldownDefinition(id: 'flame_shock', name: 'Flame Shock', duration: 6),
-    CooldownDefinition(
-      id: 'voltaic_blaze',
-      name: 'Voltaic Blaze',
-      duration: 30,
-      requiredTalent: voltaicBlazeTalent,
-    ),
-    CooldownDefinition(
-      id: 'stormkeeper',
-      name: 'Stormkeeper',
-      duration: 60,
-      requiredTalent: stormkeeperTalent,
-    ),
-    CooldownDefinition(
-      id: 'ascendance',
-      name: 'Ascendance',
-      duration: 180,
-      requiredTalent: ascendanceTalent,
-    ),
-    CooldownDefinition(
-      id: 'ancestral_swiftness',
-      name: 'Ancestral Swiftness',
-      duration: 60,
-      requiredTalent: ancestralSwiftnessTalent,
-    ),
-    CooldownDefinition(
-      id: 'natures_swiftness',
-      name: "Nature's Swiftness",
-      duration: 60,
-      requiredTalent: naturesSwiftnessTalent,
-    ),
-  ];
-
-  /// Talents the APL (or spell availability) cares about. Imported builds
-  /// may contain many more; those are kept but not shown as toggles.
-  @override
-  List<TalentDefinition> get talents => const [
-    TalentDefinition(
-      id: callOfTheAncestors,
-      name: 'Farseer (Call of the Ancestors)',
-      group: 'Hero tree',
-      exclusiveWith: [tempestTalent],
-    ),
-    TalentDefinition(
-      id: tempestTalent,
-      name: 'Stormbringer (Tempest)',
-      group: 'Hero tree',
-      exclusiveWith: [callOfTheAncestors],
-    ),
-    TalentDefinition(
-      id: ancestralSwiftnessTalent,
-      name: 'Ancestral Swiftness (Farseer)',
-      group: 'Hero tree',
-      description: "Replaces Nature's Swiftness.",
-    ),
-    TalentDefinition(
-      id: earthShockTalent,
-      name: 'Earth Shock',
-      group: 'Spec',
-      exclusiveWith: [elementalBlastTalent],
-      description: 'Choice node with Elemental Blast.',
-    ),
-    TalentDefinition(
-      id: elementalBlastTalent,
-      name: 'Elemental Blast',
-      group: 'Spec',
-      exclusiveWith: [earthShockTalent],
-      description: 'Choice node with Earth Shock.',
-    ),
-    TalentDefinition(
-      id: masterOfTheElements,
-      name: 'Master of the Elements',
-      group: 'Spec',
-    ),
-    TalentDefinition(
-      id: eyeOfTheStorm,
-      name: 'Eye of the Storm',
-      group: 'Spec',
-    ),
-    TalentDefinition(id: stormkeeperTalent, name: 'Stormkeeper', group: 'Spec'),
-    TalentDefinition(id: ascendanceTalent, name: 'Ascendance', group: 'Spec'),
-    TalentDefinition(
-      id: voltaicBlazeTalent,
-      name: 'Voltaic Blaze',
-      group: 'Spec',
-    ),
-    TalentDefinition(id: purgingFlames, name: 'Purging Flames', group: 'Spec'),
-    TalentDefinition(id: moltenWrath, name: 'Molten Wrath', group: 'Spec'),
-    TalentDefinition(id: cracklingFury, name: 'Crackling Fury', group: 'Spec'),
-    TalentDefinition(id: infernoArc, name: 'Inferno Arc', group: 'Spec'),
-    TalentDefinition(
-      id: naturesSwiftnessTalent,
-      name: "Nature's Swiftness",
-      group: 'Class',
-    ),
-    TalentDefinition(
-      id: flametongueWeapon,
-      name: 'Flametongue Weapon',
-      group: 'Class',
-    ),
-  ];
+  List<CooldownDefinition> get cooldowns => elementalCooldowns;
 
   @override
-  List<TalentLoadout> get loadouts => _defaultLoadouts;
+  List<TalentDefinition> get talents => elementalTalentToggles;
 
   @override
-  List<SetBonusDefinition> get setBonuses => const [
-    SetBonusDefinition(id: 'mid2_4pc', name: 'Midnight Season 2 (4-piece)'),
-  ];
+  List<TalentLoadout> get loadouts => elementalLoadouts;
 
   @override
-  Set<String> get unmodelledActions => const {
-    'snapshot_stats',
-    'flametongue_weapon',
-    'thunderstrike_ward',
-    'blood_fury',
-    'berserking',
-    'fireblood',
-    'ancestral_call',
-    'use_item',
-    'potion',
-    'invoke_external_buff',
-  };
+  List<SetBonusDefinition> get setBonuses => elementalSetBonuses;
+
+  @override
+  Set<String> get unmodelledActions => elementalUnmodelledActions;
 
   /// Swelling Maelstrom adds 50 (in-game tooltip; SimC reads it from spell
   /// data).
   @override
   double maxResource(Set<String> talents) =>
-      talents.contains(swellingMaelstrom) ? 150 : 100;
+      talents.contains(ElementalTalents.swellingMaelstrom) ? 150 : 100;
 
   @override
   CombatState defaultState(TalentLoadout loadout) {
@@ -514,7 +101,7 @@ class ElementalShaman extends RotationSpec {
     if (spell.cost == 0) return 0;
     if (spell.id == 'lava_burst' && state.buff('lava_surge').isUp) return 0;
     var cost = spell.cost;
-    if (state.hasTalent(eyeOfTheStorm)) {
+    if (state.hasTalent(ElementalTalents.eyeOfTheStorm)) {
       cost -= spell.id == 'elemental_blast' ? 10 : 5;
     }
     return cost;

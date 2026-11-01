@@ -66,12 +66,14 @@ lib/
 │   ├── apl/                # SimC parsing + evaluation
 │   │   ├── apl_expression.dart   # Expression AST + Pratt parser for `if=`
 │   │   ├── apl_document.dart     # `actions.<list>+=/...` line parser
-│   │   └── apl_evaluator.dart    # Walks lists like SimC; produces a trace
+│   │   ├── apl_evaluator.dart    # Walks lists like SimC; produces a trace
+│   │   └── apl_state_resolver.dart  # buff./cooldown./talent./… → numbers
 │   ├── models/             # CombatState (scenario), Keybind, spec metadata types
-│   ├── specs/              # RotationSpec + one implementation per spec
+│   ├── specs/              # RotationSpec + per spec: <spec>.dart (behaviour)
+│   │                       #   and <spec>_data.dart (spell/aura/talent tables)
 │   ├── talents/            # Talent tree types + in-game export string decoder
 │   │   └── generated/      # *.g.dart from tool/generate_talent_tree.py
-│   └── use_cases/          # GenerateScenario (random quiz states)
+│   └── use_cases/          # GenerateScenario (quiz states), PickAnswerOptions
 ├── data/
 │   ├── services/           # Asset loading, SimC download, LocalStore (prefs)
 │   └── repositories/       # AplRepository, TalentBuildRepository, KeybindRepository
@@ -79,10 +81,10 @@ lib/
 │   ├── core/               # theme.dart, keybind_input.dart (key/mouse → Keybind)
 │   │   └── widgets/        # SpellButton, ConditionView, TraceList, RecommendationCard…
 │   └── features/
-│       ├── sandbox/        # {view_models,views}/
-│       ├── quiz/           # {view_models,views}/
-│       ├── apl_viewer/     # {view_models,views}/
-│       ├── setup/          # {view_models,views}/: talent import, keybinds
+│       ├── sandbox/        # view_models/, views/ (+ views/widgets/)
+│       ├── quiz/           # view_models/, views/ (+ views/widgets/)
+│       ├── apl_viewer/     # view_models/, views/
+│       ├── setup/          # view_models/, views/ (+ views/widgets/): builds, keybinds
 │       └── home/views/     # HomeShell: navigation, creates the view models
 └── utils/result.dart       # Result<T> = Ok | Error
 tool/generate_talent_tree.py  # SimC trait data → talent tree .g.dart
@@ -110,7 +112,7 @@ tool/generate_talent_tree.py  # SimC trait data → talent tree .g.dart
 
 | Resolved by | Identifiers |
 | ----------- | ----------- |
-| `AplEvaluator` | `buff/debuff/dot.<name>.{up,down,stack,react,remains,ticking,refreshable,duration,max_stack}`, `cooldown.<name>.{remains,ready,up,charges,charges_fractional,max_charges,duration,full_recharge_time}`, `talent.<name>[.enabled]`, `set_bonus.<name>`, `active_dot.<name>`, `spell_targets.*`, `active_enemies`, `fight_remains`, `target.time_to_die`, `gcd`, `gcd.max`, `movement.distance` |
+| `AplStateResolver` | `buff/debuff/dot.<name>.{up,down,stack,react,remains,ticking,refreshable,duration,max_stack}`, `cooldown.<name>.{remains,ready,up,charges,charges_fractional,max_charges,duration,full_recharge_time}`, `talent.<name>[.enabled]`, `set_bonus.<name>`, `active_dot.<name>`, `spell_targets.*`, `active_enemies`, `fight_remains`, `target.time_to_die`, `gcd`, `gcd.max`, `movement.distance` |
 | `RotationSpec.resolveScalar` | Resource (`maelstrom`, `.deficit`, `.max`, `.pct`) and spec extras (`lightning_rod`) |
 | Not supported | `variable.*` (`variable` actions are skipped), `trinket.*`, `prev_gcd.*`, `time`, `target_if=` (ignored; single target), `use_item`/`potion`/racials (listed in `spec.unmodelledActions`) |
 
@@ -127,8 +129,8 @@ variable support in the evaluator before it will give correct answers.
 
 ### Add an aura or proc the APL reads
 
-1. Add an `AuraDefinition` to `ElementalShaman.auras`
-   (`lib/domain/specs/elemental_shaman.dart`).
+1. Add an `AuraDefinition` to `elementalAuras`
+   (`lib/domain/specs/elemental_shaman_data.dart`).
    - Set `kind` (buff, dot or debuff), `duration`, `maxStacks` and
      `requiredTalent`/`requiredSetBonus` (these hide it when not taken).
    - Set `quizChance`: the probability it's up in random quiz scenarios.
@@ -140,16 +142,19 @@ variable support in the evaluator before it will give correct answers.
 
 ### Add an ability
 
-1. Add a `SpellDefinition` to `spells`, keyed by the SimC action name.
+1. Add a `SpellDefinition` to `elementalSpells` (in
+   `elemental_shaman_data.dart`), keyed by the SimC action name.
    - Fill in `cost`, `castTime`, `offGcd` and `requiredTalent`.
    - `requiredBuff` is for spells that only exist during a proc, like
      Tempest.
    - `onActionBar: false` hides it from the quiz bar.
 2. If it has a cooldown, add a `CooldownDefinition` (`maxCharges` for charge
    spells) and set `cooldownId`/`usesCharges` on the spell.
-3. Special rules go in `availability()` (e.g. Wind Shear needs a casting
-   target) and `applyOffGcd()` (the buff an off-GCD press applies).
-4. APL actions you deliberately don't model go in `unmodelledActions`.
+3. Special rules go in `ElementalShaman.availability()` (e.g. Wind Shear
+   needs a casting target) and `applyOffGcd()` (the buff an off-GCD press
+   applies).
+4. APL actions you deliberately don't model go in
+   `elementalUnmodelledActions`.
    Otherwise the trace shows "Not in the spell book".
 
 ### Add a spec
@@ -164,7 +169,8 @@ data is already keyed by `spec.id`.
    `assets/apl/README.md`.
 2. If the class has no talent tree yet, generate one (see below). Class ids
    are SimC's (warrior 1, … shaman 7, … evoker 13).
-3. Implement `RotationSpec` in `lib/domain/specs/`:
+3. Implement `RotationSpec` in `lib/domain/specs/<spec>.dart`, with its
+   tables in `<spec>_data.dart`:
    - `specId`: the Blizzard spec id, e.g. 262.
    - `talentTree`.
    - `heroTreeNames`: SimC sub-tree ids, found as `subTree:` on the
@@ -205,8 +211,9 @@ anything new the sandbox doesn't model.
   every change. "Save as build" stores hand-edited talents.
 - **Quiz** (`ui/features/quiz`), in `QuizViewModel`:
   - **Action bar mode.**
-  - **Multiple choice:** `_buildOptions`. Distractors are abilities from
-    trace lines the APL considered before the winner. Answer with keys 1–4.
+  - **Multiple choice:** options come from the `PickAnswerOptions` use case.
+    Distractors are abilities from trace lines the APL considered before
+    the winner. Answer with keys 1–4.
   - **Hot keys:** timed, uses the user's keybinds. An off-GCD press before
     the GCD ability is allowed. Auto-advances after a correct answer.
   - Scenarios come from `GenerateScenario` and are re-rolled to down-weight
@@ -229,7 +236,9 @@ anything new the sandbox doesn't model.
 test/
 ├── test_helpers.dart   # spec, FileAssetBundle, loadedRepository(),
 │                       # TestRepositories (APL + builds + keybinds on InMemoryStore)
-├── domain/             # parser, evaluator, real-APL behaviour, coverage, codec, generator
+├── code_organisation_test.dart  # file-size limit, domain/ import rules
+├── domain/             # parser, evaluator, real-APL behaviour, coverage,
+│                       # codec, scenario generator, answer options
 ├── data/               # repository persistence
 ├── ui/                 # view models, quiz key handling, app navigation
 └── screenshots/        # opt-in PNG renders (see above)
@@ -252,7 +261,9 @@ use it rather than creating a parallel file or class.
 | ---------- | ------ | --- |
 | Per-spec behaviour (costs, availability, resources) | the spec's `RotationSpec` overrides | `if (spec is …)` checks elsewhere |
 | Spells, procs, cooldowns, talents | the data lists on the spec (`SpellDefinition`, `AuraDefinition`, …) | new widgets or editors for one aura |
-| Spec-agnostic APL identifiers | `AplEvaluator._resolve` | each spec's `resolveScalar` |
+| Spec-agnostic APL identifiers | `AplStateResolver.resolve` | each spec's `resolveScalar` |
+| Quiz rules that don't need Flutter | a use case in `domain/use_cases/` | private ViewModel methods |
+| A spec's static tables | `<spec>_data.dart` | the spec class body |
 | Persistence | a repository over `LocalStore` | direct `SharedPreferences` calls |
 | A widget used by two features | `ui/core/widgets/` | copy-pasted private widgets |
 | Feature behaviour | the feature's ViewModel | logic in `build()` |
@@ -270,8 +281,13 @@ When a new file *is* justified:
 Keep files focused:
 - **Size:** aim for ≤ 300 hand-written lines per file. When a file passes
   that, split it by responsibility. Typical splits:
-  - a screen's private widgets go into `views/widgets/`
-  - a spec's data tables go apart from its behaviour
+  - a screen's helper widgets go into `views/widgets/`, one public widget
+    per file
+  - a spec's data tables go in `<spec>_data.dart`, apart from its behaviour
+  - logic that doesn't need Flutter goes into a domain use case
+  - `test/code_organisation_test.dart` fails CI above 400 lines (generated
+    `*.g.dart` and data-only `*_data.dart` files are exempt), and if
+    `domain/` imports `material`, `widgets` or `services`.
 - **Widgets:** one public widget per file. Private helper widgets may share
   the file while they're small.
 - **Exceptions:** generated files (`*.g.dart`) and test files.
@@ -279,10 +295,6 @@ Keep files focused:
   parameters "for later".
 - **No duplication:** if you're about to copy a block, extract it to where
   both callers can reach it.
-
-Some files are over the size target today: `quiz_screen.dart`,
-`elemental_shaman.dart`, `apl_evaluator.dart`. Don't make them bigger;
-split them when you work there.
 
 `analysis_options.yaml` enforces part of this. It turns on strict casts,
 inference and raw types, plus `prefer_final_locals`, `unawaited_futures`,

@@ -5,6 +5,7 @@ import 'package:rotational_quiz/domain/apl/apl_document.dart';
 import 'package:rotational_quiz/domain/apl/apl_evaluator.dart';
 import 'package:rotational_quiz/domain/models/combat_state.dart';
 import 'package:rotational_quiz/domain/specs/elemental_shaman.dart';
+import 'package:rotational_quiz/domain/specs/elemental_shaman_data.dart';
 
 void main() {
   const spec = ElementalShaman();
@@ -85,8 +86,8 @@ void main() {
 
     /// The SimC builds take Elemental Blast; this swaps in Earth Shock.
     CombatState earthShockBuild() => base()
-        .withTalent(ElementalShaman.elementalBlastTalent, false)
-        .withTalent(ElementalShaman.earthShockTalent, true);
+        .withTalent(ElementalTalents.elementalBlastTalent, false)
+        .withTalent(ElementalTalents.earthShockTalent, true);
 
     test('Lava Burst to proc Master of the Elements with enough Maelstrom', () {
       // Elemental Blast needs more Maelstrom banked than Earth Shock.

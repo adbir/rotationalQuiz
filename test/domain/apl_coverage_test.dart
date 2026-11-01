@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rotational_quiz/domain/apl/apl_document.dart';
-import 'package:rotational_quiz/domain/apl/apl_evaluator.dart';
 import 'package:rotational_quiz/domain/apl/apl_expression.dart';
+import 'package:rotational_quiz/domain/apl/apl_state_resolver.dart';
 import 'package:rotational_quiz/domain/models/spec_definition.dart';
 import 'package:rotational_quiz/domain/specs/elemental_shaman.dart';
 
@@ -47,11 +47,11 @@ void main() {
   // Static check: unlike evaluating one state, this also covers clauses that
   // `&` / `|` short-circuit past.
   test('every identifier on the single-target path resolves', () {
-    const evaluator = AplEvaluator(spec);
+    const resolver = AplStateResolver(spec);
     final state = spec.defaultState(spec.loadouts.first);
     final unknown = [
       for (final id in identifiers)
-        if (evaluator.resolveIdentifier(id, state) == null) id,
+        if (resolver.resolve(id, state) == null) id,
     ];
     expect(unknown, isEmpty);
   });

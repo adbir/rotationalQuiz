@@ -12,6 +12,7 @@ import '../../../../domain/models/keybind.dart';
 import '../../../../domain/models/spec_definition.dart';
 import '../../../../domain/specs/rotation_spec.dart';
 import '../../../../domain/use_cases/generate_scenario.dart';
+import '../../../../domain/use_cases/pick_answer_options.dart';
 
 enum QuizMode {
   /// Click the right button on your action bar.
@@ -42,7 +43,8 @@ class QuizViewModel extends ChangeNotifier {
   }) : _aplRepository = aplRepository,
        _evaluator = AplEvaluator(aplRepository.spec),
        _random = random ?? Random(),
-       _generate = GenerateScenario(aplRepository.spec, random: random) {
+       _generate = GenerateScenario(aplRepository.spec, random: random),
+       _pickOptions = PickAnswerOptions(random: random) {
     _aplRepository.addListener(nextQuestion);
     _talentBuilds.addListener(_onBuildChanged);
     _keybinds.addListener(notifyListeners);
@@ -56,6 +58,7 @@ class QuizViewModel extends ChangeNotifier {
   final AplEvaluator _evaluator;
   final Random _random;
   final GenerateScenario _generate;
+  final PickAnswerOptions _pickOptions;
 
   /// How long to show a correct hot-key answer before moving on.
   static const autoAdvanceDelay = Duration(milliseconds: 900);
@@ -274,44 +277,14 @@ class QuizViewModel extends ChangeNotifier {
     _reactionTime = null;
     _offGcdPressed.clear();
     _questionNumber++;
-    _options = _mode == QuizMode.multipleChoice ? _buildOptions() : const [];
+    _options = _mode == QuizMode.multipleChoice
+        ? _pickOptions(answer, actionBar)
+        : const [];
     if (_mode == QuizMode.hotkeys) {
       _startedAt = DateTime.now();
       _timer = Timer(_timeLimit, () => _finish(QuizOutcome.timedOut, null));
     }
     notifyListeners();
-  }
-
-  /// The answer plus three plausible distractors: abilities from APL lines
-  /// that were considered before the winner, then random known abilities.
-  List<SpellDefinition> _buildOptions() {
-    final answerId = _answer?.selectedSpellId;
-    final bar = actionBar;
-    final correct = bar.where((s) => s.id == answerId).firstOrNull;
-    if (correct == null) return bar.take(4).toList();
-
-    final nearMisses = <SpellDefinition>[];
-    for (final entry in _answer!.trace) {
-      final spell = bar.where((s) => s.id == entry.action.name).firstOrNull;
-      if (spell == null || spell.id == answerId) continue;
-      if (entry.outcome != TraceOutcome.conditionFalse &&
-          entry.outcome != TraceOutcome.unavailable) {
-        continue;
-      }
-      if (!nearMisses.contains(spell)) nearMisses.add(spell);
-    }
-    nearMisses.shuffle(_random);
-    final others = [
-      for (final s in bar)
-        if (s.id != answerId && !nearMisses.contains(s)) s,
-    ]..shuffle(_random);
-
-    final options = [correct, ...nearMisses.take(2)];
-    for (final s in [...others, ...nearMisses.skip(2)]) {
-      if (options.length >= 4) break;
-      if (!options.contains(s)) options.add(s);
-    }
-    return options..shuffle(_random);
   }
 
   void _onBuildChanged() {
