@@ -378,6 +378,206 @@ kind that counts (not the Bulwark) with its arrivals and departures, and the pla
 Chain Lightning and Earthquake damage rows (82, no amounts, the player as id 1).
 The owner's log is not in it.
 
+## Worked example: Mythic Coiled Altar
+
+Encounter 3429. Three Farseers with the owner's wipe first. Rank 1 and rank 50
+are from the top 100 on 2026-11-01 (kills of 514 and 516 s). Rank 28 (507 s,
+`ZaWTvbHVMwPq7d8L` / 15) was read too and is used only for the waves and
+pooling below.
+
+| | Owner, 93% wipe | Rank 50 | Rank 1 |
+| --- | --- | --- | --- |
+| Report / fight | `B3zd6Hb7gvynTXYj` / 9 | `APG4gqFxZnrtXRpa` / 16 | `n4jBN71KbyRkt28X` / 36 |
+| Fought length | 58 s (wipe) | 516 s (kill) | 514 s (kill) |
+| DPS | about 233,500 | 267,901 | 313,665 |
+| Item level | 334 | 335 | 337 |
+| Casts per minute | 41.2 | 50.2 | 53.6 |
+| Gaps over 1.8 s | 1 | 12 | 3 |
+| Maelstrom per minute | 293 | 329 | 404 |
+| Maelstrom wasted | 0 | 166 | 187 |
+| Spenders with Master of the Elements | 6 of 6 | 51 of 61 | 40 of 65 |
+| Free spenders | 4 of 6 | 32 of 61 | 29 of 65 |
+| Overcharge! lost by refreshing | 1 | 0 | 1 |
+| Ancestors, actual / expected | 8 / 7.6 | 65 / 63.3 | 73 / 65.5 |
+| Stormkeeper median press delay | 1.34 s | 0.77 s | 3.20 s |
+| Spiritwalker's Grace, normal + Time Spiral | 1 + 0 | 6 + 0 | 4 + 5 |
+
+The owner's DPS is the sum of the damage events of the player and pets over
+58.2 s, which is not the ranking's number. The same sum gives 312,757 for rank 1
+against the ranked 313,665. The owner's fight is 58 s of phase 1 against 514 s
+and 516 s of the whole kill, so only the casts-per-minute stretches below are a
+fair comparison; the totals are not. Spenders are Elemental Blast and Earthquake
+together. Raid support received: rank 1 had Blessing of the Bronze all fight and
+Time Spiral for 19 s, rank 50 had Power Infusion for 60 s, and the owner had
+Blessing of the Bronze 50 s, Ebon Might 48 s and Power Infusion 15 s of 58 s.
+
+Casts per minute by stretch, for the 58 s all three fought. The stretches start
+at the first Axegrinder arrival (15 s), the only enemy event in that time:
+
+| Stretch (s) | 0-15 | 15-30 | 30-45 | 45-58 |
+| --- | --- | --- | --- | --- |
+| Owner | 64.0 | 48.0 | 36.0 | 13.8 |
+| Rank 50 | 80.0 | 48.0 | 52.0 | 27.7 |
+| Rank 1 | 48.0 | 48.0 | 56.0 | 55.4 |
+
+The owner and rank 50 open with more casts than rank 1 and equal it at 15 to
+30 s. The owner then drops to 36 and 14, three casts in the last 13 s (the log
+doesn't say why; deaths were not read). Rank 50 has 27.7 in 45 to 58 s, which
+holds its longest gap of 8.0 s. The Maelstrom rebuild over each whole log: rank 1 has 109 readings with a worst drift of 34 and a
+mean of 1.1, rank 50 has 126 with 8 and 0.8, and rank 28 has 116 with 89 and
+2.6 (the same-millisecond case under "Reading a fight"). The owner's 15 readings
+have a worst drift of 8 and a mean of 1.7.
+
+### Who the logs are
+
+- **Owner's heroic kill** (`GaZ4Fj7VTm8YgqhQ` / 30, source 12, 316 s) is a
+  Restoration Shaman log (spec 264: Chain Heal, Riptide and Healing Stream Totem
+  lead its casts, with no Maelstrom gain or spender). It is not an Elemental log, so
+  it gives the fight's shape only and no casts or Maelstrom. Its enemies are
+  Heroic. Wherever it is quoted below it says so.
+- **Owner's wipe** is source 14, Elemental (spec 262).
+
+### Phases and add waves
+
+Phases from `phaseTransitions`:
+
+| Log | Phase 2 | Phase 3 | Phase 4 | Ends |
+| --- | --- | --- | --- | --- |
+| Rank 1 (Mythic) | 139.0 s | 319.6 s | 357.7 s | 514.0 s |
+| Rank 28 (Mythic) | 142.0 s | 295.2 s | 333.5 s | 507.0 s |
+| Rank 50 (Mythic) | 143.3 s | 325.6 s | 364.0 s | 516.4 s |
+| Owner's wipe (Mythic) | not reached | | | 58.2 s |
+| Owner's heroic kill (Heroic, healer log) | 84.0 s | 152.0 s | 190.1 s | 316.3 s |
+
+Phase 2 starts 139 to 143 s into the Mythic kills (it is not on a timer), and
+phase 3 is 38.1, 38.3 and 38.4 s long.
+
+The add waves are the Spiteful Soulcoilers: two arrive together (their first
+casts) and die in 20 to 36 s on Mythic (12 to 15 s in the Heroic kill). Their waves are timed from the phases, not from the
+pull:
+
+| Wave | Rank 1 | Rank 28 | Rank 50 | Heroic kill | From |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 164.5 s | 168.2 s | 169.2 s | 110.3 s | phase 2 start + 25.5 / 26.2 / 25.9 / 26.3 s |
+| 2 | 197.5 s | 201.2 s | 202.2 s | 143.3 s | phase 2 start + 58.5 / 59.2 / 58.9 / 59.3 s |
+| 3 | 249.5 s | 253.2 s | 254.2 s | | phase 2 start + 110.5 / 111.2 / 110.9 s |
+| 4 | 282.5 s | 286.2 s | 287.2 s | | phase 2 start + 143.5 / 144.2 / 143.9 s |
+| 5 | 427.1 s | 402.9 s | 433.4 s | | phase 3 start + 107.5 / 107.7 / 107.8 s |
+| 6 | | 499.6 s | | | phase 4 start + 166.1 s |
+
+So the waves repeat between pulls to within 0.7 s of the phase they follow, in
+all three Mythic kills, and the Heroic kill's first two sit at the same
+offsets from its own phase 2 (26.3 and 59.3 s, so Heroic timings match the
+Mythic ones here). Wave 6 came only in rank 28, the slowest kill. In pull
+time the waves are 4 to 5 s apart between logs, so a comparison must start each
+stretch at each log's own wave, as `waveStarts` does. The owner's 58 s holds no
+wave.
+
+Other enemies, none of them add waves to count:
+
+| Enemy | Copies | Arrives | Player damaged it | Taken from others |
+| --- | --- | --- | --- | --- |
+| Manifestation of Dread | 30 (rank 1) | 6 at a time, 3 to 7 s before each Soulcoiler wave (157.5, 194.7, 242.7, 279.9, 421.3 s) | 0 hits | 0 damage events in the log |
+| Axegrinder | 10 (5 in the owner's wipe) | 5 at 15 s and 5 at 100 s, in the owner's, rank 1's and rank 28's logs (15.0 to 15.3 s, 100.1 to 100.3 s) and at 15 s in the Heroic kill | 0 hits | 5 hits, all from Hex Lord Malacrass at 272 to 280 s |
+
+Neither kind is an enemy alive under the existing rule (an add counts only if
+the player damaged it), and neither dies in the log. Measured on rank 1:
+`loadEnemyPresence` finds Spiteful Soulcoiler, Zul'jan and Hex Lord Malacrass
+only. The rule needed no change. The Axegrinder arrivals at 15 and 100 s are timing
+markers only, like Twin Fangs' Bulwark waves.
+
+**Untargetable stretches (not changed).** Zul'jan and Hex Lord Malacrass are
+single-copy enemies, so `loadEnemyPresence` has both up for the whole fight. The
+player's damage says otherwise, in hits more than 8 s apart (rank 1, with rank 28
+alike):
+
+| Boss | Rank 1 damaged it during | Rank 28 |
+| --- | --- | --- |
+| Zul'jan | 0 to 139.2 s, then 323.5 to 510.4 s | 0.4 to 142.0 s, then 298.9 to 505.5 s |
+| Hex Lord Malacrass | 147.1 to 216.9 s, 231.3 to 301.6 s, 318.1 to 398.0 s, 409.3 to 494.6 s, 506.1 to 513.8 s | 150.9 to 220.5 s, 235.6 to 373.5 s, 387.9 to 470.3 s, 487.4 to 506.4 s |
+
+The owner's wipe damaged only Zul'jan, from 2.8 s, and its report has no Malacrass.
+So in phases 1 and 2 only one boss is hit at a time, but the alive count says 2
+(4 in a Soulcoiler wave, where 3 can be hit). In the owner's wipe it reads 1
+(no Malacrass in that report), so the same phase reads 2 for rank 1 and 1 for
+the owner. The replay compares the
+alive count with the APL's `spell_targets` thresholds of 2 and 3, so the 2 is
+enough to ask for an area spell where a single target is hit. I did not change
+`loadEnemyPresence`: `EnemyGroup` holds one arrival and one departure per
+copy, and the boss's real spans are several, so a fix is a model change and not
+a small rule. The owner should decide whether it is wanted.
+
+Queries and cost, in points, measured on rank 1 by the change in `rateLimitData`
+across each call (minus the 1 of the query itself): `loadEnemyPresence` 5,
+`loadFight` 8, `loadFight(includeTargetsHit: true)` 9, rankings for 100 rows 1.
+The whole job (five logs with their rankings, plus four extra single-page
+casts and damage-taken queries for the Manifestations and Axegrinders on rank
+1, and these measurements) had spent 133 points in the hour when it ended. The
+Manifestations and Axegrinders were read with the existing `events` call.
+
+### Do top players hold a spender for the waves?
+
+Sometimes, and not the same ones. The held rule (`isHeld`: over 10 s or twice
+the player's median gap since the last spender, and one follows within 5 s) reads:
+
+- **Rank 1** (median gap 6.5 s) holds at waves 3 and 4 (12.5 and 12.6 s since
+  the last spender, an Elemental Blast 3.7 s and 1.3 s after the arrival), not at
+  1, 2 and 5. It also holds into phase 3 (14.9 s since the last spender, Elemental Blast
+  4.9 s after).
+- **Rank 28** (median 5.3 s) holds at waves 3 (11.8 s) and 6 (16.9 s), not at
+  1, 2, 4 and 5. Wave 4 had 10.2 s, just under twice the median.
+- **Rank 50** (median 7.3 s) holds at none. Its longest gap before a wave is 7.5 s
+  (wave 4, and the first spender after it is at the arrival).
+
+Rank 1 and rank 28 both hold at wave 3 (phase 2 start + 111 s). Two of five and two
+of six waves is fewer than Twin Fangs' four of six, and rank 50 never holds, so this
+boss shows no sign that pooling for the waves is the top players' habit. The
+default held rule did not need changing. The mean Maelstrom in the 10 s before a
+wave (below) is no guide: held waves read 59 and 85 against 76, 91 and 77.
+
+Per wave (the Soulcoilers' first cast): the rebuilt Maelstrom at the arrival, the
+lowest and highest in the 10 s before, the mean over those 10 s, seconds since the
+last spender, the first spender after with its offset (all Elemental Blast), and
+the spenders cast in the 10 s after. Held waves are marked *.
+
+Rank 1:
+
+| Wave (s) | At arrival | Low / high | Mean 10 s before | Since last | First after | Spenders next 10 s |
+| --- | --- | --- | --- | --- | --- | --- |
+| 164.5 | 45 | 26 / 116 | 76 | 4.1 s | +5.8 s | 1 |
+| 197.5 | 32 | 24 / 114 | 91 | 1.0 s | +11.4 s | 0 |
+| 249.5 * | 95 | 30 / 95 | 59 | 12.5 s | +3.7 s | 3 |
+| 282.5 * | 121 | 47 / 121 | 85 | 12.6 s | +1.3 s | 1 |
+| 427.1 | 53 | 33 / 123 | 77 | 4.0 s | +11.3 s | 0 |
+
+Rank 50:
+
+| Wave (s) | At arrival | Low / high | Mean 10 s before | Since last | First after | Spenders next 10 s |
+| --- | --- | --- | --- | --- | --- | --- |
+| 169.2 | 66 | 35 / 125 | 92 | 4.1 s | +4.1 s | 2 |
+| 202.2 | 60 | 25 / 115 | 74 | 4.9 s | +9.7 s | 1 |
+| 254.2 | 35 | 35 / 125 | 113 | 0.3 s | +13.5 s | 0 |
+| 287.2 | 47 | 14 / 104 | 44 | 7.5 s | +0.0 s | 2 |
+| 433.4 | 32 | 17 / 107 | 69 | 4.1 s | +23.3 s | 0 |
+
+### Committed fixture
+
+`test/fixtures/coiled_altar_window.json` is rank 1 from 225 s to 300 s of the
+pull (the same shape and keys as the Twin Fangs one, 66 KB). It holds waves 3 and 4
+(24.5 and 57.5 s into the window, two Soulcoilers each, which die at about 55 s and
+past 75 s), both bosses, 11 Maelstrom readings, the player's Chain Lightning and
+Earthquake damage rows (one, since this player cast almost no area spells), and
+Flame Shock on both bosses. Its rebuild drifts a mean of 1.2: nine readings are
+exact, one is 4 off, and one is 9 off at 23.0 s, where the Stormkeeper cast's reading
+and a Lava Burst gain share a millisecond and the gain comes first. Both waves read as
+held (12.5 and 12.6 s since the last spender, Elemental Blast 3.7 s and 1.3 s after).
+The Manifestations and Axegrinders are not in it, since the player never damaged
+them. The owner's log is not in it, and no player name is.
+
+The live test `finds the Coiled Altar Soulcoiler waves...` (opt in, with
+`WCL_LIVE=1`) reads rank 1's presence and checks the five waves and the three
+kinds counted.
+
 ## Flame Shock uptime
 
 Answers #26. Measured on 2026-11-01 on the three Sszorak logs above, with the
