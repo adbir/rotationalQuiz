@@ -141,6 +141,32 @@ void main() {
       expect(vm.isCorrect, isTrue);
     });
 
+    test(
+      'hot keys: skipping the off-GCD ability still counts, with a hint',
+      () {
+        final vm = quiz()..setMode(QuizMode.hotkeys);
+        while (vm.answer!.offGcd.isEmpty) {
+          vm.nextQuestion();
+        }
+        final offGcd = vm.answer!.offGcd.map((a) => a.name).toList();
+        vm.guessSpell(vm.answer!.selectedSpellId!);
+        expect(vm.isCorrect, isTrue);
+        expect(vm.skippedOffGcd, offGcd);
+
+        vm.nextQuestion();
+        while (vm.answer!.offGcd.isEmpty) {
+          vm.nextQuestion();
+        }
+        for (final action in vm.answer!.offGcd) {
+          vm.guessSpell(action.name);
+        }
+        vm.guessSpell(vm.answer!.selectedSpellId!);
+        expect(vm.isCorrect, isTrue);
+        expect(vm.skippedOffGcd, isEmpty);
+        vm.dispose();
+      },
+    );
+
     test('hot keys: time runs out, correct answers auto-advance', () {
       fakeAsync((async) {
         final vm = quiz()..setMode(QuizMode.hotkeys);

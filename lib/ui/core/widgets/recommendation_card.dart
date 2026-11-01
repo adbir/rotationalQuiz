@@ -41,6 +41,25 @@ class RecommendationCard extends StatelessWidget {
               runSpacing: 12,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
+                // Off-GCD abilities go first: e.g. Ancestral Swiftness makes
+                // the following cast instant.
+                for (final action in recommendation.offGcd)
+                  if (spec.spells[action.name] case final offGcd?)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SpellButton(
+                          spell: offGcd,
+                          size: 48,
+                          tooltip: '${offGcd.name} (off the GCD, press first)',
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.arrow_forward,
+                          color: theme.colorScheme.outline,
+                        ),
+                      ],
+                    ),
                 if (spell != null)
                   SpellButton(
                     spell: spell,
@@ -49,20 +68,6 @@ class RecommendationCard extends StatelessWidget {
                   )
                 else
                   Text('Nothing castable', style: theme.textTheme.titleLarge),
-                for (final action in recommendation.offGcd)
-                  if (spec.spells[action.name] case final offGcd?)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.add, color: theme.colorScheme.outline),
-                        const SizedBox(width: 8),
-                        SpellButton(
-                          spell: offGcd,
-                          size: 48,
-                          tooltip: '${offGcd.name} (off the GCD)',
-                        ),
-                      ],
-                    ),
               ],
             ),
             if (selected != null) ...[
