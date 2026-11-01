@@ -48,6 +48,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider.value(value: aplRepository),
         ChangeNotifierProvider.value(value: warcraftLogs),
+        Provider<LocalStore>.value(value: store),
         Provider(
           create: (_) => WarcraftLogsRepository(
             spec: spec,

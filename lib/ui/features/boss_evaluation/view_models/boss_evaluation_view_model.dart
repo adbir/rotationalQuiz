@@ -1,28 +1,39 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../data/repositories/warcraft_logs_repository.dart';
+import '../../../../data/services/local_store.dart';
 import '../../../../data/services/pkce_access_token_source.dart';
 import '../../../../domain/models/boss_comparison.dart';
 import '../../../../domain/models/enemy_group.dart';
 import '../../../../domain/models/fight_log.dart';
+import '../../../../domain/models/finding.dart';
 import '../../../../domain/models/report_reference.dart';
 import '../../../../domain/use_cases/build_reminders.dart';
 import '../../../../domain/use_cases/compare_fights.dart';
 import '../../../../domain/use_cases/format_nsrt_note.dart';
 import '../../../../domain/use_cases/pick_comparison_logs.dart';
+import '../../../../domain/use_cases/rank_findings.dart';
 import '../../../../utils/result.dart';
+import 'finding_text.dart';
 
 enum BossEvaluationStatus { idle, loading, failed, loaded }
 
 /// Compares a pasted Warcraft Logs fight with a similar top log and rank 1.
 class BossEvaluationViewModel extends ChangeNotifier {
-  BossEvaluationViewModel({required this._repository, required this._signIn}) {
+  BossEvaluationViewModel({
+    required this._repository,
+    required this._signIn,
+    required this._store,
+  }) {
     _signIn.addListener(notifyListeners);
   }
 
   final WarcraftLogsRepository _repository;
   final PkceAccessTokenSource _signIn;
+  final LocalStore _store;
   var _disposed = false;
 
   BossEvaluationStatus status = BossEvaluationStatus.idle;
@@ -38,6 +49,22 @@ class BossEvaluationViewModel extends ChangeNotifier {
 
   /// The boss the result is for.
   String bossName = '';
+
+  /// What to tell the player about [comparison], while [status] is loaded.
+  FindingsReport? report;
+
+  /// The words for [report], while [status] is loaded.
+  FindingText? get text => comparison == null
+      ? null
+      : FindingText(comparison: comparison!, resourceLabel: resourceLabel);
+
+  static const showAllKey = 'boss_evaluation.show_all';
+
+  /// Whether the three tables are open. Remembered between visits.
+  bool get showAll => _store.getString(showAllKey) == 'true';
+  set showAll(bool value) {
+    unawaited(_store.setString(showAllKey, '$value'));
+  }
 
   /// Whether the NSRT note also covers waves the top log did not hold for.
   bool get allWaves => _allWaves;
@@ -155,6 +182,7 @@ class BossEvaluationViewModel extends ChangeNotifier {
       if (_disposed) return;
 
       comparison = CompareFights(_repository.spec)(fights, groups);
+      report = const RankFindings()(comparison!);
       bossName = fight.name;
       _topLog = fights.last.log;
       _groups = groups;

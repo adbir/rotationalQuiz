@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rotational_quiz/data/services/local_store.dart';
 import 'package:rotational_quiz/ui/features/boss_evaluation/view_models/boss_evaluation_view_model.dart';
 import 'package:rotational_quiz/ui/features/boss_evaluation/views/boss_evaluation_screen.dart';
+import 'package:rotational_quiz/ui/features/boss_evaluation/views/widgets/fight_bar.dart';
+import 'package:rotational_quiz/ui/features/boss_evaluation/views/widgets/finding_card.dart';
 
 import '../fake_warcraft_logs_repository.dart';
 import '../test_helpers.dart';
@@ -17,8 +20,11 @@ void main() {
     WidgetTester tester,
     FakeWarcraftLogsRepository fake, {
     bool signedIn = true,
+    InMemoryStore? store,
   }) async {
-    final repos = (await tester.runAsync(TestRepositories.create))!;
+    final repos = (await tester.runAsync(
+      () => TestRepositories.create(store),
+    ))!;
     if (signedIn) await tester.runAsync(repos.signInWithCode);
     tester.view.physicalSize = const Size(1000, 5000);
     tester.view.devicePixelRatio = 1;
@@ -26,6 +32,7 @@ void main() {
     final viewModel = BossEvaluationViewModel(
       repository: fake,
       signIn: repos.warcraftLogs,
+      store: repos.store,
     );
     addTearDown(viewModel.dispose);
     await tester.pumpWidget(
@@ -97,6 +104,8 @@ void main() {
     await show(tester, FakeWarcraftLogsRepository());
     await load(tester);
     await tester.pumpAndSettle();
+    await tester.tap(find.text('All numbers'));
+    await tester.pumpAndSettle();
 
     // Header: you have no DPS or item level, the rankings do.
     expect(find.text('You'), findsWidgets);
@@ -140,4 +149,51 @@ void main() {
     await tester.tap(find.byType(Checkbox));
     expect(viewModel.allWaves, isTrue);
   });
+
+  testWidgets('leads with up to three findings and folds the tables', (
+    tester,
+  ) async {
+    await show(tester, FakeWarcraftLogsRepository());
+    await load(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FindingCard), findsWidgets);
+    expect(find.byType(FindingCard).evaluate().length, lessThanOrEqualTo(3));
+    expect(find.textContaining('You pressed'), findsOneWidget);
+    expect(find.textContaining('Where:'), findsWidgets);
+    expect(find.textContaining('Try:'), findsWidgets);
+    expect(find.text('Show the numbers'), findsWidgets);
+    expect(find.text('All numbers'), findsOneWidget);
+    expect(find.text('Metrics'), findsNothing);
+    expect(find.byType(FightBar), findsOneWidget);
+  });
+
+  testWidgets('remembers whether All numbers is open', (tester) async {
+    final store = InMemoryStore();
+    await show(tester, FakeWarcraftLogsRepository(), store: store);
+    await load(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All numbers'));
+    await tester.pumpAndSettle();
+    expect(find.text('Metrics'), findsOneWidget);
+    expect(store.getString('boss_evaluation.show_all'), 'true');
+
+    await tester.pumpWidget(const SizedBox());
+    await show(tester, FakeWarcraftLogsRepository(), store: store);
+    await load(tester);
+    await tester.pumpAndSettle();
+    expect(find.text('Metrics'), findsOneWidget);
+  });
+
+  testWidgets(
+    'says Same as rank 1 and shows no findings when nothing differs',
+    (tester) async {
+      await show(tester, FakeWarcraftLogsRepository(matchRank1: true));
+      await load(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Same as rank 1'), findsOneWidget);
+      expect(find.byType(FindingCard), findsNothing);
+    },
+  );
 }

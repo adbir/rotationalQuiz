@@ -227,6 +227,10 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   own `cast`. A cancelled cast counts as stopping where it started. Idle seconds
   per minute would need the [GCD](#gcd-global-cooldown), which is not in the log.
 - **Status:** `confirmed`
+- **What to try (Boss Evaluation):** for casts per minute: "Keep a cast going
+  while you move, and queue the next spell before this one ends." For gaps:
+  "Queue the next spell before this one ends, and use instant spells while you
+  move." (`FindingKind` in `lib/domain/models/finding.dart`.)
 - **Not to be confused with:** [active time](#active-time-uptime-activity). ABC
   is the habit, active time is the number.
 
@@ -347,6 +351,8 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   `resourcechange` events with `resourceChangeType` 11, divided by
   [kill time](#kill-time) in minutes.
 - **Status:** `confirmed`
+- **What to try (Boss Evaluation):** "Cast a spender before your resource
+  reaches its cap."
 - **Not to be confused with:** [pooling](#pooling), which stays below the cap.
 
 ### Pooling
@@ -373,6 +379,8 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   and the first spender after. Checked on Twin Fangs: rank 1 held at 98, 192,
   253 and 347 s, not at 37 or 408 s (see [warcraft-logs.md](warcraft-logs.md)).
   A test on the mean Maelstrom (15 above the fight's mean) missed those holds\r\n  and was removed.
+- **What to try (Boss Evaluation):** "Let your resource build for about 10 s
+  before a wave, then cast a spender as it arrives."
 - **Not to be confused with:** [overcap](#overcap-overcapping-capped), and with
   holding a resource when nothing is coming, which is a
   [mistake](#mistake).
@@ -997,6 +1005,8 @@ the app's, and all the log measures depend on ability ids, so every entry here i
   have no `cost` in `classResources`. In three logs, 61 of 121 Elemental Blasts were
   free.
 - **Status:** `confirmed`
+- **What to try (Boss Evaluation), when free spenders are lost by refreshing:**
+  "Cast the free spender before you refresh the buff that gives it."
 - **In this repo:** `buff.overcharge_tier`. Don't confuse it with the Overcharge
   talent (1251026), an unrelated critical strike effect.
 

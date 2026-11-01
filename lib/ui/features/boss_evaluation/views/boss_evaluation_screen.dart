@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../view_models/boss_evaluation_view_model.dart';
-import 'widgets/log_header_table.dart';
-import 'widgets/metrics_table.dart';
-import 'widgets/nsrt_note_bar.dart';
-import 'widgets/pooling_table.dart';
-import 'widgets/stretch_table.dart';
+import 'widgets/evaluation_result.dart';
 
 /// Paste a Warcraft Logs fight to see it beside a similar top log and rank 1.
 class BossEvaluationScreen extends StatefulWidget {
@@ -99,19 +95,7 @@ class _BossEvaluationScreenState extends State<BossEvaluationScreen> {
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
-                if (comparison != null) ...[
-                  LogHeaderTable(comparison: comparison, bossName: vm.bossName),
-                  MetricsTable(
-                    comparison: comparison,
-                    resourceLabel: vm.resourceLabel,
-                  ),
-                  StretchTable(comparison: comparison),
-                  PoolingTable(
-                    comparison: comparison,
-                    resourceLabel: vm.resourceLabel,
-                  ),
-                  NsrtNoteBar(viewModel: vm),
-                ],
+                if (comparison != null) EvaluationResult(viewModel: vm),
               ],
             ),
           ),

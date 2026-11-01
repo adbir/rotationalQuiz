@@ -49,6 +49,9 @@ abstract final class AppTheme {
         TraceOutcome.error => scheme.error,
       };
 
+  /// The one accent of Boss Evaluation: where the player is behind.
+  static const gapColor = Color(0xFFE0A030);
+
   static const passColor = Color(0xFF2E9E5B);
   static const failColor = Color(0xFFD9534F);
 }
