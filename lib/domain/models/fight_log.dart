@@ -118,6 +118,7 @@ class LogBuffEvent {
     required this.targetId,
     required this.change,
     this.stack,
+    this.sourceId,
   });
 
   final Duration time;
@@ -125,8 +126,27 @@ class LogBuffEvent {
   final int targetId;
   final LogBuffChange change;
 
+  /// Who cast the buff (an id in the report), `null` if the log omits it.
+  final int? sourceId;
+
   /// Stacks after the change, when the log reports them.
   final int? stack;
+}
+
+/// A row of the buff table: how long a buff was up and how often it was gained.
+@immutable
+class LogReceivedBuff {
+  const LogReceivedBuff({
+    required this.abilityId,
+    required this.name,
+    required this.uptime,
+    required this.uses,
+  });
+
+  final int abilityId;
+  final String name;
+  final Duration uptime;
+  final int uses;
 }
 
 /// Everything one player did in one pull.
@@ -143,6 +163,7 @@ class FightLog {
     required this.buffEvents,
     required this.talents,
     this.debuffEvents = const [],
+    this.receivedBuffs = const [],
   });
 
   final String reportCode;
@@ -162,6 +183,10 @@ class FightLog {
   /// The player's damage-over-time debuffs on enemies, as the spec lists them.
   /// `targetId` is the enemy hit.
   final List<LogBuffEvent> debuffEvents;
+
+  /// Every buff the player held, from the log's buff table. It has what the
+  /// events lack, such as a buff that began before the pull.
+  final List<LogReceivedBuff> receivedBuffs;
 
   /// SimC talent tokens.
   final Set<String> talents;

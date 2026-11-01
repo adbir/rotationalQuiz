@@ -81,6 +81,27 @@ class FakeApi {
         'reportData': {'report': _report},
       });
     }
+    if (query.contains('table(dataType: Buffs')) {
+      return _ok({
+        'reportData': {
+          'report': {
+            'table': {
+              'data': {
+                'auras': [
+                  {
+                    'guid': 10060,
+                    'name': 'Power Infusion',
+                    'totalUptime': 50000,
+                    'totalUses': 4,
+                  },
+                  {'name': 'no id'},
+                ],
+              },
+            },
+          },
+        },
+      });
+    }
     if (vars['hostility'] == 'Enemies') {
       // Two copies of the add act, and the first acts twice.
       return _ok(
@@ -236,6 +257,12 @@ void main() {
       final buff = log.buffEvents.single;
       expect(buff.change, LogBuffChange.removeStack);
       expect(buff.stack, 1);
+      expect(buff.sourceId, isNull);
+
+      final received = log.receivedBuffs.single;
+      expect(received.abilityId, 10060);
+      expect(received.uptime, const Duration(seconds: 50));
+      expect(received.uses, 4);
 
       expect(log.talents, {'stormkeeper'}, reason: 'unknown ids are dropped');
     });

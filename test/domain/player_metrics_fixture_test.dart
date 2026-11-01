@@ -57,6 +57,9 @@ FightLog loadFixture([String name = 'sszorak_window']) {
     debuffEvents: [
       for (final r in rows('debuffs')) ?WarcraftLogsMapper.buffEvent(r, start),
     ],
+    receivedBuffs: WarcraftLogsMapper.receivedBuffs({
+      'auras': json['receivedBuffs'],
+    }),
   );
 }
 

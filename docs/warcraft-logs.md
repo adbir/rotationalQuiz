@@ -703,3 +703,16 @@ What explains them:
   line and by the pressed ability's own lines was seen in the log. Dots, debuffs,
   pets, the enemy count when no `presence` is given, cooldowns with raid or proc
   support and Maelstrom more than 5 off the last logged reading are estimates.
+
+**Implemented (#60).** `WarcraftLogsService.buffTable` runs query (a) for the whole
+fight and `loadFight` fills `FightLog.receivedBuffs` (1 extra point).
+`LogBuffEvent.sourceId` holds the caster. `SpecLogRules.raidSupportIds` lists the
+buffs shown (the doc's six plus the lusts). `CompareFights` gives each `ComparedLog`
+a `raidSupport` (name, percent of the fight, uses), and the Boss Evaluation header
+prints it under "Raid support", or "none seen". It is never part of a finding or
+score. A table asked for a window (the fixtures' 225 s to 300 s) leaves out a buff
+that began before the window, so Blessing of the Bronze is not in the fixtures;
+a whole-fight table does list it. The fixtures got `receivedBuffs`: the Sszorak
+window shows Power Infusion 15 s (1), Ebon Might 70.4 s (12), Time Spiral 15.5 s (2);
+the Twin Fangs window Ebon Might 69.4 s (9), Time Spiral 13.5 s (2). Fetching them
+cost about 10 points (including two rankings pages and two report queries).

@@ -109,7 +109,24 @@ abstract final class WarcraftLogsMapper {
       targetId: _int(json['targetID']) ?? -1,
       change: change,
       stack: _int(json['stack']),
+      sourceId: _int(json['sourceID']),
     );
+  }
+
+  /// The rows of a buff table (`data` of `table(dataType: Buffs)`).
+  static List<LogReceivedBuff> receivedBuffs(JsonMap table) {
+    final auras = table['auras'];
+    return [
+      if (auras is List)
+        for (final row in auras.whereType<JsonMap>())
+          if (_int(row['guid']) case final id?)
+            LogReceivedBuff(
+              abilityId: id,
+              name: row['name'] as String? ?? '',
+              uptime: Duration(milliseconds: _int(row['totalUptime']) ?? 0),
+              uses: _int(row['totalUses']) ?? 0,
+            ),
+    ];
   }
 
   /// One kind of enemy, with when each copy first acted and when it was gone.

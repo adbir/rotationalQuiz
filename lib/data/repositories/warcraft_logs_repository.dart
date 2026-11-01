@@ -60,6 +60,13 @@ class WarcraftLogsRepository {
           if (aura.kind == AuraKind.dot && aura.spellId != null)
             ...await events(WclEventType.debuffs, abilityId: aura.spellId),
       ];
+      final buffTable = await _service.buffTable(
+        code: reportCode,
+        fightId: fightId,
+        sourceId: id,
+        start: start,
+        end: WarcraftLogsMapper.fightEnd(fight),
+      );
       final damage = includeTargetsHit
           ? await events(WclEventType.damageDone)
           : const <JsonMap>[];
@@ -97,6 +104,7 @@ class WarcraftLogsRepository {
             for (final row in debuffs)
               ?WarcraftLogsMapper.buffEvent(row, start),
           ],
+          receivedBuffs: WarcraftLogsMapper.receivedBuffs(buffTable),
         ),
       );
     } on Exception catch (e) {

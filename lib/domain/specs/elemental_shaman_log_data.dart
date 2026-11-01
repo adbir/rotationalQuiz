@@ -57,6 +57,18 @@ const elementalLogRules = SpecLogRules(
   raidCooldownSupport: {
     'spiritwalkers_grace': ['Time Spiral', 'Blessing of the Bronze'],
   },
+  raidSupportIds: {
+    10060: 'Power Infusion',
+    395152: 'Ebon Might',
+    410089: 'Prescience',
+    413984: 'Shifting Sands',
+    375256: 'Time Spiral',
+    381756: 'Blessing of the Bronze',
+    2825: 'Bloodlust',
+    32182: 'Heroism',
+    80353: 'Time Warp',
+    390386: 'Fury of the Aspects',
+  },
   auraLogIds: {
     'ascendance': {1219480},
     'call_of_the_ancestors': {447244, 445624},
