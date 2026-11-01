@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'aura_metrics.dart';
 import 'dot_uptime.dart';
+import 'free_cast_window.dart';
 import 'gap_detail.dart';
 import 'window_cast.dart';
 
@@ -27,6 +28,7 @@ class PlayerMetrics {
     this.dotUptime = const [],
     this.upkeep = const [],
     this.heldProcs = const [],
+    this.freeCastWindows = const [],
     this.resourceLevels,
   });
 
@@ -50,6 +52,9 @@ class PlayerMetrics {
 
   /// How long procs waited, per spec rule.
   final List<HeldProcMetrics> heldProcs;
+
+  /// What was cast inside each free-cast buff, per spec rule.
+  final List<FreeCastWindowMetrics> freeCastWindows;
 
   /// The resource's level over the fight, when the spec reads it.
   final ResourceLevelMetrics? resourceLevels;

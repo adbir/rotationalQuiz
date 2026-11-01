@@ -32,7 +32,12 @@ enum FindingKind {
   abilityCastsPerMinute('Cast it whenever it has a charge.'),
 
   /// The resource left at the end, as a percentage of its maximum.
-  resourceAtEnd('Spend your resource so that it runs out as the boss dies.');
+  resourceAtEnd('Spend your resource so that it runs out as the boss dies.'),
+
+  /// Average mana the casts inside a free-cast buff would have cost.
+  freeCastValue(
+    'Cast your most expensive spells, back to back, while the buff is up.',
+  );
 
   const FindingKind(this.whatToTry);
 

@@ -10,6 +10,7 @@ import '../specs/rotation_spec.dart';
 import 'compute_aura_metrics.dart';
 import 'compute_chance_proc_metrics.dart';
 import 'compute_cooldown_metrics.dart';
+import 'compute_free_cast_metrics.dart';
 import 'compute_gap_metrics.dart';
 import 'compute_window_cast_metrics.dart';
 
@@ -56,6 +57,7 @@ class ComputePlayerMetrics {
       dotUptime: _dotUptime(log),
       upkeep: auras.upkeep(),
       heldProcs: auras.heldProcs(),
+      freeCastWindows: ComputeFreeCastMetrics(spec, log)(events),
       resourceLevels: auras.resourceLevels([
         for (final start in phaseStarts)
           if (start > Duration.zero) start,

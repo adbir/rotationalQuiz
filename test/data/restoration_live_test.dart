@@ -4,9 +4,11 @@
 // about 24 points (see the doc).
 //
 //   WCL_LIVE=1 flutter test test/data/restoration_live_test.dart
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:rotational_quiz/data/repositories/warcraft_logs_repository.dart';
 import 'package:rotational_quiz/data/services/warcraft_logs_service.dart';
 import 'package:rotational_quiz/domain/models/fight_log.dart';
@@ -27,6 +29,38 @@ const _logs = [
 ];
 
 String _f(num? v, [int digits = 1]) => v?.toStringAsFixed(digits) ?? '-';
+
+/// Points spent this hour; the query itself costs 1.
+Future<double> _points(String token) async {
+  final response = await http.post(
+    Uri.parse('https://www.warcraftlogs.com/api/v2/client'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({'query': '{ rateLimitData { pointsSpentThisHour } }'}),
+  );
+  final data = jsonDecode(response.body) as Map<String, Object?>;
+  final limit =
+      (data['data']! as Map<String, Object?>)['rateLimitData']!
+          as Map<String, Object?>;
+  return (limit['pointsSpentThisHour']! as num).toDouble();
+}
+
+/// The Innervates received: when, mana saved, GCD fill and the casts.
+String _windows(String label, PlayerMetrics m) {
+  final windows = m.freeCastWindows.single.windows;
+  final each = [
+    for (final w in windows)
+      [
+        '${w.start.inSeconds} s',
+        '${w.manaSaved.round()} mana',
+        'fill ${_f(w.fill * 100, 0)}%',
+        [for (final c in w.casts) c.name].join(' > '),
+      ].join(', '),
+  ];
+  return '$label Innervate x${windows.length}: ${each.join(' | ')}';
+}
 
 /// One line of the numbers the doc's table holds.
 String _row(String label, FightLog log, PlayerMetrics m) {
@@ -74,6 +108,7 @@ void main() {
     () async {
       const resto = RestorationShaman();
       final token = await clientToken();
+      final before = await _points(token);
       final repo = WarcraftLogsRepository(
         spec: resto,
         service: WarcraftLogsService(accessToken: () async => token),
@@ -97,6 +132,13 @@ void main() {
         // ignore: avoid_print, the numbers go into docs/warcraft-logs.md.
         print(_row(label, logs[i], metrics[i]));
       }
+      for (final (i, (label, _, _, _)) in _logs.indexed) {
+        // ignore: avoid_print, as above.
+        print(_windows(label, metrics[i]));
+      }
+      final spent = await _points(token) - before - 1;
+      // ignore: avoid_print, as above.
+      print('points spent: ${spent.toStringAsFixed(2)}');
       final report = const RankFindings()(
         CompareFights(resto)([
           for (final (i, (label, _, _, _)) in _logs.indexed)

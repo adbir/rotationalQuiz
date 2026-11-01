@@ -9,6 +9,7 @@ const _earthliving = 382024;
 const _stormstreamProc = 1267089;
 const _stormstreamTotem = 1267068;
 const _riptide = 61295;
+const _innervate = 29166;
 
 /// Casts against possible, on a 0 to 100 scale.
 RankedMetric _possible(String cooldownId, String whatToTry) => RankedMetric(
@@ -37,7 +38,7 @@ final restorationLogRules = SpecLogRules(
   castAliases: const {383648: _earthShield},
   // Source of Magic lands on the Shaman as 372571 (the fixture's abilities
   // table); the Evoker's cast is 369459 on Wowhead.
-  raidSupportIds: const {29166: 'Innervate', 372571: 'Source of Magic'},
+  raidSupportIds: const {_innervate: 'Innervate', 372571: 'Source of Magic'},
   auraLogIds: const {
     'healing_rain': {_healingRain},
     'earth_shield': {_earthShield},
@@ -68,6 +69,10 @@ final restorationLogRules = SpecLogRules(
   ],
   heldProcs: const [
     HeldProcRule(buffId: _stormstreamProc, name: 'Stormstream Totem'),
+  ],
+  // Every cast inside Innervate is free. Its count stays in raid support.
+  freeCastWindows: const [
+    FreeCastWindowRule(buffId: _innervate, name: 'Innervate'),
   ],
   readsResourceLevel: true,
   // The units differ (percent, seconds, casts a minute), so the ones behind
@@ -111,6 +116,16 @@ final restorationLogRules = SpecLogRules(
       FindingKind.resourceAtEnd,
       fullScale: 100,
       whatToTry: 'Spend your mana so that it runs out as the boss dies.',
+    ),
+    // Absent from a log with no Innervate, so no one is behind for not
+    // receiving one. Wowhead and Icy Veins state no rule: the owner's
+    // (docs/restoration-shaman.md).
+    const RankedMetric(
+      FindingKind.freeCastValue,
+      abilityId: _innervate,
+      higherIsBetter: true,
+      onlyWhenSeen: true,
+      whatToTry: 'Cast Chain Heal back to back while Innervate is up.',
     ),
     _upkeep(_earthShield, 'Keep Earth Shield on a tank all fight.'),
     _upkeep(_earthliving, 'Keep Earthliving Weapon on all fight.'),
