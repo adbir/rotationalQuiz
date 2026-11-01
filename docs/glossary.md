@@ -608,6 +608,8 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - **In a log:** The first casts of a fight: `cast` events for one `sourceID` in
   one of `fightIDs`, in `timestamp` order, as a list of `abilityGameID`s. How many
   casts count as the opener is not decided.
+- **Note:** Elemental's accepted openers are listed in
+  [elemental-shaman.md](elemental-shaman.md#opener).
 - **Status:** `confirmed`
 - **Not to be confused with:** [prepull](#prepull).
 

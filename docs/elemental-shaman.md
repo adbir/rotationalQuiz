@@ -140,6 +140,32 @@ it.
   baseline and hides the Storm Elemental buffs.
 - Follow its conditions for priority, and check its comments against the game.
 
+## Opener
+
+The Shaman Discord FAQ gives three single-target openers and says the choice
+doesn't matter, so don't score one as a mistake. Potion and trinket go with
+Ascendance in each.
+
+| | Before the pull | After the pull |
+| --- | --- | --- |
+| 1 | Stormkeeper, Lava Burst | Ancestral Swiftness, Ascendance, Lightning Bolt, Lava Burst, Lightning Bolt |
+| 2 | Stormkeeper | Ancestral Swiftness, Ascendance, Lava Burst, Lightning Bolt, Lava Burst, Lightning Bolt |
+| 3 | Stormkeeper | Lightning Bolt, Lightning Bolt, Ancestral Swiftness, Ascendance, Lava Burst, Elemental Blast, Lava Burst, Elemental Blast |
+
+For AoE it gives Stormkeeper before the pull, then Ancestral Swiftness, Voltaic
+Blaze, Ascendance.
+
+- **Logs:** all three Sszorak logs in [warcraft-logs.md](warcraft-logs.md) use the
+  third shape. Stormkeeper's stacks go on Lightning Bolt, and Ancestral Swiftness
+  goes on the first Lava Burst after Ascendance.
+- **Extra Flame Shock:** ranks 18 and 1 also finish a Lava Burst at the pull and
+  cast Flame Shock with it, which consumes that Master of the Elements at once.
+- **APL, single target:** `precombat` casts only Stormkeeper. Ancestral Swiftness
+  has no condition, so it comes at the pull, before the Lightning Bolts.
+- **APL, AoE:** for Farseer with the tier set, the Stormkeeper Chain Lightning line
+  comes before Ascendance, so the APL spends those stacks first. The FAQ's AoE
+  opener doesn't.
+
 ## Community guidance
 
 The Shaman Discord's Elemental FAQ (dated April 2026) matched the APL and logs line

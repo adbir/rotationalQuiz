@@ -116,8 +116,8 @@ The biggest gap for rank ~1133 was casts per minute, in every phase. That lowere
 Maelstrom gained and Elemental Blasts cast. Ancestors per cast were the same in
 all three, so luck wasn't the cause. Buffing every Elemental Blast isn't simply
 better: top players fire without Master of the Elements when both tier buffs are
-up, and waiting for it lost two Overcharge! in that log. All damage went to the boss on this fight, so
-it can't test pooling.
+up, and waiting for it lost two Overcharge! in that log. All damage went to the
+boss on this fight, so it can't test pooling.
 
 This is one comparison log, and it doesn't show how much DPS each difference is
 worth.
