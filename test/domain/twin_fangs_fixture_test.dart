@@ -1,14 +1,9 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rotational_quiz/data/services/warcraft_logs_service.dart';
-import 'package:rotational_quiz/domain/models/enemy_group.dart';
 import 'package:rotational_quiz/domain/use_cases/detect_pooling.dart';
 import 'package:rotational_quiz/domain/use_cases/rebuild_resource_timeline.dart';
 
 import '../test_helpers.dart';
-import 'player_metrics_fixture_test.dart' show loadFixture;
+import 'player_metrics_fixture_test.dart' show loadFixture, loadFixtureEnemies;
 
 /// 75 seconds of a real Mythic Twin Fangs kill (rank 1, 420 s), from 225 s to
 /// 300 s of the pull. The Spawn of Vexhul and Broodling wave arrives at 28 s
@@ -16,20 +11,7 @@ import 'player_metrics_fixture_test.dart' show loadFixture;
 void main() {
   final log = loadFixture('twin_fangs_window');
   final timeline = const RebuildResourceTimeline(spec)(log);
-  final enemies = [
-    for (final e
-        in (jsonDecode(
-              File('test/fixtures/twin_fangs_window.json').readAsStringSync(),
-            ) as JsonMap)['enemies']!
-            as List)
-      EnemyGroup(
-        name: (e as JsonMap)['name']! as String,
-        arrivals: [
-          for (final t in e['arrivals']! as List)
-            Duration(milliseconds: (t as num).toInt()),
-        ],
-      ),
-  ];
+  final enemies = loadFixtureEnemies('twin_fangs_window').groups;
 
   test('rebuilds Maelstrom within 8 of every logged reading', () {
     expect(timeline.checkpoints, hasLength(17));

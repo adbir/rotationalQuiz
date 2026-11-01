@@ -1,6 +1,7 @@
 import '../apl/apl_document.dart';
 import '../apl/apl_evaluator.dart';
 import '../models/buff_windows.dart';
+import '../models/enemy_presence.dart';
 import '../models/fight_log.dart';
 import '../models/replay_report.dart';
 import '../models/spec_definition.dart';
@@ -25,13 +26,15 @@ class ReplayLog {
   static const _offGcdAfter = Duration(milliseconds: 1000);
 
   /// [talents] stands in when the log has none. [fightRemainsAfter] is how
-  /// long the fight went on after a log that is only a window of it.
+  /// long the fight went on after a log that is only a window of it. Targets
+  /// come from [presence], or are [targets] throughout.
   ReplayReport call(
     FightLog log,
     AplDocument document, {
     Set<String>? talents,
     Duration? fightRemainsAfter,
     int targets = 1,
+    EnemyPresence? presence,
     double? startAmount,
   }) {
     final rules = spec.logRules;
@@ -53,6 +56,7 @@ class ReplayLog {
           : talents ?? spec.loadouts.first.talents,
       fightRemainsAfter: fightRemainsAfter,
       targets: targets,
+      presence: presence,
     );
     final spellsById = {
       for (final spell in spec.spells.values)

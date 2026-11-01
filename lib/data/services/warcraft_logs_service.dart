@@ -14,7 +14,10 @@ enum WclEventType {
   casts('Casts'),
   resources('Resources'),
   buffs('Buffs'),
-  combatantInfo('CombatantInfo');
+  combatantInfo('CombatantInfo'),
+  deaths('Deaths'),
+  damageDone('DamageDone'),
+  damageTaken('DamageTaken');
 
   const WclEventType(this.apiName);
 
@@ -85,7 +88,7 @@ query ($code: String!, $fight: Int!) {
 }''';
 
   static const _eventsQuery = r'''
-query ($code: String!, $fight: Int!, $source: Int!, $type: EventDataType!, $start: Float!, $end: Float!, $resources: Boolean!, $hostility: HostilityType!) {
+query ($code: String!, $fight: Int!, $source: Int, $type: EventDataType!, $start: Float!, $end: Float!, $resources: Boolean!, $hostility: HostilityType!) {
   reportData {
     report(code: $code) {
       events(fightIDs: [$fight], sourceID: $source, dataType: $type, startTime: $start, endTime: $end, limit: 5000, includeResources: $resources, hostilityType: $hostility) {
@@ -135,11 +138,14 @@ query ($code: String!, $fight: Int!, $source: Int!, $type: EventDataType!, $star
 
   /// Every event of [type] for one source, across all pages. [start] and
   /// [end] are the fight's times from [report]. [enemy] reads an enemy NPC's
-  /// events (its id from `enemyNPCs`) instead of a player's.
+  /// events (its id from `enemyNPCs`) instead of a player's. Without a
+  /// [sourceId] every source's events come back, which is how all enemy
+  /// deaths come in one query. `DamageTaken` with [enemy] filters on the one
+  /// taking the damage.
   Future<List<JsonMap>> events({
     required String code,
     required int fightId,
-    required int sourceId,
+    int? sourceId,
     required WclEventType type,
     required num start,
     required num end,

@@ -121,4 +121,58 @@ void main() {
       expect(adds.waveStarts().length, greaterThanOrEqualTo(5));
     },
   );
+
+  test(
+    'counts the enemies alive and the targets hit in the Twin Fangs logs',
+    skip: env['WCL_LIVE'] == null,
+    timeout: const Timeout(Duration(minutes: 3)),
+    () async {
+      final token = await _clientToken();
+      final repo = WarcraftLogsRepository(
+        spec: spec,
+        service: WarcraftLogsService(accessToken: () async => token),
+      );
+      // Rank 1's report, fight and player.
+      const code = 'CGjdNa8RBfcQtAWg';
+      const fight = 33;
+      const player = 25;
+      final result = await repo.loadEnemyPresence(
+        reportCode: code,
+        fightId: fight,
+        playerId: player,
+      );
+      final presence = switch (result) {
+        Ok(:final value) => value,
+        Error(:final error) => fail('$error'),
+      };
+      // The two bosses alone at first, and still alone while a Barbed Bulwark
+      // wave is up (11 s): they are crowd controlled, not damaged.
+      expect(presence.aliveAt(const Duration(seconds: 5)), 2);
+      expect(presence.aliveAt(const Duration(seconds: 13)), 2);
+      // The first Vexhul wave brings 3 Vexhul and some Broodlings.
+      expect(presence.aliveAt(const Duration(seconds: 40)), greaterThan(5));
+      expect(presence.aliveAt(const Duration(seconds: 65)), 2);
+
+      final rank1 = await repo.loadFight(
+        reportCode: code,
+        fightId: fight,
+        sourceId: player,
+        includeTargetsHit: true,
+      );
+      final log = switch (rank1) {
+        Ok(:final value) => value,
+        Error(:final error) => fail('$error'),
+      };
+      final chain = [
+        for (final cast in log.casts)
+          if (cast.abilityId == 188443 && !cast.isBegin) cast.targetsHit,
+      ];
+      expect(chain, isNotEmpty);
+      expect(chain, everyElement(isNotNull));
+      expect(
+        chain.whereType<int>().reduce((a, b) => a > b ? a : b),
+        greaterThan(3),
+      );
+    },
+  );
 }

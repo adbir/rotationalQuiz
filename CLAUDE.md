@@ -278,6 +278,9 @@ anything new the sandbox doesn't model.
 - **Warcraft Logs** (`WarcraftLogsRepository`): loads one player's fight
   (`FightLog`) and a boss's rankings (`RankedLog`) from the v2 GraphQL API. Not
   on any screen yet; #13 adds one. Domain models measure time from the pull.
+  `loadEnemyPresence` gives an `EnemyPresence` (enemies alive per kind over the
+  fight), and `loadFight(includeTargetsHit: true)` sets `LogCast.targetsHit` on
+  area casts; the replay reads the first (see `docs/warcraft-logs.md`).
 - **Player metrics** (`ComputePlayerMetrics`): turns one `FightLog` into
   `PlayerMetrics`, so two fights can be compared. No screen yet; #13 adds one.
   - **Rules:** ids and rules come from `RotationSpec.logRules`, spell ids and

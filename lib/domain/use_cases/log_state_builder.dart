@@ -1,4 +1,5 @@
 import '../models/combat_state.dart';
+import '../models/enemy_presence.dart';
 import '../models/fight_log.dart';
 import '../models/resource_timeline.dart';
 import '../models/spec_definition.dart';
@@ -17,6 +18,7 @@ class LogStateBuilder {
     required this.talents,
     this.fightRemainsAfter,
     this.targets = 1,
+    this.presence,
     this.maelstromTolerance = 5,
   });
 
@@ -30,8 +32,15 @@ class LogStateBuilder {
   /// of it. `null` means unknown, and `fight_remains` then counts as a guess.
   final Duration? fightRemainsAfter;
 
-  /// Enemies in range, held for the whole log: the log has no enemy count.
+  /// Enemies in range, held for the whole log when there is no [presence].
   final int targets;
+
+  /// The enemies alive over the fight. When given, `active_enemies` and
+  /// `spell_targets` read the number alive at the moment.
+  // ponytail: alive is not in range. An add across the room counts, so this
+  // can overcount an AoE ability's targets. The ceiling is a fight where the
+  // adds are spread out.
+  final EnemyPresence? presence;
 
   /// Drift between the rebuild and a logged reading that a Maelstrom value
   /// still counts as seen.
@@ -56,7 +65,7 @@ class LogStateBuilder {
       maxResource: max,
       fightRemains: _seconds(log.fight.duration - q + tail),
       talents: talents,
-      targets: targets,
+      targets: presence?.aliveAt(q) ?? targets,
       setBonuses: {for (final bonus in spec.setBonuses) bonus.id},
       buffs: _buffs(q),
       dots: {'flame_shock': _flameShock(q)},
@@ -83,10 +92,10 @@ class LogStateBuilder {
         return parts[0] != 'buff' || rules.unobservableAuras.contains(name);
       case ['cooldown', final name, ...]:
         return _cooldownEstimated(name, q);
-      case ['spell_targets', ...] || ['active_dot', ...]:
+      case ['active_dot', ...] || ['target', 'time_to_die']:
         return true;
-      case ['active_enemies'] || ['target', 'time_to_die']:
-        return true;
+      case ['spell_targets', ...] || ['active_enemies']:
+        return presence == null;
       case ['fight_remains']:
         return fightRemainsAfter == null;
     }
