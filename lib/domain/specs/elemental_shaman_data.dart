@@ -199,14 +199,16 @@ const elementalAuras = <AuraDefinition>[
     spellId: 260734,
     name: 'Master of the Elements',
     requiredTalent: ElementalTalents.masterOfTheElements,
-    description: 'Lava Burst empowers your next spender.',
+    description:
+        'Lava Burst buffs your next Nature, Physical or Frost spell. '
+        'Aim to make it a spender.',
   ),
   AuraDefinition(
     id: 'lava_surge',
     spellId: 77762,
     name: 'Lava Surge',
     duration: 10,
-    description: 'Next Lava Burst is instant and free.',
+    description: "Resets Lava Burst's cooldown and makes it instant.",
   ),
   AuraDefinition(
     id: 'stormkeeper',
