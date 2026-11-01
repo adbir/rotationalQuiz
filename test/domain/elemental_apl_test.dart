@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rotational_quiz/domain/apl/apl_document.dart';
 import 'package:rotational_quiz/domain/apl/apl_evaluator.dart';
+import 'package:rotational_quiz/domain/apl/apl_state_resolver.dart';
 import 'package:rotational_quiz/domain/models/combat_state.dart';
+import 'package:rotational_quiz/domain/models/spec_definition.dart';
 import 'package:rotational_quiz/domain/specs/elemental_shaman.dart';
 import 'package:rotational_quiz/domain/specs/elemental_shaman_data.dart';
 
@@ -110,17 +112,51 @@ void main() {
       expect(spec.spells['flame_shock']!.cooldownId, isNull);
     });
 
-    test("Spiritwalker's Grace has two charges and spends one per press", () {
+    test("Spiritwalker's Grace has one charge and a normal cooldown", () {
       const id = 'spiritwalkers_grace';
+      expect(spec.cooldownDefinition(id)!.maxCharges, isNull);
+      expect(spec.spells[id]!.usesCharges, isFalse);
       expect(spec.availability(id, base()).isAvailable, isTrue);
 
-      final once = spec.applyOffGcd(id, base());
-      expect(once.cooldown(id).charges, 1);
-      expect(spec.availability(id, once).isAvailable, isTrue);
+      final used = spec.applyOffGcd(id, base());
+      expect(used.cooldown(id).remains, 90);
+      expect(used.buff(id).isUp, isTrue);
+      expect(spec.availability(id, used).isAvailable, isFalse);
+    });
 
-      final twice = spec.applyOffGcd(id, once);
-      expect(twice.cooldown(id).charges, 0);
-      expect(spec.availability(id, twice).isAvailable, isFalse);
+    test('Lava Burst charges depend on talents', () {
+      final lavaBurst = spec.cooldownDefinition('lava_burst')!;
+      const echo = ElementalTalents.echoOfTheElements;
+      const reverb = ElementalTalents.elementalReverb;
+      expect(spec.maxCharges(lavaBurst, const {}), 1);
+      expect(spec.maxCharges(lavaBurst, const {echo}), 2);
+      expect(spec.maxCharges(lavaBurst, const {echo, reverb}), 3);
+      expect(spec.maxCharges(lavaBurst, farseer.talents), 3);
+      expect(
+        spec.maxCharges(spec.cooldownDefinition('ascendance')!, const {}),
+        isNull,
+      );
+    });
+
+    test('the APL sees the talent-based charge cap', () {
+      final state = base().withCooldown(
+        'lava_burst',
+        const CooldownState(charges: 2.5),
+      );
+      expect(
+        const AplStateResolver(spec)
+            .resolve('cooldown.lava_burst.charges_fractional', state),
+        2.5,
+      );
+      expect(
+        const AplStateResolver(spec)
+            .resolve('cooldown.lava_burst.max_charges', state),
+        3,
+      );
+    });
+
+    test('Stormkeeper gives 2 stacks', () {
+      expect(spec.auraDefinition('stormkeeper', AuraKind.buff)!.maxStacks, 2);
     });
 
     test('other off-GCD abilities still go on a normal cooldown', () {
@@ -235,7 +271,10 @@ void main() {
     test('moving without Spiritwalker\'s Grace falls back to instants', () {
       final state = base()
           .copyWith(moving: true)
-          .withCooldown('spiritwalkers_grace', const CooldownState(charges: 0));
+          .withCooldown(
+            'spiritwalkers_grace',
+            const CooldownState(remains: 60),
+          );
 
       expect(pick(state), 'flame_shock');
     });

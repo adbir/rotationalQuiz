@@ -352,8 +352,11 @@ Fix what it flags; don't `// ignore:` it without a comment explaining why.
   - Cooldowns are tooltip values with the talents both reference builds take
     (First Ascendant, Graceful Spirit). Stormkeeper stays at its 60 s base:
     Offering from Beyond shortens it during play.
-  - Spiritwalker's Grace has at least 2 charges (logs show casts 0.2 s apart).
-    Its 90 s recharge doesn't fully explain the gaps in logs.
+  - Spiritwalker's Grace has one charge. Logs show casts seconds apart because
+    an Evoker's Time Spiral allows a free cast, so count those separately.
+  - Lava Burst has 1 charge, +1 from Echo of the Elements and +1 from Elemental
+    Reverb (`ElementalShaman.maxCharges`).
+  - Stormkeeper gives 2 stacks (tooltip, three logs and the project owner).
   - Storm Elemental and Wind Gust stay hidden: they're not talents in
     Midnight.
 

@@ -85,7 +85,11 @@ class StateSummary extends StatelessWidget {
               if (cooldown.requiredTalent == null ||
                   state.hasTalent(cooldown.requiredTalent!))
                 _Chip(
-                  _cooldownLabel(cooldown, state.cooldown(cooldown.id)),
+                  _cooldownLabel(
+                    cooldown,
+                    state.cooldown(cooldown.id),
+                    spec.maxCharges(cooldown, state.talents),
+                  ),
                   spec.spells[cooldown.id]?.spellId,
                 ),
           ],
@@ -97,9 +101,10 @@ class StateSummary extends StatelessWidget {
   static String _cooldownLabel(
     CooldownDefinition definition,
     CooldownState cd,
+    int? maxCharges,
   ) {
-    if (definition.maxCharges != null) {
-      final charges = cd.charges ?? definition.maxCharges!.toDouble();
+    if (maxCharges != null) {
+      final charges = cd.charges ?? maxCharges.toDouble();
       return '${definition.name}: ${charges.toStringAsFixed(1)} charges';
     }
     return cd.remains <= 0

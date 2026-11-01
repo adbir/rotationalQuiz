@@ -77,6 +77,14 @@ class ElementalShaman extends RotationSpec {
   /// Swelling Maelstrom adds 50 and Primordial Capacity adds 25 (in-game
   /// tooltips; a rank-1 Farseer log shows a cap of 125).
   @override
+  int? maxCharges(CooldownDefinition cooldown, Set<String> talents) {
+    if (cooldown.id != 'lava_burst') return super.maxCharges(cooldown, talents);
+    return 1 +
+        (talents.contains(ElementalTalents.echoOfTheElements) ? 1 : 0) +
+        (talents.contains(ElementalTalents.elementalReverb) ? 1 : 0);
+  }
+
+  @override
   double maxResource(Set<String> talents) =>
       100 +
       (talents.contains(ElementalTalents.swellingMaelstrom) ? 50 : 0) +
@@ -134,10 +142,7 @@ class ElementalShaman extends RotationSpec {
     }
 
     if (spell.usesCharges) {
-      final charges =
-          state.cooldown(spell.id).charges ??
-          cooldownDefinition(spell.id)?.maxCharges?.toDouble() ??
-          0;
+      final charges = state.cooldown(spell.id).charges ?? 0;
       final surge = spell.id == 'lava_burst' && state.buff('lava_surge').isUp;
       if (charges < 1 && !surge) {
         return const SpellAvailability.unavailable('No charges');
@@ -191,16 +196,10 @@ class ElementalShaman extends RotationSpec {
 
   @override
   CombatState applyOffGcd(String spellId, CombatState state) {
-    final definition = cooldownDefinition(spellId);
+    final cooldown = cooldownDefinition(spellId)?.duration;
     var next = state;
-    if (definition?.maxCharges case final maxCharges?) {
-      final charges = state.cooldown(spellId).charges ?? maxCharges.toDouble();
-      next = next.withCooldown(spellId, CooldownState(charges: charges - 1));
-    } else if (definition != null) {
-      next = next.withCooldown(
-        spellId,
-        CooldownState(remains: definition.duration),
-      );
+    if (cooldown != null) {
+      next = next.withCooldown(spellId, CooldownState(remains: cooldown));
     }
     return switch (spellId) {
       'ancestral_swiftness' ||

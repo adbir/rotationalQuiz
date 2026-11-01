@@ -28,6 +28,8 @@ abstract final class ElementalTalents {
 
   static const swellingMaelstrom = 'swelling_maelstrom';
   static const primordialCapacity = 'primordial_capacity';
+  static const echoOfTheElements = 'echo_of_the_elements';
+  static const elementalReverb = 'elemental_reverb';
 }
 
 const elementalSpells = <String, SpellDefinition>{
@@ -162,7 +164,7 @@ const elementalSpells = <String, SpellDefinition>{
     abbreviation: 'SWG',
     school: SpellSchool.arcane,
     offGcd: true,
-    usesCharges: true,
+    cooldownId: 'spiritwalkers_grace',
   ),
   'wind_shear': SpellDefinition(
     id: 'wind_shear',
@@ -214,7 +216,7 @@ const elementalAuras = <AuraDefinition>[
     id: 'stormkeeper',
     spellId: 191634,
     name: 'Stormkeeper',
-    maxStacks: 3,
+    maxStacks: 2,
     requiredTalent: ElementalTalents.stormkeeperTalent,
   ),
   AuraDefinition(
@@ -320,11 +322,12 @@ const elementalAuras = <AuraDefinition>[
 /// Durations come from in-game tooltips. Where a talent changes them, the
 /// value assumes the talents both reference builds take.
 const elementalCooldowns = <CooldownDefinition>[
+  // One charge; talents add more, see ElementalShaman.maxCharges.
   CooldownDefinition(
     id: 'lava_burst',
     name: 'Lava Burst',
     duration: 8,
-    maxCharges: 2,
+    maxCharges: 1,
   ),
   CooldownDefinition(
     id: 'voltaic_blaze',
@@ -360,14 +363,12 @@ const elementalCooldowns = <CooldownDefinition>[
     duration: 60,
     requiredTalent: ElementalTalents.naturesSwiftnessTalent,
   ),
-  // 120 s, minus 30 s from Graceful Spirit. Logs show two casts 0.2 s apart, so
-  // it has at least two charges. Pairs 9-20 s apart suggest faster recharge
-  // than this in some logs; the cause isn't known yet.
+  // 120 s, minus 30 s from Graceful Spirit. An Evoker's Time Spiral allows a
+  // free cast on top of this, which is why logs show casts seconds apart.
   CooldownDefinition(
     id: 'spiritwalkers_grace',
     name: "Spiritwalker's Grace",
     duration: 90,
-    maxCharges: 2,
     quizReadyChance: 0.85,
   ),
 ];
