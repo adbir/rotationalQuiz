@@ -37,7 +37,7 @@ class EvaluationResult extends StatelessWidget {
         const SizedBox(height: 16),
         if (report.findings.isNotEmpty) ...[
           Text(
-            'Ordered by size of the difference, not by DPS worth.',
+            'Ordered by what usually costs most, not by measured DPS.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

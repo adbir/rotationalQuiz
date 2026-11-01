@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'gap_detail.dart';
+
 /// What one player did in one pull, in numbers two fights can be compared on.
 /// A metric says what happened, never why. Effects that depend on the raid are
 /// named rather than blended in: see [raidFreeCasts] and
@@ -91,6 +93,7 @@ class GapMetrics {
     required this.threshold,
     required this.count,
     required this.longest,
+    this.details = const [],
   });
 
   /// The shortest time that counts as a gap.
@@ -99,6 +102,9 @@ class GapMetrics {
   /// Gaps over [threshold].
   final int count;
   final Duration longest;
+
+  /// Every gap over [threshold], in fight order.
+  final List<GapDetail> details;
 }
 
 /// Gains of the spec's primary resource. [gained] includes [wasted].
@@ -127,6 +133,7 @@ class SpenderMetrics {
     required this.casts,
     required this.free,
     required this.lostFree,
+    this.lostFreeDetails = const [],
     this.withBuff,
     this.skippedBuff,
     this.buffName,
@@ -139,6 +146,9 @@ class SpenderMetrics {
 
   /// Free spenders lost to a refresh of the buff that gives them.
   final int lostFree;
+
+  /// When each was lost and what gave the buff.
+  final List<LostFreeSpender> lostFreeDetails;
 
   /// Spenders with the spec's spender buff up, or `null` without the talent.
   final int? withBuff;

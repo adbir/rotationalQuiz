@@ -1,19 +1,18 @@
 import '../models/buff_windows.dart';
 import '../models/fight_log.dart';
+import '../models/gap_detail.dart';
 import '../models/log_rules.dart';
 import '../models/player_metrics.dart';
 import '../specs/rotation_spec.dart';
 import 'compute_chance_proc_metrics.dart';
 import 'compute_cooldown_metrics.dart';
+import 'compute_gap_metrics.dart';
 
 /// Turns one player's fight into [PlayerMetrics], from the spec's tables.
 class ComputePlayerMetrics {
   const ComputePlayerMetrics(this.spec);
 
   final RotationSpec spec;
-
-  /// Longer than one GCD, so an instant cast followed by the next is no gap.
-  static const gapThreshold = Duration(milliseconds: 1800);
 
   /// A phase change this close to the end is the boss dying, not a phase.
   static const _shortestLastPhase = Duration(seconds: 1);
@@ -41,7 +40,7 @@ class ComputePlayerMetrics {
         byAbility: _byAbility(log, presses, perMinute),
         byPhase: _byPhase(log.fight, presses),
       ),
-      gaps: _gaps(events),
+      gaps: ComputeGapMetrics(spec, log, cooldowns)(events),
       resource: _resource(log, rules, perMinute),
       spenders: _spenders(log, rules, presses),
       cooldowns: cooldowns.cooldowns(),
@@ -100,23 +99,6 @@ class ComputePlayerMetrics {
     );
   }
 
-  GapMetrics _gaps(List<LogCast> events) {
-    var count = 0;
-    var longest = Duration.zero;
-    for (var i = 1; i < events.length; i++) {
-      final (before, after) = (events[i - 1], events[i]);
-      final finishedCast =
-          before.isBegin &&
-          !after.isBegin &&
-          before.abilityId == after.abilityId;
-      if (finishedCast) continue;
-      final gap = after.time - before.time;
-      if (gap > gapThreshold) count++;
-      if (gap > longest) longest = gap;
-    }
-    return GapMetrics(threshold: gapThreshold, count: count, longest: longest);
-  }
-
   ResourceMetrics _resource(
     FightLog log,
     SpecLogRules rules,
@@ -158,12 +140,26 @@ class ComputePlayerMetrics {
         cast.resources.any(
           (r) => r.type == rules.resourceType && r.cost == null,
         );
-    final lostFree = log.buffEvents.where(
-      (e) =>
-          e.change == LogBuffChange.refresh &&
-          e.targetId == log.playerId &&
-          rules.freeSpenderBuffIds.contains(e.abilityId),
-    );
+    final fades = [
+      for (final e in log.buffEvents)
+        if (e.change == LogBuffChange.remove &&
+            e.targetId == log.playerId &&
+            rules.freeSpenderSourceIds.contains(e.abilityId))
+          e,
+    ];
+    final lostFree = [
+      for (final e in log.buffEvents)
+        if (e.change == LogBuffChange.refresh &&
+            e.targetId == log.playerId &&
+            rules.freeSpenderBuffIds.contains(e.abilityId))
+          LostFreeSpender(
+            time: e.time,
+            sourceName: _name(
+              log,
+              fades.where((f) => f.time <= e.time).lastOrNull?.abilityId,
+            ),
+          ),
+    ];
 
     final buffId = rules.spenderBuffId;
     final hasBuff =
@@ -181,6 +177,7 @@ class ComputePlayerMetrics {
       casts: spenders.length,
       free: spenders.where(isFree).length,
       lostFree: lostFree.length,
+      lostFreeDetails: lostFree,
       withBuff: buff == null
           ? null
           : spenders.where((c) => buff.isUpFor(c.time)).length,
@@ -188,4 +185,7 @@ class ComputePlayerMetrics {
       buffName: hasBuff ? log.abilityNames[buffId] : null,
     );
   }
+
+  static String? _name(FightLog log, int? id) =>
+      id == null ? null : log.abilityNames[id] ?? 'Ability $id';
 }

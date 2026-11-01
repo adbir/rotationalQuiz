@@ -28,6 +28,9 @@ class CompareFights {
 
   final RotationSpec spec;
 
+  /// A gap this close in time to another log's is the same moment.
+  static const sameGapWindow = Duration(seconds: 3);
+
   /// The first of [fights] is the player's; [playerEnemyGroups] are its adds.
   BossComparison call(
     List<FightToCompare> fights,
@@ -56,12 +59,14 @@ class CompareFights {
     ];
 
     final metrics = ComputePlayerMetrics(spec);
+    final computed = [for (final f in fights) metrics(f.log)];
+    final rank1Gaps = computed.last.gaps.details;
     return BossComparison(
       logs: [
-        for (final f in fights)
+        for (final (i, f) in fights.indexed)
           ComparedLog(
             label: f.label,
-            metrics: metrics(f.log),
+            metrics: computed[i],
             kill: f.log.fight.kill,
             dps: f.ranked?.amount,
             itemLevel: (f.ranked?.itemLevel ?? 0) > 0
@@ -78,6 +83,16 @@ class CompareFights {
       pooling: starts.isEmpty
           ? const []
           : [for (final f in fights) _pooling(f.log, starts)],
+      gapsAlsoInRank1: [
+        for (final gap in computed.first.gaps.details)
+          rank1Gaps.any((g) => (g.start - gap.start).abs() <= sameGapWindow),
+      ],
+      eventName: source == StretchSource.waves
+          ? playerEnemyGroups
+                .where((g) => starts.every(g.waveStarts().contains))
+                .firstOrNull
+                ?.name
+          : null,
     );
   }
 

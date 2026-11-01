@@ -48,6 +48,8 @@ class BossComparison {
     required this.stretches,
     required this.castsPerMinute,
     required this.pooling,
+    this.gapsAlsoInRank1 = const [],
+    this.eventName,
   });
 
   final List<ComparedLog> logs;
@@ -65,4 +67,13 @@ class BossComparison {
   /// By log, then by stretch start after the first. Empty when the stretches
   /// are the whole fight, which has no event to check before.
   final List<List<PoolingReport>> pooling;
+
+  /// For each gap of the first log (`metrics.gaps.details`): whether rank 1, the
+  /// last log, also has a gap starting within a few seconds. An intermission
+  /// shows in both.
+  final List<bool> gapsAlsoInRank1;
+
+  /// The name of the add that comes in the waves the stretches are cut at, when
+  /// [stretchSource] is waves.
+  final String? eventName;
 }

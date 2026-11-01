@@ -71,7 +71,7 @@ class BuildReminders {
         result.add(
           Reminder(
             time: _tenths(r.eventTime - hold),
-            label: 'Pool for ${enemy ?? 'the wave'}',
+            label: 'Pool for ${enemy ?? 'the add wave'}',
             spellId: id,
           ),
         );
