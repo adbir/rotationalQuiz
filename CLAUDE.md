@@ -335,11 +335,22 @@ Fix what it flags; don't `// ignore:` it without a comment explaining why.
   `mapEquals`) but never `material.dart` or widgets.
 - Use `Result<T>` (`utils/result.dart`) for repository operations that can
   fail.
+- For a spell's current wording, use its Wowhead page, whose changelog shows
+  the patch history (we're on 12.1.5):
+  `https://www.wowhead.com/spell=16166/master-of-the-elements#changelog`.
+  Those pages block scripts, so read them in a browser. From a script, use
+  `https://nether.wowhead.com/tooltip/spell/<id>`. Tooltips show base values
+  before talents, so check talents too.
 - Spell numbers (costs, cooldowns, durations) in spec files are
   approximations; note the source when you change them. Known assumptions:
   - Maximum Maelstrom is 100, +50 with Swelling Maelstrom and +25 with
     Primordial Capacity (in-game tooltips; a rank-1 Farseer log shows 125).
   - Fire Elemental is treated as baseline.
+  - Cooldowns are tooltip values with the talents both reference builds take
+    (First Ascendant, Graceful Spirit). Stormkeeper stays at its 60 s base:
+    Offering from Beyond shortens it during play.
+  - Spiritwalker's Grace has at least 2 charges (logs show casts 0.2 s apart).
+    Its 90 s recharge doesn't fully explain the gaps in logs.
   - Storm Elemental and Wind Gust stay hidden: they're not talents in
     Midnight.
 
