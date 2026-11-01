@@ -288,6 +288,10 @@ anything new the sandbox doesn't model.
   - **Raid support:** `RaidFreeCastMetrics` and
     `CooldownMetrics.raidDependsOn` name it. Don't blend it into a score.
   - **Left out:** damage share, DPS and deaths, because `FightLog` lacks them.
+- **APL replay** (`ReplayLog`, `LogStateBuilder`): rebuilds the state at each
+  GCD press of a `FightLog` and compares the press with the APL's pick. Domain
+  only, no screen yet. Rates, causes and what the log can't show are in
+  [`docs/warcraft-logs.md`](docs/warcraft-logs.md) under "APL replay".
 - **Persistence:** `LocalStore`, backed by `shared_preferences`
   (localStorage on the web). Keys are `keybinds.<spec>`,
   `talent_builds.<spec>`, `active_talent_build.<spec>` and `spell_icons`. Imported builds
