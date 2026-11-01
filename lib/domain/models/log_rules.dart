@@ -17,6 +17,8 @@ class SpecLogRules {
     this.raidFreeCasts = const [],
     this.raidCooldownSupport = const {},
     this.chanceProcs = const [],
+    this.auraLogIds = const {},
+    this.unobservableAuras = const {},
   });
 
   /// Warcraft Logs' number for the spec's primary resource.
@@ -50,6 +52,13 @@ class SpecLogRules {
   final Map<String, List<String>> raidCooldownSupport;
 
   final List<ChanceProcRule> chanceProcs;
+
+  /// Buff ids as logged, by aura id, where they differ from the aura's spell
+  /// id (Ascendance casts as 114050 and its buff is 1219480).
+  final Map<String, Set<int>> auraLogIds;
+
+  /// Auras a fight's events never show, so a replay can only guess them.
+  final Set<String> unobservableAuras;
 }
 
 /// A buff from another player that pays for one of [castIds].
