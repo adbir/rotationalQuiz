@@ -4,10 +4,21 @@ A Flutter app that turns SimulationCraft action priority lists (APLs) into a
 sandbox and quiz for World of Warcraft rotations. The first supported spec is
 **Elemental Shaman, single target** (Midnight).
 
-**Glossary:** [`docs/glossary.md`](docs/glossary.md) defines WoW raiding, WCL
-log and SimC terms. Read it before naming a raiding concept in code or UI, and
-before any Boss Evaluation or log-analysis work: each term says how to measure
-it in a log and whether that is verified.
+## Project knowledge
+
+Reach for these before guessing. Add what you learn to them, with its source, so
+the next agent has it.
+
+- **[`docs/elemental-shaman.md`](docs/elemental-shaman.md):** verified spell
+  behaviour, cooldowns, procs and Ancestors. Read before changing spell data or
+  stating how a spell works.
+- **[`docs/warcraft-logs.md`](docs/warcraft-logs.md):** API access, sign-in, ids
+  and how to compare logs fairly. Read before log or Boss Evaluation work.
+- **[`docs/glossary.md`](docs/glossary.md):** raiding, log and SimC terms, with how
+  to measure each. Read before naming a raiding concept in code or UI.
+- **[`docs/environments.md`](docs/environments.md):** what cloud sessions and the
+  Windows PC can each reach, plus the PR and merge workflow. Read when a host,
+  tool or push fails, and before stacking PRs.
 
 ## Setup
 
@@ -251,24 +262,10 @@ anything new the sandbox doesn't model.
   for the icon name and loads the image from `wow.zamimg.com`. Names are
   cached in `LocalStore` under `spell_icons` and validated before use.
   Without a `SpellIconScope`, offline, or on any error, buttons show their
-  coloured abbreviation and chips show text only. The cloud container
-  can't reach these hosts, so check icons on the live site.
+  coloured abbreviation and chips show text only.
 - **Warcraft Logs** (`WarcraftLogsRepository`): loads one player's fight
   (`FightLog`) and a boss's rankings (`RankedLog`) from the v2 GraphQL API. Not
-  on any screen yet; #13 adds one.
-  - **Sign-in:** the site is public, so it can't hold a client secret. The API
-    allows browser calls from our origin, including `oauth/token` and
-    `api/v2/user`, so no backend is needed: each user will sign in through the
-    PKCE flow. `WarcraftLogsService` takes its token from an
-    `AccessTokenSource`, so sign-in plugs in there. PKCE hasn't been run end to
-    end yet.
-  - **Local testing:** a client ID and secret go in the git-ignored `.env` as
-    `WCL_CLIENT_ID` and `WCL_CLIENT_SECRET`. Never commit or print them.
-  - **Live check:** normal test runs make no network calls. To test against the
-    real API, which spends a few of the 1,000 hourly points:
-    `WCL_LIVE=1 flutter test test/data/warcraft_logs_live_test.dart`.
-  - **Time:** domain models measure time from the pull, not from the start of
-    the report.
+  on any screen yet; #13 adds one. Domain models measure time from the pull.
 - **Persistence:** `LocalStore`, backed by `shared_preferences`
   (localStorage on the web). Keys are `keybinds.<spec>`,
   `talent_builds.<spec>`, `active_talent_build.<spec>` and `spell_icons`. Imported builds
@@ -354,28 +351,8 @@ Fix what it flags; don't `// ignore:` it without a comment explaining why.
   `mapEquals`) but never `material.dart` or widgets.
 - Use `Result<T>` (`utils/result.dart`) for repository operations that can
   fail.
-- For a spell's current wording, use its Wowhead page, whose changelog shows
-  the patch history (we're on 12.1.5):
-  `https://www.wowhead.com/spell=16166/master-of-the-elements#changelog`.
-  Those pages block scripts, so read them in a browser. From a script, use
-  `https://nether.wowhead.com/tooltip/spell/<id>`. Tooltips show base values
-  before talents, so check talents too.
-- Spell numbers (costs, cooldowns, durations) in spec files are
-  approximations; note the source when you change them. Known assumptions:
-  - Maximum Maelstrom is 100, +50 with Swelling Maelstrom and +25 with
-    Primordial Capacity (in-game tooltips; a rank-1 Farseer log shows 125).
-  - Fire Elemental is treated as baseline.
-  - Cooldowns are tooltip values with the talents both reference builds take
-    (First Ascendant, Graceful Spirit). Stormkeeper stays at its 60 s base:
-    Offering from Beyond shortens it during play.
-  - Spiritwalker's Grace has one charge. Logs show casts seconds apart because
-    an Evoker's Time Spiral allows a free cast, so count those separately. An
-    Evoker's Blessing of the Bronze also takes 15% off its cooldown (76.5 s).
-  - Lava Burst has 1 charge, +1 from Echo of the Elements and +1 from Elemental
-    Reverb (`ElementalShaman.maxCharges`).
-  - Stormkeeper gives 2 stacks (tooltip, three logs and the project owner).
-  - Storm Elemental and Wind Gust stay hidden: they're not talents in
-    Midnight.
+- When you change a spell number, record it and its source in
+  [`docs/elemental-shaman.md`](docs/elemental-shaman.md).
 
 ## Flutter agent tooling
 
