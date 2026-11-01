@@ -197,11 +197,11 @@ variable support in the evaluator before it will give correct answers.
 
 ### Add a spec
 
-The app is **single-spec today**: `ElementalShaman` is hard-coded in
-`lib/main.dart` and `test/test_helpers.dart`, and each repository takes one
-`spec`. A second spec needs, in addition to the steps below, a spec picker
-and either per-spec repositories or a spec-aware provider setup. Persisted
-data is already keyed by `spec.id`.
+The app has a spec picker (Setup): `ActiveSpecRepository` stores the active
+spec id (`active_spec`) and `SpecHost` rebuilds the per-spec repositories when
+it changes. Register a new spec in the `specs` list in `lib/main.dart`. A spec
+with no APL (`RestorationShaman`) leaves `aplAssetPath` null and the Sandbox,
+Quiz and APL tabs are hidden. Persisted data is keyed by `spec.id`.
 
 1. Copy the upstream `.simc` into `assets/apl/` and add a row to
    `assets/apl/README.md`.

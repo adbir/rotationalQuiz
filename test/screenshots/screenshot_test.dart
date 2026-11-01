@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:rotational_quiz/app.dart';
+import 'package:rotational_quiz/data/repositories/active_spec_repository.dart';
 import 'package:rotational_quiz/data/repositories/warcraft_logs_repository.dart';
 import 'package:rotational_quiz/data/services/local_store.dart';
 import 'package:rotational_quiz/domain/models/keybind.dart';
@@ -85,6 +86,10 @@ void main() {
           ChangeNotifierProvider.value(value: repos.keybinds),
           ChangeNotifierProvider.value(value: repos.warcraftLogs),
           Provider<LocalStore>.value(value: repos.store),
+          ChangeNotifierProvider(
+            create: (_) =>
+                ActiveSpecRepository(specs: [spec], store: repos.store),
+          ),
           Provider<WarcraftLogsRepository>.value(
             value: FakeWarcraftLogsRepository(),
           ),
@@ -133,6 +138,20 @@ void main() {
     await tester.pumpAndSettle();
     await shot('boss_evaluation');
     tester.view.physicalSize = size;
+
+    // Restoration Shaman: no APL, so only Setup and Boss are left.
+    tester.view.physicalSize = size;
+    final resto = (await tester.runAsync(
+      () => TestRepositories.create(
+        InMemoryStore({ActiveSpecRepository.storeKey: 'restoration_shaman'}),
+      ),
+    ))!;
+    await tester.pumpWidget(specApp(resto));
+    await tester.pumpAndSettle();
+    await shot('restoration_setup');
+    await tester.tap(find.text('Boss').last);
+    await tester.pumpAndSettle();
+    await shot('restoration_boss');
 
     // Let the hot-key countdown expire so no timers are left pending.
     await tester.pumpWidget(const SizedBox());

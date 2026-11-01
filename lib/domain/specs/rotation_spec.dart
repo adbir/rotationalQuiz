@@ -47,29 +47,32 @@ abstract class RotationSpec {
   /// Display name of the primary resource.
   String get resourceLabel;
 
-  /// Bundled APL asset path.
-  String get aplAssetPath;
+  /// Bundled APL asset path, or `null` for a spec with no APL.
+  String? get aplAssetPath => null;
 
-  /// URL of the upstream APL in the SimulationCraft repository.
-  Uri get remoteAplUrl;
+  /// URL of the upstream APL in the SimulationCraft repository, or `null`.
+  Uri? get remoteAplUrl => null;
+
+  /// Whether the sandbox, quiz and APL viewer can work for this spec.
+  bool get hasApl => aplAssetPath != null;
 
   /// The SimC action list to evaluate. Usually the top-level list so that
   /// interrupts, defensives and `run_action_list` jumps are respected.
-  String get entryList;
+  String get entryList => '';
 
   /// The list the user mostly cares about; highlighted in the APL viewer.
-  String get focusList;
+  String get focusList => '';
 
-  Map<String, SpellDefinition> get spells;
-  List<AuraDefinition> get auras;
-  List<CooldownDefinition> get cooldowns;
-  List<TalentDefinition> get talents;
+  Map<String, SpellDefinition> get spells => const {};
+  List<AuraDefinition> get auras => const [];
+  List<CooldownDefinition> get cooldowns => const [];
+  List<TalentDefinition> get talents => const [];
   List<TalentLoadout> get loadouts;
-  List<SetBonusDefinition> get setBonuses;
+  List<SetBonusDefinition> get setBonuses => const [];
 
   /// Actions the sandbox deliberately does not model (racials, trinkets,
   /// potions...). They are shown as skipped in the trace.
-  Set<String> get unmodelledActions;
+  Set<String> get unmodelledActions => const {};
 
   /// How this spec appears in Warcraft Logs fights.
   SpecLogRules get logRules;
