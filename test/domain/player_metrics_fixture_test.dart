@@ -30,7 +30,10 @@ FightLog loadFixture([String name = 'sszorak_window']) {
       for (final ability in rows('abilities'))
         ability['gameID'] as int: ability['name'] as String,
     },
-    casts: [for (final r in rows('casts')) ?WarcraftLogsMapper.cast(r, start)],
+    casts: [
+      for (final r in rows('casts'))
+        ?WarcraftLogsMapper.cast(r, start, aliases: spec.logRules.castAliases),
+    ],
     resourceGains: [
       for (final r in rows('resources'))
         ?WarcraftLogsMapper.resourceGain(r, start),

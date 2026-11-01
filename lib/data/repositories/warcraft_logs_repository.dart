@@ -57,7 +57,12 @@ class WarcraftLogsRepository {
           playerId: id,
           abilityNames: _abilityNames(masterData),
           casts: [
-            for (final row in casts) ?WarcraftLogsMapper.cast(row, start),
+            for (final row in casts)
+              ?WarcraftLogsMapper.cast(
+                row,
+                start,
+                aliases: spec.logRules.castAliases,
+              ),
           ],
           resourceGains: [
             for (final row in resources)

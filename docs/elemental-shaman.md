@@ -39,12 +39,17 @@ The cap is 100, +50 from Swelling Maelstrom and +25 from Primordial Capacity
 | ----- | --------- | ------ |
 | Elemental Blast | costs 90 | log |
 | Earth Shock | cost 60 | estimate |
-| Earthquake | costs 60, cast id 462620 | log (`classResources` cost 60 on 13 casts) |
+| Earthquake | costs 60; cast id 462620 on the target, 61882 on the cursor | log (`classResources` cost 60 on 13 casts); owner for the two versions |
 | Eye of the Storm | -5 on spenders, -10 on Elemental Blast | inferred from APL thresholds |
 | Lava Burst | gives 8 | tooltip |
 | Flame Shock | gives 3 | tooltip |
 | Voltaic Blaze | gives 6 | tooltip |
 | Stormkeeper | gives 10 | tooltip |
+
+Earthquake has two versions in one talent node: cast on the target (462620) and
+cast on the cursor (61882). Logs count both as one press (`castAliases` in the
+log rules). On Twin Fangs the cursor version can't reach the adds, which spawn
+in untargetable acid, so Farseer logs there cast 462620 only (owner).
 
 The app has no table of gains yet. Logs record every gain and any waste.
 
@@ -192,8 +197,5 @@ Most players are Farseer (owner), so check that path first.
 
 - Expected Ancestors run 1.4 to 2.8 below actual in three logs. Ascendance's rolls
   are the likely cause.
-- The talent tree has two Earthquake entries in one node. Farseer logs cast
-  Earthquake as 462620 (13 casts in a rank 1 Twin Fangs log, none as 61882).
-  Which entry gives 61882, if either, is not known.
 - What do the three Elemental Blast stat buffs in the APL's `aoe` list do in
   Midnight? The FAQ says to cast it when none are up, at any target count.

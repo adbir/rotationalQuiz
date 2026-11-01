@@ -9,6 +9,7 @@ class SpecLogRules {
   const SpecLogRules({
     required this.resourceType,
     this.duplicateCastIds = const {},
+    this.castAliases = const {},
     this.spenderBuffId,
     this.spenderBuffTalent,
     this.spenderBuffSkipIds = const {},
@@ -23,6 +24,10 @@ class SpecLogRules {
 
   /// Cast events that fire alongside another cast and aren't a press.
   final Set<int> duplicateCastIds;
+
+  /// Logged cast ids that are the same press as the spec's spell id, such as
+  /// a second version of a spell. Loading a fight maps the key to the value.
+  final Map<int, int> castAliases;
 
   /// The buff a player aims to spend on spenders, if the spec has one.
   final int? spenderBuffId;
