@@ -592,6 +592,9 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   (`EnemyGroup.arrivals`), a second or so after the spawn; a wave starts when
   none of its group has arrived for 15 s. Twin Fangs waves repeat to within
   0.2 s between pulls.
+- **Not a target:** Twin Fangs' Barbed Bulwark is removed by crowd control or a
+  stun, not killed (the owner). It never counts as an enemy alive: an add counts
+  only if the player damaged it.
 - **Status:** `needs checking`
 
 ### AoE (area of effect)

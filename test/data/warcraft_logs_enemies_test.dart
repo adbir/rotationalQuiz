@@ -39,6 +39,7 @@ http.Response _answer(http.Request request) {
                   {'id': 30, 'name': 'Boss'},
                   {'id': 31, 'name': 'Adder'},
                   {'id': 32, 'name': 'Imp'},
+                  {'id': 33, 'name': 'Wall'},
                 ],
               },
               'fights': [
@@ -50,6 +51,7 @@ http.Response _answer(http.Request request) {
                     {'id': 30, 'instanceCount': 1},
                     {'id': 31, 'instanceCount': 2},
                     {'id': 32, 'instanceCount': 2},
+                    {'id': 33, 'instanceCount': 5},
                   ],
                 },
               ],
@@ -63,6 +65,16 @@ http.Response _answer(http.Request request) {
   final rows = switch ((vars['type'], vars['source'])) {
     ('Deaths', null) => [
       {..._row(9, 1, 'targetInstance'), 'targetID': 31},
+    ],
+    ('DamageDone', 7) => [
+      for (final (target, amount) in [(31, 900), (32, 800), (33, 1), (33, 0)])
+        {
+          'timestamp': _start + 4000,
+          'sourceID': 7,
+          'targetID': target,
+          'amount': amount,
+          'unmitigatedAmount': 5000,
+        },
     ],
     ('Casts', 31) => [
       _row(4, 1, 'sourceInstance'),
@@ -112,6 +124,7 @@ void main() {
       final result = await repo.loadEnemyPresence(
         reportCode: 'abc',
         fightId: 1,
+        playerId: 7,
       );
       presence = (result as Ok<EnemyPresence>).value;
     });
@@ -133,13 +146,24 @@ void main() {
       expect(presence.aliveByKindAt(_s(8.6)).containsKey('Imp'), isFalse);
     });
 
+    test('leaves out an add the player never really damaged', () {
+      // Wall took hits for 1 and 0 of 5000: crowd controlled, not killed.
+      expect(presence.groups.map((g) => g.name), ['Boss', 'Adder', 'Imp']);
+    });
+
     test('asks for deaths once and damage only for the kind with none', () {
       final types = [
         for (final r in requests)
           if ((r['variables']! as Map)['type'] case final String type)
             '$type ${(r['variables']! as Map)['source']}',
       ];
-      expect(types, ['Deaths null', 'Casts 31', 'Casts 32', 'DamageTaken 32']);
+      expect(types, [
+        'Deaths null',
+        'DamageDone 7',
+        'Casts 31',
+        'Casts 32',
+        'DamageTaken 32',
+      ]);
       expect((requests[1]['variables']! as Map)['hostility'], 'Enemies');
     });
   });

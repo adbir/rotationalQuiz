@@ -217,6 +217,10 @@ phases. The owner reached the first five Vexhul waves and all six Bulwark waves.
 Rank 53 killed at 415 s: its 408 s Broodlings came, its Vexhul spawns did not
 log. There are no phase changes in the log.
 
+The Barbed Bulwarks are not adds to kill or to count as targets: crowd control or a
+stun removes them (the owner). Their waves are timing markers only; see "Enemies
+alive".
+
 Per wave (the Broodlings' first cast, about 0.5 s after the spawn): the
 rebuilt Maelstrom at the spawn, the lowest and highest in the 10 s before,
 seconds since the last spender, and the first
@@ -289,7 +293,9 @@ page of data about 1 more, so a whole fight is cheap:
 
 With `Enemies`, `sourceID` names the enemy that casts in `Casts` and the one that
 is hit in `DamageTaken`. On Twin Fangs rank 1, `loadEnemyPresence` cost 8 points
-(report 2, deaths 1, three casts, two damage-taken), `loadFight` 6, and
+before the Bulwark rule (report 2, deaths 1, three casts, two damage-taken); it now
+adds the player's damage (1) and skips the Bulwark's two queries, so 7 by that list
+(not re-measured). `loadFight` costs 6, and
 `includeTargetsHit` adds 1 (one page of 3,800 rows for 420 s). The Vexhul's
 damage taken alone is 4 pages, which is why a kind with any death uses the
 deaths and skips it.
@@ -316,39 +322,44 @@ What the logs hold, on Twin Fangs (the same in all three):
   `withTargetsHit` keeps `sourceID == player`. The rules are
   `SpecLogRules.aoeDamage`.
 
+**Barbed Bulwark is not a target** (the owner, from play). It is not a killable
+add: crowd control or a stun removes it. It takes no real damage (the player's hits
+on it do 0, apart from two Flame Shock ticks for 1 of about 6,000), and no death
+event exists for it. So an add kind counts toward enemies alive only if the player
+damaged it: some hit for at least 1% of its unmitigated amount
+(`damagedTargets`, from the same `DamageDone` page as the targets hit). That is
+data, not a name check, and it drops the Bulwark in all three logs. A kind the
+player simply ignored would drop out too; Bulwark is the case it is for. Bosses
+always count.
+
 Enemies alive over rank 1's 420 s, at the best 0.1 s of each wave (both bosses
-always, plus the adds):
+always, plus the adds the player damaged). Between waves it is the 2 bosses, and
+in a Bulwark wave (11, 72, 166, 227, 321 and 382 s) it stays 2:
 
-| Wave (s) | Bulwarks (15) | Vexhul (3) | Broodlings (10) | Alive at peak |
-| -------- | ------------- | ---------- | --------------- | ------------- |
-| 11 | 8 | | | 10 |
-| 37 | | 3 | 3 | 8 |
-| 72 | 7 | | | 9 |
-| 98 | | 3 | 5 | 10 |
-| 166 | 6 | | | 8 |
-| 192 | | 3 | 3 | 8 |
-| 227 | 10 | | | 12 |
-| 253 | | 3 | 3 | 8 |
-| 321 | 8 | | | 10 |
-| 347 | | 3 | 4 | 9 |
-| 382 | 10 | | | 12 |
-| 408 | | 3 | 5 | 10 |
+| Wave (s) | Vexhul (3) | Broodlings (10) | Alive at peak |
+| -------- | ---------- | --------------- | ------------- |
+| 37 | 3 | 3 | 8 |
+| 98 | 3 | 5 | 10 |
+| 192 | 3 | 3 | 8 |
+| 253 | 3 | 3 | 8 |
+| 347 | 3 | 4 | 9 |
+| 408 | 3 | 5 | 10 |
 
-Between waves it is the 2 bosses. The adds die as they arrive, so at most 10 of
-the 15 Bulwarks and 5 of the 10 Broodlings are up together.
+The adds die as they arrive, so at most 5 of the 10 Broodlings are up together.
+Before this rule the Bulwarks (up to 10 of 15 at once) made the Bulwark waves 8 to
+12 alive.
 
-Targets hit per Chain Lightning, rank 1 (138 casts, mean 2.5, against a mean 3.3
-alive at the same moments):
+Targets hit per Chain Lightning, rank 1 (138 casts, mean 2.5). This counts every
+enemy the chain touched, so a Bulwark it hit for 0 is in it:
 
 | Targets hit | 1 | 2 | 3 | 4 | 5 |
 | ----------- | - | - | - | - | - |
 | Casts | 1 | 95 | 22 | 9 | 10 |
 
 Earthquake hit 3 enemies on all 13 casts (the three Spawn of Vexhul). Chain
-Lightning hit 5 at most. With only the bosses up it hits 2 of 2, and with a Bulwark
-wave up it hits 4 or 5 of the 8 to 10 alive, so the alive count overstates what it
-reaches by up to 5. The APL's `spell_targets` thresholds are 2 or 3, so the replay
-uses the alive count.
+Lightning hit 5 at most. With a Bulwark wave up it hit 4 or 5, counting Bulwarks at
+0 damage. The replay uses the alive count, which leaves the Bulwarks out; the
+APL's `spell_targets` thresholds are 2 or 3.
 
 ### Rebuild check
 
@@ -363,7 +374,7 @@ The committed fixture is `test/fixtures/twin_fangs_window.json`: rank 1 from
 225 s to 300 s, which holds the 253 s Vexhul wave and the 227 s Bulwark wave. It
 rebuilds with no drift over 17 readings, and the 253 s wave reads as held (15 s
 since the last spender, Earthquake 2.1 s after the spawn). It also holds each enemy
-kind that was up in the window with its arrivals and departures, and the player's
+kind that counts (not the Bulwark) with its arrivals and departures, and the player's
 Chain Lightning and Earthquake damage rows (82, no amounts, the player as id 1).
 The owner's log is not in it.
 
@@ -591,7 +602,10 @@ log carries and the set bonus on:
 | Fixture | Presses compared | Agreement | Exact deviations |
 | ------- | ---------------- | --------- | ---------------- |
 | `sszorak_window` (owner, low parse), one boss | 46 | 41% (19) | 16 of 27 |
-| `twin_fangs_window` (rank 1), enemies alive | 59 | 68% (40) | 16 of 19 |
+| `twin_fangs_window` (rank 1), enemies alive | 59 | 61% (36) | 19 of 23 |
+
+Counting the Barbed Bulwarks as targets gave 68% (40 of 59, 16 of 19 exact), a
+rate that rested on enemies the player can't hit; the figure above leaves them out.
 
 Before the enemy count (#12), `ReplayLog` held a `targets` guess for the whole
 log, and Sszorak had no count at all:
@@ -603,25 +617,25 @@ log, and Sszorak had no count at all:
 | `twin_fangs_window`, 2 targets | 59 | 63% (37) | 0 of 22 |
 
 Counting the enemies alive at each press (`EnemyPresence`, from the deaths and
-arrivals of "Enemies alive" above) lifts rank 1 from 63% to 68% without being
-told a number, and the 1 target guess's 37% was the wrong guess for a fight with
-two bosses. Sszorak is one boss, so it is unchanged at 41%; only its exact count
+arrivals of "Enemies alive" above) lifts rank 1 from the 1 target guess's 37% to 61%
+without being told a number. It is a little under the 63% of guessing 2 targets for
+the whole log, which was right between waves and wrong for the Vexhul wave. Sszorak is one boss, so it is unchanged at 41%; only its exact count
 moves, from 12 to 16, because a count read from the log is no longer an estimate.
 `ReplayLog` takes `presence` (and still `targets`, for a log with no enemy data).
-The fixtures hold the enemies of their window: the two bosses, the Bulwark wave at
-2 s and the Vexhul wave at 28 s. The targets hit per Chain Lightning are in the
+The fixtures hold the enemies of their window that count: the two bosses and the
+Vexhul wave at 28 s (the Bulwark wave at 2 s is left out, as above). The targets hit per Chain Lightning are in the
 fixture too, but the replay does not use them: they are the player's own choice,
 so feeding them back would make the state agree with the press.
 
 Five presses (Sszorak) and two (Twin Fangs) are of abilities outside the spell
 table, such as Ghost Wolf, and are not compared. Treat these as how well the APL
-fits a window, not a grade: even rank 1 is at 68%.
+fits a window, not a grade: even rank 1 is at 61%.
 
 Top deviation kinds (pressed instead of wanted):
 
 | Sszorak | n | Twin Fangs, enemies alive | n |
 | ------- | - | ------------------------- | - |
-| Lava Burst instead of Elemental Blast | 6 | Chain Lightning instead of Lava Burst | 8 |
+| Lava Burst instead of Elemental Blast | 6 | Chain Lightning instead of Lava Burst | 11 |
 | Lightning Bolt instead of Lava Burst | 4 | Lightning Bolt instead of Lava Burst | 3 |
 | Lava Burst instead of Lightning Bolt | 4 | Chain Lightning instead of Earthquake | 2 |
 | Lava Burst instead of Flame Shock | 3 | Lava Burst instead of Earthquake | 2 |
@@ -633,15 +647,15 @@ What explains them:
   sitting at the 125 cap for about 15 s (33 s to 50 s of the window) with no
   spender, while the APL wanted Elemental Blast on every press. It matches this
   log's 99 wasted Maelstrom, and is exact.
-- **Different play, rank 1.** Chain Lightning instead of Lava Burst, 8 times
+- **Different play, rank 1.** Chain Lightning instead of Lava Burst, 11 times
   (13 when 2 targets was assumed), with Lava Surge up or 2+ charges: the player
   keeps cleaving at 2 enemies, where the APL prefers a Lava Burst. Chain
   Lightning instead of Earthquake and Lava Burst instead of Earthquake are
   builders pressed where the APL wanted a spender. The replay says what happened,
   not why; rank 1's habit of holding a spender for a wave is in "Add waves".
 - **State the APL couldn't see: targets.** Now seen. The count is the enemies
-  alive, not the enemies in range: a Bulwark wave puts 8 to 10 alive where Chain
-  Lightning hit 4 or 5 (see "Enemies alive"). It can overcount, and an add's arrival
+  alive, not the enemies in range, with the Bulwarks left out (they are not
+  targets). It can overcount, and an add's arrival
   is its first cast, up to 2 s after it spawned, so it can also undercount.
 - **State the replay estimates.** Flame Shock is on the target and no event shows
   it, so its time left is rebuilt from the player's casts and assumed 12 s at the

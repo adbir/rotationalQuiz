@@ -111,6 +111,7 @@ class FakeWarcraftLogsRepository implements WarcraftLogsRepository {
   Future<Result<EnemyPresence>> loadEnemyPresence({
     required String reportCode,
     required int fightId,
+    required int playerId,
   }) async {
     await hold;
     if (error != null) return Result.error(error!);

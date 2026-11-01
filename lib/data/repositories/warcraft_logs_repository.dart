@@ -99,24 +99,28 @@ class WarcraftLogsRepository {
     required int fightId,
   }) async {
     try {
-      return Result.ok(await _enemyGroups(reportCode, fightId, false));
+      return Result.ok(await _enemyGroups(reportCode, fightId));
     } on Exception catch (e) {
       return Result.error(e);
     }
   }
 
   /// Which enemies were up and when: each kind of add with when every copy
-  /// arrived and left, and the bosses throughout. Costs what
-  /// [loadEnemyGroups] does, one query for every enemy death, and one more
+  /// arrived and left, and the bosses throughout. Only adds the player
+  /// ([playerId]) damaged count. Costs what [loadEnemyGroups] does for those
+  /// kinds, one query for every enemy death, the player's damage, and one more
   /// for each kind of add with no death in the log (see
   /// `docs/warcraft-logs.md`, "Enemies alive").
   Future<Result<EnemyPresence>> loadEnemyPresence({
     required String reportCode,
     required int fightId,
+    required int playerId,
   }) async {
     try {
       return Result.ok(
-        EnemyPresence(await _enemyGroups(reportCode, fightId, true)),
+        EnemyPresence(
+          await _enemyGroups(reportCode, fightId, playerId: playerId),
+        ),
       );
     } on Exception catch (e) {
       return Result.error(e);
@@ -125,9 +129,10 @@ class WarcraftLogsRepository {
 
   Future<List<EnemyGroup>> _enemyGroups(
     String reportCode,
-    int fightId,
-    bool withDepartures,
-  ) async {
+    int fightId, {
+    int? playerId,
+  }) async {
+    final withDepartures = playerId != null;
     final report = await _service.report(code: reportCode, fightId: fightId);
     final fight = _firstMap(report['fights']);
     if (fight == null) {
@@ -155,6 +160,22 @@ class WarcraftLogsRepository {
     final deaths = withDepartures
         ? await enemyEvents(WclEventType.deaths)
         : const <JsonMap>[];
+    // ponytail: an add counts only if the player damaged it, which drops
+    // Barbed Bulwark (crowd controlled, not killed). A kind the player simply
+    // ignored drops out too; the ceiling is a fight with a real add left alone.
+    final damaged = playerId == null
+        ? null
+        : WarcraftLogsMapper.damagedTargets(
+            await _service.events(
+              code: reportCode,
+              fightId: fightId,
+              sourceId: playerId,
+              type: WclEventType.damageDone,
+              start: start,
+              end: WarcraftLogsMapper.fightEnd(fight),
+            ),
+            playerId,
+          );
     final enemies = fight['enemyNPCs'];
     final groups = <EnemyGroup>[];
     for (final npc
@@ -169,6 +190,7 @@ class WarcraftLogsRepository {
         }
         continue;
       }
+      if (damaged != null && !damaged.contains(id.toInt())) continue;
       final casts = await enemyEvents(WclEventType.casts, id.toInt());
       var ends = [
         for (final death in deaths)

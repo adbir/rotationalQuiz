@@ -146,6 +146,26 @@ abstract final class WarcraftLogsMapper {
     );
   }
 
+  /// The enemy NPCs the player really damaged: some hit for at least 1% of
+  /// what it would have done. Hits on an immune or absorbing enemy land for 0,
+  /// or for 1 from a tick, and don't count.
+  static Set<int> damagedTargets(List<JsonMap> damage, int playerId) {
+    final targets = <int>{};
+    for (final row in damage) {
+      final target = _int(row['targetID']);
+      final amount = row['amount'];
+      final raw = row['unmitigatedAmount'];
+      if (target != null &&
+          _int(row['sourceID']) == playerId &&
+          amount is num &&
+          amount > 0 &&
+          (raw is! num || amount * 100 >= raw)) {
+        targets.add(target);
+      }
+    }
+    return targets;
+  }
+
   /// Sets [LogCast.targetsHit] on each finished cast of an area ability in
   /// [rules]: the distinct enemies the player's [damage] events hit within the
   /// rule's time after the cast. A cast with no hit at all gets 0.
