@@ -72,7 +72,6 @@ const elementalSpells = <String, SpellDefinition>{
     name: 'Flame Shock',
     abbreviation: 'FS',
     school: SpellSchool.fire,
-    cooldownId: 'flame_shock',
   ),
   'voltaic_blaze': SpellDefinition(
     id: 'voltaic_blaze',
@@ -163,7 +162,7 @@ const elementalSpells = <String, SpellDefinition>{
     abbreviation: 'SWG',
     school: SpellSchool.arcane,
     offGcd: true,
-    cooldownId: 'spiritwalkers_grace',
+    usesCharges: true,
     onActionBar: false,
   ),
   'wind_shear': SpellDefinition(
@@ -317,6 +316,8 @@ const elementalAuras = <AuraDefinition>[
   ),
 ];
 
+/// Durations come from in-game tooltips. Where a talent changes them, the
+/// value assumes the talents both reference builds take.
 const elementalCooldowns = <CooldownDefinition>[
   CooldownDefinition(
     id: 'lava_burst',
@@ -324,29 +325,31 @@ const elementalCooldowns = <CooldownDefinition>[
     duration: 8,
     maxCharges: 2,
   ),
-  CooldownDefinition(id: 'flame_shock', name: 'Flame Shock', duration: 6),
   CooldownDefinition(
     id: 'voltaic_blaze',
     name: 'Voltaic Blaze',
-    duration: 30,
+    duration: 10,
     requiredTalent: ElementalTalents.voltaicBlazeTalent,
   ),
+  // Offering from Beyond takes 3 s off per Ancestor called, so gaps of 40-55 s
+  // show up in logs. That depends on play, so this stays the base value.
   CooldownDefinition(
     id: 'stormkeeper',
     name: 'Stormkeeper',
     duration: 60,
     requiredTalent: ElementalTalents.stormkeeperTalent,
   ),
+  // 180 s, minus 60 s from First Ascendant.
   CooldownDefinition(
     id: 'ascendance',
     name: 'Ascendance',
-    duration: 180,
+    duration: 120,
     requiredTalent: ElementalTalents.ascendanceTalent,
   ),
   CooldownDefinition(
     id: 'ancestral_swiftness',
     name: 'Ancestral Swiftness',
-    duration: 60,
+    duration: 30,
     requiredTalent: ElementalTalents.ancestralSwiftnessTalent,
   ),
   CooldownDefinition(
@@ -354,6 +357,15 @@ const elementalCooldowns = <CooldownDefinition>[
     name: "Nature's Swiftness",
     duration: 60,
     requiredTalent: ElementalTalents.naturesSwiftnessTalent,
+  ),
+  // 120 s, minus 30 s from Graceful Spirit. Logs show two casts 0.2 s apart, so
+  // it has at least two charges. Pairs 9-20 s apart suggest faster recharge
+  // than this in some logs; the cause isn't known yet.
+  CooldownDefinition(
+    id: 'spiritwalkers_grace',
+    name: "Spiritwalker's Grace",
+    duration: 90,
+    maxCharges: 2,
   ),
 ];
 

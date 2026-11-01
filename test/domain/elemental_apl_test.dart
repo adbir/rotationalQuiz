@@ -80,6 +80,59 @@ void main() {
     });
   });
 
+  group('cooldowns', () {
+    test('match the in-game tooltips and talents', () {
+      double? duration(String id) => spec.cooldownDefinition(id)?.duration;
+      expect(duration('ancestral_swiftness'), 30);
+      expect(duration('ascendance'), 120);
+      expect(duration('stormkeeper'), 60);
+      expect(duration('voltaic_blaze'), 10);
+      expect(duration('spiritwalkers_grace'), 90);
+      expect(spec.cooldownDefinition('flame_shock'), isNull);
+    });
+
+    test('reference builds take the talents those values assume', () {
+      for (final loadout in spec.loadouts) {
+        expect(
+          loadout.talents,
+          contains('first_ascendant'),
+          reason: loadout.name,
+        );
+        expect(
+          loadout.talents,
+          contains('graceful_spirit'),
+          reason: loadout.name,
+        );
+      }
+    });
+
+    test('Flame Shock has no cooldown', () {
+      expect(spec.spells['flame_shock']!.cooldownId, isNull);
+    });
+
+    test("Spiritwalker's Grace has two charges and spends one per press", () {
+      const id = 'spiritwalkers_grace';
+      expect(spec.availability(id, base()).isAvailable, isTrue);
+
+      final once = spec.applyOffGcd(id, base());
+      expect(once.cooldown(id).charges, 1);
+      expect(spec.availability(id, once).isAvailable, isTrue);
+
+      final twice = spec.applyOffGcd(id, once);
+      expect(twice.cooldown(id).charges, 0);
+      expect(spec.availability(id, twice).isAvailable, isFalse);
+    });
+
+    test('other off-GCD abilities still go on a normal cooldown', () {
+      const id = 'ancestral_swiftness';
+      final used = spec.applyOffGcd(
+        id,
+        base().withCooldown(id, CooldownState.ready),
+      );
+      expect(used.cooldown(id).remains, 30);
+    });
+  });
+
   group('single-target recommendations', () {
     String? pick(CombatState state) =>
         evaluator.recommend(document, state).selectedSpellId;
@@ -182,10 +235,8 @@ void main() {
     test('moving without Spiritwalker\'s Grace falls back to instants', () {
       final state = base()
           .copyWith(moving: true)
-          .withCooldown(
-            'spiritwalkers_grace',
-            const CooldownState(remains: 60),
-          );
+          .withCooldown('spiritwalkers_grace', const CooldownState(charges: 0));
+
       expect(pick(state), 'flame_shock');
     });
 

@@ -135,7 +135,10 @@ class ElementalShaman extends RotationSpec {
     }
 
     if (spell.usesCharges) {
-      final charges = state.cooldown(spell.id).charges ?? 0;
+      final charges =
+          state.cooldown(spell.id).charges ??
+          cooldownDefinition(spell.id)?.maxCharges?.toDouble() ??
+          0;
       final surge = spell.id == 'lava_burst' && state.buff('lava_surge').isUp;
       if (charges < 1 && !surge) {
         return const SpellAvailability.unavailable('No charges');
@@ -189,18 +192,24 @@ class ElementalShaman extends RotationSpec {
 
   @override
   CombatState applyOffGcd(String spellId, CombatState state) {
-    final cooldown = cooldownDefinition(spellId)?.duration;
+    final definition = cooldownDefinition(spellId);
     var next = state;
-    if (cooldown != null) {
-      next = next.withCooldown(spellId, CooldownState(remains: cooldown));
+    if (definition?.maxCharges case final maxCharges?) {
+      final charges = state.cooldown(spellId).charges ?? maxCharges.toDouble();
+      next = next.withCooldown(spellId, CooldownState(charges: charges - 1));
+    } else if (definition != null) {
+      next = next.withCooldown(
+        spellId,
+        CooldownState(remains: definition.duration),
+      );
     }
     return switch (spellId) {
       'ancestral_swiftness' ||
       'natures_swiftness' => next.withBuff(spellId, const AuraState.up()),
-      'spiritwalkers_grace' =>
-        next
-            .withBuff(spellId, const AuraState.up(remains: 15))
-            .withCooldown(spellId, const CooldownState(remains: 120)),
+      'spiritwalkers_grace' => next.withBuff(
+        spellId,
+        const AuraState.up(remains: 15),
+      ),
       'wind_shear' =>
         next
             .copyWith(targetCasting: false)
