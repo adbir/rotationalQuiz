@@ -1286,3 +1286,101 @@ against 86), Nature's Swiftness (67 against 83). Earth Shield is ahead.
 `characterRankings(metric: hps, difficulty: 5, includeCombatantInfo: true)` on
 3429, which cost 2 points with combatant info (the actor lookups 1 each). The
 open question of pairing Heroic logs with Heroic rankings stays open.
+
+### Validation (#81, partial)
+
+**Partial: 72 of 81 logs measured** before the run stopped (the owner's PC shut
+down during the rate-limit wait). Top 20 by `hps` and 20 mid-rank (every fifth
+of ranks 105 to 200) on Heroic and Mythic Coiled Altar (3429), rankings of
+2026-11-01. Measured: Heroic top 16, Heroic mid 19, Mythic top 20, Mythic mid
+17. The owner's kill was not refetched; its values are #78's (above). No Mythic
+owner log exists (the guild query, `reports(guildID: 579454, limit: 25)`, 26
+points, finds Heroic kills only). Heroic ranks 8, 11, 17, 18, 22, 33 and 120
+are anonymous reports (`a:` codes, player "Anonymous") and can't be loaded; the
+top 20 is the first 20 public logs.
+
+**Method.** A scratch test (not committed) calls `loadFight` and
+`ComputePlayerMetrics(RestorationShaman())` per log, plus one
+`table(dataType: Healing, sourceID)` for overheal. Innervate: windows of buff
+29166 on the player, mana saved is the spec's cost of each cast finishing inside
+one. Top beats mid is P(a top log beats a mid log), ties half ("AUC"; 0.5 is no
+difference). Cost about 10 points a log (Mythic about 13), with 1 per pacing
+check; 6 for six rankings pages; 850 in all before the stop.
+
+Measured logs (report/fight): Heroic top 1 `PRkbJByN4VdzpHcC`/67, 2
+`qmnVyxkMzALj9JB6`/40, 3 `7Cd6VwnLz3W4NxXZ`/26, 4 `1bzg2pX9JrvVFMTH`/36, 5
+`K9vHmVydz7nMWA6Z`/34, 6 `7gGBjTCJfbdnR8cm`/32, 7 `txzYFPyMdjKW9XrD`/1, 9
+`Vg1kGHBW4hv8cqdm`/30, 10 `d2vN1TpaKBGkyc6W`/35, 12 `7JDBrRwjCZ9cNgqx`/1, 13
+`Hb9kGDrhKNYR4ACp`/26, 14 `VAdH8b6qKMNPgpTB`/16, 15 `KRnXJwtgZf9FWpM2`/17, 16
+`cHJLFgA3NX1ktdYy`/11, 19 `VgXNTGmz2R68tPFC`/1, 20 `jZ1Km24f3gqGkM7D`/11.
+Heroic mid 105 to 200 except 120; Mythic top 1 to 20; Mythic mid 105 to 185.
+All codes and the per-log rows are in the scratch `results.jsonl` (below).
+
+Median (interquartile range), top 20 against mid; "≥90" is the share reaching
+90% of possible or of uptime:
+
+| Metric | Heroic top | Heroic mid | AUC | Mythic top | Mythic mid | AUC | Owner |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Casts per minute | 50.8 (47.5–53.2) | 48.5 (46.7–50.2) | 0.68 | 50.6 (48.5–52.5) | 49.7 (45.8–50.5) | 0.67 | 44.4 |
+| Surging Totem of possible | 92% (86–93), ≥90 10/16 | 91% (86–94) | 0.47 | 92% (90–95), ≥90 15/20 | 90% (88–91) | 0.66 | 69% |
+| Healing Rain up | 93.7% (90–95), ≥90 14/16 | 92.8% (88–94) | 0.57 | 94.5% (92–96), ≥90 17/20 | 90.4% (90–92) | 0.79 | 66.8% |
+| Riptide per minute | 11.9 (11.4–12.0) | 11.4 (11.1–11.9) | 0.64 | 11.6 (11.5–11.9) | 11.3 (11.0–11.5) | 0.72 | 5.3 |
+| Riptide of possible (5 s, 2 charges) | 97% (93–98), ≥90 14/16 | 93% (91–97) | 0.65 | 96% (94–98), ≥90 17/20 | 93% (90–95) | 0.72 | 43% |
+| Healing Stream of possible | 93% (88–95), ≥90 11/16 | 91% (88–96) | 0.50 | 92% (89–95), ≥90 14/20 | 94% (90–95) | 0.43 | 68% |
+| Stormstream hold (lower is better) | 1.77 s (1.36–2.85) | 2.51 s (1.81–3.07) | 0.62 | 3.28 s (2.51–4.03) | 2.66 s (2.02–4.87) | 0.45 | 4.15 s |
+| Ascendance of possible | 100% (67–100), ≥90 11/16 | 100% | 0.45 | 75% (75–100), ≥90 7/20 | 75% | 0.58 | 50% |
+| Spirit Link of possible | 67% (63–100), ≥90 7/16 | 100% (67–100) | 0.43 | 67% (50–75), ≥90 1/20 | 71% (50–75) | 0.43 | 50% |
+| Nature's Swiftness of possible | 100% (86–100), ≥90 11/16 | 88% (83–100) | 0.62 | 90% (89–93), ≥90 13/20 | 90% (82–90) | 0.64 | 67% |
+| Mana at end | 12.9% (7–17) | 5.7% (4–14) | 0.65 | 14.8% (5–38) | 20.0% (9–31) | 0.47 | 19% |
+| Mana at 2nd phase change | 49.5% (39–59) | 42.5% (37–49) | 0.59 | 45.9% (32–55) | 39.6% (28–62) | 0.55 | 70% |
+| Earth Shield on others | 0% (0–97), ≥90 5/16 | 0% (0–80) | 0.54 | 0% (0–98), ≥90 7/20 | 98.9% (0–99) | 0.38 | 94.1% |
+| Earthliving out | 100% (99.5–100), ≥90 16/16 | 99.5% | 0.67 | 100%, ≥90 20/20 | 100% | 0.62 | 90.7% |
+| Overheal share | 11.9% (11–15) | 17.7% (16–20) | 0.81 better | 18.3% (16–21) | 17.9% (17–20) | 0.48 | 14.5% |
+| Innervates received | 1.5 (0–2) | 0 (0–2) | | 3 (3–5) | 3 (0–3) | | 0 |
+| Mana saved per Innervate | 45,338 (40,417–60,950), 11 logs | 45,075, 7 logs | 0.60 | 47,417 (38,912–53,046) | 41,788, 12 logs | 0.60 | none received |
+| HPS (ranking) | 520,171 | 439,746 | 1.00 | 477,285 | 424,714 | 1.00 | 280,624 |
+
+**The owner** is below all 35 measured Heroic logs on Healing Rain, Riptide,
+Surging Totem and Healing Stream, above only 3 of 35 on casts per minute, and
+holds Stormstream longer than 30 of 35; mana at the end and Earth Shield are
+inside the range.
+
+**Riptide's cooldown: Rip Current** (talent spell 1254251, "Reduces the cooldown
+of Riptide by 1.0 sec", Wowhead tooltip; in the Heroic build). Every measured
+top and mid log takes it, and the longest cooldown each log's Riptide casts fit
+with two charges is 5.0 s (median and quartiles, all four sets). Rank 1's 61 in
+305.4 s fit `2 + floor(305.4 / 5)` = 63. Whether the owner takes it: not
+checked (owner not refetched).
+
+**Early signal (partial, to confirm on the full set).** Ranks 105 to 200 are
+strong players (HPS within 15% of the top 20), so few metrics separate them:
+
+- **Keep:** casts per minute (AUC 0.68 / 0.67), Healing Rain uptime (most top
+  logs ≥90% on both; separation weak on Heroic, 0.57).
+- **Replace:** Riptide casts per minute by Riptide against possible with a 5 s
+  cooldown when Rip Current is taken (≥90 for 14/16 and 17/20; 0.65 / 0.72).
+- **Demote to shown:** Healing Stream (0.50 / 0.43), Spirit Link and Ascendance
+  (top logs don't max them), Stormstream hold (Heroic and Mythic disagree),
+  mana at the end (wide on Mythic, directions disagree), Earth Shield on others
+  (median 0%: most top logs hold none of 974 in the caster table; not yet
+  explained), Surging Totem (fails on Heroic; Healing Rain carries it).
+- **Undecided:** Nature's Swiftness (0.62 / 0.64, but only 11/16 and 13/20
+  reach 90%), Earthliving (everyone ≥98%; no clear gap). Mana saved per
+  Innervate: shown only (raid support; 0.60 both).
+- **Heroic against Mythic:** Stormstream hold (top holds less on Heroic, more on
+  Mythic), mana at the end and overheal (top lower only on Heroic), Earth Shield.
+
+**Resume.** Still to fetch (9): Heroic top 21 `4MFvjKar7b9YxRtX`/60, 23
+`dcjFN7Bf9HDgYnZM`/1, 24 `XfjwQhdrCv9aqPD1`/1, 25 `tRQVXM3FkLGb91TA`/10; Heroic
+mid 121 `wjMXdv3LYQnRgNFa`/48; Mythic mid 190 `qaKHCMbA3LjZ46yN`/44, 195
+`vBhQg87Lt1ap94AR`/12, 200 `wxvVfRdbNhX1pAKg`/17; the owner
+`GaZ4Fj7VTm8YgqhQ`/30 source 12. Harness (uncommitted, in the
+`agent-a5b63e58b3a175083` worktree): `test/_scratch/validation_test.dart` and
+`wcl_cache.dart`; data in the session scratchpad
+(`C:\Users\Adam\AppData\Local\Temp\claude\E--addon-dev-rotationalQuiz\dee4e8a8-8b29-424b-8345-0048d748f7a4\scratchpad`):
+`logset.json` (81 picks), `results.jsonl` (one row per log; finished rows are
+skipped), `cache/` (raw responses by request hash), `scripts/analyse.py`
+(tables). Rerun with `WCL_STEP=logs flutter test
+test/_scratch/validation_test.dart` (pauses below 900 points an hour), then
+`python -I scripts/analyse.py <scratchpad>`. A `checks` step (about 10 points)
+finds who holds Earth Shield 974 in rank 2's kill and the owner's HPS rank.

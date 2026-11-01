@@ -32,20 +32,20 @@ at max charges or in Ascendance, Nature's Swiftness on cooldown (on Chain Heal),
 place Surging Totem well, Riptide on cooldown, Chain Heal, Healing Wave, DPS when
 safe. Method: Surging Totem, Healing Stream Totem, Riptide, then filler.
 
-| Must-do | Named by | How a log measures it |
-| --- | --- | --- |
-| Spend Stormstream procs at once (buff lasts 60 s, stacks to 2) | Wowhead (first), Icy Veins | Average time buff 1267089 is held: `totalUptime` / `totalUses`. Buff uses equalled casts in all three logs; stack events not checked |
-| Riptide on cooldown, on someone without one | all three | Riptide casts per minute; Riptide out (61295, `targetID` Buffs table) |
-| Nature's Swiftness on cooldown, on Chain Heal | Wowhead, Icy Veins (Method: not named) | Casts against possible (1 min). What it was spent on is the next cast |
-| Keep Surging Totem (its Healing Rain) up, placed where most stand | all three; first for Method, fourth for Wowhead, third for Icy Veins | Healing Rain buff 1307888 uptime; casts against possible (25 s, lasts 25 s). Placement: not measurable |
-| Healing Stream Totem on cooldown | all three | Casts of 5394 against possible: a Stormstream cast restores a charge (Wowhead), so possible is `2 + floor(length / 30) + Stormstream casts` (recharge assumed unhasted) |
-| Ascendance prepared: two Tidal Waves, Surging Totem right before, totems during | Wowhead | Surging Totem cast within about 1 s before Ascendance; Healing Stream and Stormstream casts in its 15 s. Tidal Waves stacks need Buffs events (not fetched); two Riptides in the 12 s before is a proxy |
-| Ascendance, Spirit Link Totem for heavy damage, not overlapping | all three | Casts against possible. Whether damage was heavy or overlapped: raid-dependent |
-| Chain Heal or Healing Wave by how many are hurt and mana | all three | Cast counts only. How many were hurt: not measurable |
-| Mana: percent near the boss's health percent, ending near 0% (Icy Veins); pace Chain Heal (Wowhead) | Wowhead, Icy Veins | Mana at phase changes and at the end from `classResources`. Boss health over time not fetched |
-| DPS when no one is in danger (Icy Veins); Lava Burst on Lava Surge (Method) | Icy Veins, Method | Damage casts per minute. Whether anyone was in danger: not measurable |
-| Pre-pull: Water Shield on self, Earth Shield on tank and self | Icy Veins (Method: Earth Shield on tank) | Earth Shield 974 (others) and 383648 (self) uptime. Water Shield 52127 is in no log's Buffs table; whether logs record it is unknown |
-| Unleash Life on cooldown | Wowhead (short cooldowns in general), Icy Veins (Farseer list only), Method | Not ranked: no top-40 log takes it |
+| Must-do | Named by | How a log measures it | Log evidence (#81, partial): H top / mid / owner; M top / mid |
+| --- | --- | --- | --- |
+| Spend Stormstream procs at once (buff lasts 60 s, stacks to 2) | Wowhead (first), Icy Veins | Average time buff 1267089 is held: `totalUptime` / `totalUses`. Buff uses equalled casts in all three logs; stack events not checked | hold 1.77 / 2.51 / 4.15 s; 3.28 / 2.66 s |
+| Riptide on cooldown, on someone without one | all three | Riptide casts per minute; Riptide out (61295, `targetID` Buffs table) | of possible at 5 s: 97 / 93 / 43%; 96 / 93% |
+| Nature's Swiftness on cooldown, on Chain Heal | Wowhead, Icy Veins (Method: not named) | Casts against possible (1 min). What it was spent on is the next cast | 100 / 88 / 67%; 90 / 90% |
+| Keep Surging Totem (its Healing Rain) up, placed where most stand | all three; first for Method, fourth for Wowhead, third for Icy Veins | Healing Rain buff 1307888 uptime; casts against possible (25 s, lasts 25 s). Placement: not measurable | Healing Rain 93.7 / 92.8 / 66.8%; 94.5 / 90.4%. Casts 92 / 91 / 69%; 92 / 90% |
+| Healing Stream Totem on cooldown | all three | Casts of 5394 against possible: a Stormstream cast restores a charge (Wowhead), so possible is `2 + floor(length / 30) + Stormstream casts` (recharge assumed unhasted) | 93 / 91 / 68%; 92 / 94% |
+| Ascendance prepared: two Tidal Waves, Surging Totem right before, totems during | Wowhead | Surging Totem cast within about 1 s before Ascendance; Healing Stream and Stormstream casts in its 15 s. Tidal Waves stacks need Buffs events (not fetched); two Riptides in the 12 s before is a proxy | not measured |
+| Ascendance, Spirit Link Totem for heavy damage, not overlapping | all three | Casts against possible. Whether damage was heavy or overlapped: raid-dependent | Ascendance 100 / 100 / 50%; 75 / 75%. Spirit Link 67 / 100 / 50%; 67 / 71% |
+| Chain Heal or Healing Wave by how many are hurt and mana | all three | Cast counts only. How many were hurt: not measurable | not measured |
+| Mana: percent near the boss's health percent, ending near 0% (Icy Veins); pace Chain Heal (Wowhead) | Wowhead, Icy Veins | Mana at phase changes and at the end from `classResources`. Boss health over time not fetched | end 12.9 / 5.7 / 19%; 14.8 / 20.0% |
+| DPS when no one is in danger (Icy Veins); Lava Burst on Lava Surge (Method) | Icy Veins, Method | Damage casts per minute. Whether anyone was in danger: not measurable | not measured |
+| Pre-pull: Water Shield on self, Earth Shield on tank and self | Icy Veins (Method: Earth Shield on tank) | Earth Shield 974 (others) and 383648 (self) uptime. Water Shield 52127 is in no log's Buffs table; whether logs record it is unknown | Earth Shield on others 0 / 0 / 94%; 0 / 99% |
+| Unleash Life on cooldown | Wowhead (short cooldowns in general), Icy Veins (Farseer list only), Method | Not ranked: no top-40 log takes it | not measured |
 
 **Where they differ:** Surging Totem's place (first for Method, below Riptide
 for Icy Veins); Nature's Swiftness (high for Wowhead and Icy Veins, absent from
@@ -170,8 +170,9 @@ tank. The metrics rank 974 and show 383648 (see "Metrics and findings" in
 
 ## Open questions
 
-- What shortens Riptide's cooldown in the Totemic build. The generated tree
-  holds talent names only, and no talent name in the build says so (#78 looked;
-  the spell text wasn't checked).
+- ~~What shortens Riptide's cooldown~~: **Rip Current** (1254251, "Reduces the
+  cooldown of Riptide by 1.0 sec", tooltip), so 5 s with Echo of the Elements'
+  two charges. Every measured top and mid log takes it, and their Riptide casts
+  fit a 5.0 s cooldown (#81, "Validation" in [warcraft-logs.md](warcraft-logs.md)).
 - Heroic against Mythic: top-20 Mythic kills last 502 to 627 s, Heroic 250 to
   489 s, so pair Heroic with Heroic until someone checks.
