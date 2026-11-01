@@ -15,7 +15,8 @@ enum FindingKind {
     'Let your resource build for about 10 s before an add wave, then cast a '
     'spender as it arrives.',
   ),
-  castBeforeWindow('Cast Stormkeeper first, then Ascendance.');
+  castBeforeWindow('Cast Stormkeeper first, then Ascendance.'),
+  dotUptime('Refresh Flame Shock before it falls off.');
 
   const FindingKind(this.whatToTry);
 

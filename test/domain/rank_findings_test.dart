@@ -126,7 +126,7 @@ void main() {
   test('a log identical to rank 1 has no findings, all the same', () async {
     final report = const RankFindings()(await compare(['rank1', 'rank1']));
     expect(report.findings, isEmpty);
-    expect(report.sameAsRank1, hasLength(4));
+    expect(report.sameAsRank1, hasLength(5));
     expect(report.stretchShortfall.every((s) => s == 0), isTrue);
   });
 

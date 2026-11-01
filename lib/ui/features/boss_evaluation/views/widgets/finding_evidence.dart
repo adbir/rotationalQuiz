@@ -54,7 +54,11 @@ class FindingEvidence extends StatelessWidget {
     rows: [
       for (var i = 0; i < comparison.logs.length; i++)
         GridRow(comparison.logs[i].label, [
-          GridCell(finding.valuesByLog[i].round().toString()),
+          GridCell(
+            finding.kind == FindingKind.dotUptime
+                ? '${finding.valuesByLog[i].toStringAsFixed(1)}%'
+                : finding.valuesByLog[i].round().toString(),
+          ),
         ]),
     ],
   );

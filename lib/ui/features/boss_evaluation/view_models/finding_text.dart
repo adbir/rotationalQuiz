@@ -1,4 +1,5 @@
 import '../../../../domain/models/boss_comparison.dart';
+import '../../../../domain/models/dot_uptime.dart';
 import '../../../../domain/models/finding.dart';
 import '../../../../domain/models/window_cast.dart';
 
@@ -46,6 +47,9 @@ class FindingText {
         'You cast Stormkeeper during Ascendance $you '
             '${f.yours == 1 ? 'time' : 'times'}, losing about '
             '${_s(_windowLost())} s of it. Rank 1: $top.',
+      FindingKind.dotUptime =>
+        '${_dot().name} was up ${_p(f.yours)}% of the fight. '
+            'Rank 1: ${_p(f.rank1)}%.',
       FindingKind.heldSpenders =>
         'Rank 1 held a spender before ${_events(f.rank1.round())} and cast '
             'one within 5 s. You held before $you.',
@@ -80,6 +84,8 @@ class FindingText {
           for (final d in _windowDetails())
             'at ${d.time.inSeconds} s, ${_s(d.remaining)} s of it left',
         ].join(', ');
+      case FindingKind.dotUptime:
+        return 'down ${[for (final g in _dot().gaps) '${_s(g.start)}-${_s(g.start + g.length)} s'].join(', ')}';
       case FindingKind.wastedResource:
         if (f.stretchIndexes.isEmpty || comparison.stretches.length == 1) {
           return 'the whole fought portion, ${comparison.fought.inSeconds} s.';
@@ -91,6 +97,8 @@ class FindingText {
             '${comparison.wastedResource.last[worst]} for rank 1).';
     }
   }
+
+  DotUptime _dot() => comparison.logs.first.metrics.dotUptime.first;
 
   // ponytail: the headline names Stormkeeper and Ascendance; a second spec
   // would take the names from its log rules.
@@ -139,15 +147,18 @@ class FindingText {
     FindingKind.lostFreeSpenders => 'free spenders',
     FindingKind.heldSpenders => 'held spenders',
     FindingKind.castBeforeWindow => 'Stormkeeper during Ascendance',
+    FindingKind.dotUptime => '${_dot().name} uptime',
   };
 
   /// The column title for a metric's evidence rows.
   String metricName(FindingKind kind) => switch (kind) {
     FindingKind.wastedResource => '$resourceLabel wasted',
     FindingKind.lostFreeSpenders => 'Free spenders lost',
+    FindingKind.dotUptime => '${_dot().name} uptime, %',
     _ => _label(kind),
   };
 
+  static String _p(double v) => v.toStringAsFixed(1);
   static String _n(double v) => v.round().toString();
   static String _s(Duration d) => (d.inMilliseconds / 1000).toStringAsFixed(1);
 }

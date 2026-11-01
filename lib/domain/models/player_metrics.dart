@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'dot_uptime.dart';
 import 'gap_detail.dart';
 import 'window_cast.dart';
 
@@ -22,6 +23,7 @@ class PlayerMetrics {
     required this.raidFreeCasts,
     required this.chanceProcs,
     this.windowCasts = const [],
+    this.dotUptime = const [],
   });
 
   final Duration fightLength;
@@ -35,6 +37,9 @@ class PlayerMetrics {
 
   /// Casts made inside a window they belonged before, per spec rule.
   final List<WindowCastMetrics> windowCasts;
+
+  /// Each of the spec's DoTs on the boss.
+  final List<DotUptime> dotUptime;
 }
 
 /// Finished casts, counting each press once.

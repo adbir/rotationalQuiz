@@ -60,6 +60,13 @@ class MetricsTable extends StatelessWidget {
           'Free spenders lost by refreshing',
           (m) => '${m.spenders.lostFree}',
         ),
+        for (final (i, dot) in first.dotUptime.indexed)
+          row(
+            '${dot.name} uptime',
+            (m) => m.dotUptime.length > i
+                ? '${m.dotUptime[i].percent.toStringAsFixed(1)}%'
+                : '–',
+          ),
         for (final proc in first.chanceProcs)
           row('${proc.name}, actual / expected', (m) {
             final match = m.chanceProcs.where((p) => p.name == proc.name);
