@@ -1,10 +1,11 @@
 import '../models/boss_comparison.dart';
 import '../models/finding.dart';
 
-/// Picks what to tell the player: the metrics they control, ordered by how far
-/// they are from rank 1 as a share of rank 1's value. Cooldown press delays are
-/// left out because top players delay too. Interim rule: #28 decides the real
-/// one and replaces this.
+/// Picks what to tell the player (decided in #28). Casts per minute leads
+/// whenever the player is 10% or more behind rank 1, and its gaps are part of
+/// it. The other metrics follow by how far behind rank 1 they are in their own
+/// unit (Maelstrom, free spenders, held spenders), up to three findings in all.
+/// Cooldown press delays are left out because top players delay too.
 class RankFindings {
   const RankFindings();
 
@@ -35,9 +36,6 @@ class RankFindings {
             if (casts[i] >= sameShare) i,
         ],
       ),
-      _finding(FindingKind.gaps, [
-        for (final m in all) m.gaps.count.toDouble(),
-      ]),
       _finding(FindingKind.wastedResource, [
         for (final m in all) m.resource.wasted.toDouble(),
       ]),
@@ -47,12 +45,16 @@ class RankFindings {
       if (comparison.pooling.isNotEmpty) _held(comparison),
     ];
 
-    final byGap = [...candidates]..sort((a, b) => b.share.compareTo(a.share));
+    final behind = [
+      for (final f in candidates)
+        if (f.share >= sameShare) f,
+    ];
+    final lead = behind.where((f) => f.kind == FindingKind.castsPerMinute);
+    final others =
+        behind.where((f) => f.kind != FindingKind.castsPerMinute).toList()
+          ..sort((a, b) => b.behind.compareTo(a.behind));
     return FindingsReport(
-      findings: [
-        for (final f in byGap)
-          if (f.share >= sameShare) f,
-      ].take(maxFindings).toList(),
+      findings: [...lead, ...others].take(maxFindings).toList(),
       sameAsRank1: [
         for (final f in candidates)
           if (f.share.abs() < sameShare) f.kind,
@@ -76,6 +78,7 @@ class RankFindings {
       yours: yours,
       rank1: rank1,
       share: behind / (rank1 < 1 ? 1 : rank1),
+      behind: behind,
       valuesByLog: values,
       stretchIndexes: stretchIndexes,
       waveTimes: waveTimes,

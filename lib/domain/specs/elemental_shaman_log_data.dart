@@ -13,6 +13,8 @@ const _stormkeeper = 191634;
 const _ancestralSwiftness = 443454;
 const _spiritwalkersGrace = 79206;
 const _gustOfWind = 192063;
+const _ghostWolf = 2645;
+const _ascendance = 114050;
 
 const elementalLogRules = SpecLogRules(
   resourceType: maelstromResourceType,
@@ -29,6 +31,10 @@ const elementalLogRules = SpecLogRules(
   // Overcharge!, from the Season 2 set. It is often the only sign of a free
   // spender, since few casts carry a Maelstrom reading.
   freeSpenderBuffIds: {1300222},
+  // Flowing Elements (1300219) comes from the fade of either (docs).
+  freeSpenderSourceIds: {_stormkeeper, _ascendance},
+  movementFormId: _ghostWolf,
+  graceId: _spiritwalkersGrace,
   raidFreeCasts: [
     RaidFreeCast(
       name: 'Time Spiral',

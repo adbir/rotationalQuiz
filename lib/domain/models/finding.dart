@@ -4,19 +4,15 @@ import 'package:flutter/foundation.dart';
 /// the same sentences are in `docs/glossary.md` next to the metric.
 enum FindingKind {
   castsPerMinute(
-    'Keep a cast going while you move, and queue the next spell before this '
-    'one ends.',
-  ),
-  gaps(
-    'Queue the next spell before this one ends, and use instant spells '
-    'while you move.',
+    'Keep a cast going while you move, queue the next spell before this one '
+    'ends, and use instant spells while you move.',
   ),
   wastedResource('Cast a spender before your resource reaches its cap.'),
   lostFreeSpenders(
     'Cast the free spender before you refresh the buff that gives it.',
   ),
   heldSpenders(
-    'Let your resource build for about 10 s before a wave, then cast a '
+    'Let your resource build for about 10 s before an add wave, then cast a '
     'spender as it arrives.',
   );
 
@@ -35,6 +31,7 @@ class Finding {
     required this.yours,
     required this.rank1,
     required this.share,
+    required this.behind,
     required this.valuesByLog,
     this.stretchIndexes = const [],
     this.waveTimes = const [],
@@ -46,6 +43,9 @@ class Finding {
 
   /// How far behind rank 1, as a share of rank 1's value. Negative when ahead.
   final double share;
+
+  /// How far behind rank 1 in the metric's own unit. Negative when ahead.
+  final double behind;
 
   /// The metric for every compared log, in the comparison's order.
   final List<double> valuesByLog;

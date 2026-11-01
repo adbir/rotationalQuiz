@@ -33,7 +33,7 @@ class NsrtNoteBar extends StatelessWidget {
                 value: viewModel.allWaves,
                 onChanged: (v) => viewModel.allWaves = v ?? false,
               ),
-              const Text('All waves'),
+              const Text('All add waves'),
             ],
           ),
         ],

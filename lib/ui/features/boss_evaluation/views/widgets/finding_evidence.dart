@@ -4,6 +4,8 @@ import '../../../../../domain/models/boss_comparison.dart';
 import '../../../../../domain/models/finding.dart';
 import '../../view_models/finding_text.dart';
 import 'comparison_grid.dart';
+import 'gap_table.dart';
+import 'lost_free_table.dart';
 import 'pooling_table.dart';
 import 'stretch_table.dart';
 
@@ -23,22 +25,37 @@ class FindingEvidence extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (finding.kind) {
-      FindingKind.castsPerMinute => StretchTable(comparison: comparison),
+      FindingKind.castsPerMinute => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          StretchTable(comparison: comparison),
+          GapTable(comparison: comparison),
+        ],
+      ),
       FindingKind.heldSpenders => PoolingTable(
         comparison: comparison,
         resourceLabel: text.resourceLabel,
       ),
-      _ => ComparisonGrid(
-        title: text.metricName(finding.kind),
-        columns: const ['Value'],
-        labelWidth: 100,
-        rows: [
-          for (var i = 0; i < comparison.logs.length; i++)
-            GridRow(comparison.logs[i].label, [
-              GridCell(finding.valuesByLog[i].round().toString()),
-            ]),
+      FindingKind.lostFreeSpenders => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _values(),
+          LostFreeTable(comparison: comparison),
         ],
       ),
+      _ => _values(),
     };
   }
+
+  Widget _values() => ComparisonGrid(
+    title: text.metricName(finding.kind),
+    columns: const ['Value'],
+    labelWidth: 100,
+    rows: [
+      for (var i = 0; i < comparison.logs.length; i++)
+        GridRow(comparison.logs[i].label, [
+          GridCell(finding.valuesByLog[i].round().toString()),
+        ]),
+    ],
+  );
 }

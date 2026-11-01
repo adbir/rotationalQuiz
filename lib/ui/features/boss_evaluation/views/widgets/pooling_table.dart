@@ -4,7 +4,7 @@ import '../../../../../domain/models/boss_comparison.dart';
 import '../../../../../domain/models/pooling_report.dart';
 import 'comparison_grid.dart';
 
-/// For each wave: the resource at the spawn, the time since the last spender,
+/// For each add wave (named after the add when known): the resource at the spawn, the time since the last spender,
 /// and the first spender after it.
 class PoolingTable extends StatelessWidget {
   const PoolingTable({
@@ -20,7 +20,9 @@ class PoolingTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final event = comparison.stretchSource == StretchSource.phases
         ? 'phase'
-        : 'wave';
+        : comparison.eventName == null
+        ? 'add wave'
+        : '${comparison.eventName} arrival';
     if (comparison.pooling.isEmpty) {
       return ComparisonGrid(
         title: '$resourceLabel before each $event',
