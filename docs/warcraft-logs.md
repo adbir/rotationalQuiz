@@ -280,3 +280,217 @@ The committed fixture is `test/fixtures/twin_fangs_window.json`: rank 1 from
 225 s to 300 s, which holds the 253 s Vexhul wave and the 227 s Bulwark wave. It
 rebuilds with no drift over 17 readings, and the 253 s wave reads as held (15 s
 since the last spender, Earthquake 2.1 s after the spawn). The owner's log is not in it.
+
+## Flame Shock uptime
+
+Answers #26. Measured on 2026-11-01 on the three Sszorak logs above, with the
+client-credentials token. Each query was fetched once; the cost is the change in
+`rateLimitData { pointsSpentThisHour }` across the call.
+
+| | Rank ~1133 | Rank 18 | Rank 1 |
+| --- | --- | --- | --- |
+| Report / fight | `ycBrVaJAgKvNLCMj` / 58 | `HJ6dAfkFbV4tXRZp` / 38 | `mG9M7nV1CDZWgJHL` / 32 |
+| Player source id | 278 (Eliance) | 11 | 21 |
+| Boss actor id (`fights.enemyNPCs`, game id 257347) | 196 | 192 | 225 |
+| Fight length | 371.5 s | 370.2 s | 287.9 s |
+
+Rank 18's other Shaman (id 22) is a different player with 6 debuff events. Pick
+the source by name or by its casts, never by "the Shaman".
+
+### Approach A: events
+
+```graphql
+query { reportData { report(code: "ycBrVaJAgKvNLCMj") {
+  events(fightIDs: [58], dataType: Debuffs, sourceID: 278, abilityID: 188389,
+         startTime: 14564187, endTime: 14935656, limit: 10000) {
+    nextPageTimestamp data } } } }
+```
+
+- **Cost:** 1 point per call. All three fit one page (24, 23 and 16 events).
+- **Rows:** `{timestamp, type, sourceID, targetID, abilityGameID, fight}` with `type`
+  `applydebuff`, `refreshdebuff` or `removedebuff`. `targetID` is the boss actor.
+  No stack, duration or `hostilityType` fields.
+- **Leave `hostilityType` at its default (Friendlies).** `hostilityType: Enemies`
+  with `sourceID` 278 or with the boss as `sourceID` returned zero rows, and cost
+  10 and 7 points. The source is the player who applied the debuff, whatever
+  the target.
+- **Uptime:** band from each `applydebuff` to the next `removedebuff`; a
+  `refreshdebuff` changes nothing. A band still open at the end of the fight
+  closes at the fight's end. The first band opens at the first apply, so time
+  before it counts as down.
+
+### Approach B: the Debuffs table
+
+```graphql
+query { reportData { report(code: "ycBrVaJAgKvNLCMj") {
+  table(fightIDs: [58], dataType: Debuffs, sourceID: 278, abilityID: 188389,
+        startTime: 14564187, endTime: 14935656) } } }
+```
+
+- **Cost:** 1 point per call.
+- **Result:** `data.auras` has one row per target (`name`, `id` = boss actor,
+  `guid`, `totalUptime` ms, `totalUses`, `bands: [{startTime, endTime}]`) and
+  `data.totalTime`. The bands are the same as approach A's, so it needs no event
+  parsing and the bands are absolute log times.
+- **Same default as A:** `hostilityType: Enemies` with a `sourceID` returned no
+  auras (glossary, "Not yet verified"). Without it the table works.
+- **Pitfall:** `totalTime` is the whole fight, so the percent is
+  `totalUptime / totalTime`, but a wipe or phase-limited window must pass the
+  matching `startTime` and `endTime`.
+
+### Numbers
+
+| | Rank ~1133 | Rank 18 | Rank 1 |
+| --- | --- | --- | --- |
+| A: uptime (events) | 333.25 s, 89.7% | 366.77 s, 99.1% | 287.47 s, 99.8% |
+| B: `totalUptime` (table) | 333,250 ms | 366,769 ms | 287,465 ms |
+| Down time | 38.2 s | 3.4 s | 0.5 s |
+| Gaps (start, length) | 0 s 2.8; 73.1 s 0.6; 91.7 s 18.9; 200.6 s 12.2; 361.4 s 3.7 | 0 s 0.5; 87.3 s 0.3; 177.6 s 0.5; 332.7 s 0.4; 351.1 s 1.7 | 0 s 0.5 |
+| Apply / refresh / remove | 5 / 15 / 4 | 5 / 14 / 4 | 1 / 15 / 0 |
+| Casts of 188389 (= casts of 470411) | 16 | 17 | 13 |
+| Ascendance casts (114050) | 4 | 2 | 3 |
+
+A and B agree to the millisecond on all three logs. The table also reports
+`totalUses` 20, 19 and 16: applies plus refreshes.
+
+### Ascendance and the echo
+
+- **Ascendance's Flame Shock** is a debuff event with no 188389 cast. Each
+  Ascendance cast (114050) has an `applydebuff` or `refreshdebuff` within 17 ms
+  and no 188389 cast within 150 ms of it (the nearest cast was 1.1 s away or
+  more). Rank ~1133 shows 2 of its 4 as `refreshdebuff` at 123.8 s and 244.3 s
+  and 2 as `applydebuff` at 2.8 s and 365.1 s (the debuff was down); rank 18
+  shows 2 of 2 as refreshes, rank 1 shows 3 of 3 as refreshes. Every other debuff event has a 188389 cast
+  at the same moment. So debuff events count Ascendance's Flame Shock, and
+  casts do not.
+- **The 470411 echo** never appears as a debuff. `Debuffs` events for 470411
+  returned zero rows in all three logs. It exists only as a cast, once per 188389
+  cast within 1 ms. Counting casts of 188389 alone gives 16, 17 and 13.
+- **Counting rule for "Flame Shock presses":** casts of 188389. For
+  "refreshes of the debuff", the `refreshdebuff` and `applydebuff` rows, which
+  also include Ascendance's.
+
+### Pitfalls
+
+- **Several targets.** The events are per target, and the table has one row per
+  target. These fights had one target, so each query returned only the boss.
+  A multi-target fight needs filtering on the boss's `targetID` (not tried,
+  `events` accepts `targetID`) or keeping only the aura row whose `id` is the
+  boss.
+- **Pandemic.** A refresh is a single `refreshdebuff` row, with no remaining or
+  new duration. Remaining time at a refresh isn't in the log. The gaps between
+  applies and refreshes run from 1.1 to 44.6 s, and a 40.9 s one had no remove
+  between, so the in-log duration is not the 18 s of the app's tables (to
+  check against the talents). Early refresh waste can't be read from the
+  events alone.
+- **Gaps are short.** A 0.3 to 0.6 s gap (remove then apply, as at 73.1 s in
+  rank ~1133) is a real lapse of the debuff, but it is also within the timing
+  allowance for ordering events. Report only gaps over about 1 s as "down".
+- **Start of the pull.** Every log starts with 0.5 to 2.8 s down before the
+  first apply. Count from the player's first cast, or from the first apply, if
+  that is not to be blamed on the player.
+- **A cast that missed.** Every 188389 cast in these logs had a debuff event
+  within 150 ms; a cast on an immune or dead target might not.
+
+### Recommendation
+
+Use approach A at 1 point per log: `events(dataType: Debuffs, sourceID,
+abilityID: 188389)` on default hostility. It gives the same uptime as the table
+and also the apply, refresh and remove times, which the app needs to show "down
+from 91.7 to 110.6 s" next to the casts, to separate Ascendance's Flame Shock
+from a pressed one, and to test against the APL. The table is the cheaper
+check for a bare percentage, and is the right source for a second opinion.
+
+`FightLog` needs, without implementing it:
+
+- **Boss actor id** on `LogFight` (the `fights.enemyNPCs` entry whose `gameID`
+  matches the encounter's boss; 196, 192, 225 above), to filter `targetID`.
+- **`WclEventType.debuffs('Debuffs')`**, one `events` call per log with
+  `abilityID` 188389 taken from the spec's rules, merged by the existing
+  paging in `WarcraftLogsService.events`. `abilityID` is a new argument.
+- **`debuffEvents: List<LogBuffEvent>`** on `FightLog`. `LogBuffEvent` already
+  holds time, ability, target and change, so the mapper's switch needs the
+  `applydebuff`, `refreshdebuff` and `removedebuff` cases; `stack` stays null.
+- **A `DebuffWindows` model**, like `BuffWindows`, built from them: bands,
+  uptime and gaps, with open bands closed at the fight's end. No spec checks: the
+  ability id comes from `RotationSpec.logRules`.
+- **A cast-vs-debuff match** (a debuff event with no 188389 cast within about
+  150 ms is Ascendance's) in the player metrics, kept apart from press counts.
+
+## Raid support received
+
+Which query lists the buffs a player got from others (ticket #27). Checked on
+2026-11-01 against the three Sszorak logs above, with a client token on the
+owner's PC. The player ids are 278 (rank ~1133), 11 (rank 18) and 21 (rank 1).
+
+### The `sourceID` / `targetID` swap
+
+For `dataType: Buffs`, in both `table` and `events`, **`sourceID` is the player
+who holds the buff and `targetID` is who cast it.** `table(dataType: Buffs,
+targetID: <player>)`, the query first tried, lists only what the player cast
+(Skyfury, Bloodlust). It had no Time Spiral, Power Infusion or Blessing of the
+Bronze in any log. With `targetID: P` the events all have `sourceID` P too, and
+`filterExpression: "source.id != P"` changed nothing (2,101, 1,996 and 2,008
+events either way), so it is not a way to select external buffs. `FightLog`
+already asks for `sourceID` = player, which is why Time Spiral reached it.
+
+### Queries and cost
+
+Cost is the change in `rateLimitData.pointsSpentThisHour` across the call.
+
+| Query | Cost | Result |
+| --- | --- | --- |
+| (a) `table(dataType: Buffs, fightIDs: [F], sourceID: P)` | 1 point | 79 to 90 auras, each `{guid, name, totalUptime, totalUses, type}`, in ms. No caster. Includes Blessing of the Bronze. |
+| (b) `events(dataType: Buffs, sourceID: P, startTime, endTime, limit: 10000)` | 1 point per page (about 2,000 events, one page) | Every apply, refresh and remove, with `sourceID` (caster) and `targetID` (P). The app's existing call. No Blessing of the Bronze. |
+| (c) as (b) plus `filterExpression: "source.id != P"` | 1 point | The same events as (b). No use. |
+| (d) as (a) with `targetID: P` | 1 point | What P cast. The wrong query. |
+
+### What each log received
+
+Uptime is `totalUptime` over the kill length (371, 370 and 288 s), then the
+table's `totalUses`. Casters are the `sourceID`s in (b).
+
+| Buff (id) | Rank ~1133 | Rank 18 | Rank 1 |
+| --- | --- | --- | --- |
+| Blessing of the Bronze (381756), table only | 100%, 1 | 100%, 1 | 100%, 1 |
+| Power Infusion (10060) | 13.5%, 4 (priest 276) | 12.2%, 3 (priest 19) | 15.6%, 3 (priest 19) |
+| Ebon Might (395152) | 90.0%, 43 (Aug 274) | 88.0%, 42 (Aug 12) | 93.7%, 40 (Aug 17) |
+| Prescience (410089) | none | 21.2%, 3 (Aug 12) | none |
+| Shifting Sands (413984) | none | 10.3%, 3 (Aug 12) | 8.9%, 2 (Aug 17) |
+| Time Spiral (375256) | 6.7%, 5 (274 and 9) | 4.6%, 6 (7 and 12) | 2.6%, 2 (17) |
+| Raid haste | Fury of the Aspects 390386: 10.8%, 1 (Evoker 9) | Time Warp 80353: 10.8%, 1 (mage 6) | Bloodlust 2825: 13.9%, 1 (cast by the player) |
+
+Breath of Eons put no buff on the player in any log. Also seen, from the Aug or
+other Evokers: Inferno's Blessing 410263 (ranks 18 and 1), Black / Bronze
+Attunement 403295 / 403296 (ranks 18 and 1), Chrono Ward 409678 (rank ~1133),
+Rewind 363534 and Temporal Anomaly 373862 (all three). Their effect on a
+cooldown or haste is not checked.
+
+### Why Blessing of the Bronze was missing
+
+It is applied before the pull and lasts through it, so no event falls inside the
+fight window. (b) never has it, while the table reports it at 100% with one use.
+A window starting 900 s before the pull (rank 18, `ability.id = 381756`, 1
+point) returned only `removebuff` events at the ends of the two earlier pulls
+(fights 36 and 37), no `applybuff`. So an earlier window can't find the apply
+either. The cause is the buff carrying over, not a filter or the source.
+
+### Recommendation
+
+Add query (a) to every comparison: 1 point per log, no extra paging. It is the
+only route to Blessing of the Bronze, and it gives uptime and uses for every
+other external. Keep (b), which `FightLog` already loads, for timing (Time
+Spiral windows, Power Infusion, Time Warp) and for the caster.
+
+`FightLog` would need:
+
+- `LogBuffEvent.sourceId`. The mapper reads `targetID` and drops `sourceID`, so
+  nobody can tell a player's own buff from a raid buff, or tell Evokers apart.
+- A list of `{abilityId, name, uptime, uses}` from (a) for the player, such as
+  `receivedBuffs`.
+- A raid-support list in `SpecLogRules` (Blessing of the Bronze 381756, Power
+  Infusion 10060, Ebon Might 395152, Prescience 410089, Shifting Sands 413984,
+  Time Spiral 375256, and the lust ids 2825, 80353, 390386), replacing the
+  hard-coded names in `raidCooldownSupport`.
+
+Not implemented. The source is the v2 API responses above.
