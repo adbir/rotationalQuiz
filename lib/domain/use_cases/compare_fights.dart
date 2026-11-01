@@ -80,6 +80,9 @@ class CompareFights {
       castsPerMinute: [
         for (final f in fights) _castsPerMinute(f.log, stretches),
       ],
+      wastedResource: [
+        for (final f in fights) _wastedResource(f.log, stretches),
+      ],
       pooling: starts.isEmpty
           ? const []
           : [for (final f in fights) _pooling(f.log, starts)],
@@ -106,6 +109,16 @@ class CompareFights {
       for (final s in stretches)
         presses.where((t) => t >= s.start && t < s.end).length /
             ((s.end - s.start).inMilliseconds / 60000),
+    ];
+  }
+
+  List<int> _wastedResource(FightLog log, List<Stretch> stretches) {
+    final type = spec.logRules.resourceType;
+    return [
+      for (final s in stretches)
+        log.resourceGains
+            .where((g) => g.type == type && g.time >= s.start && g.time < s.end)
+            .fold(0, (sum, g) => sum + g.waste),
     ];
   }
 

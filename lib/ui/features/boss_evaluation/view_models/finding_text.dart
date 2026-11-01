@@ -81,8 +81,14 @@ class FindingText {
             'at ${d.time.inSeconds} s, ${_s(d.remaining)} s of it left',
         ].join(', ');
       case FindingKind.wastedResource:
-        // ponytail: the metrics have no times, so this is the whole fight.
-        return 'the whole fought portion, ${comparison.fought.inSeconds} s.';
+        if (f.stretchIndexes.isEmpty || comparison.stretches.length == 1) {
+          return 'the whole fought portion, ${comparison.fought.inSeconds} s.';
+        }
+        final worst = f.stretchIndexes.first;
+        final s = comparison.stretches[worst];
+        return 'mostly at ${s.start.inSeconds}-${s.end.inSeconds} s '
+            '(${comparison.wastedResource.first[worst]} vs '
+            '${comparison.wastedResource.last[worst]} for rank 1).';
     }
   }
 

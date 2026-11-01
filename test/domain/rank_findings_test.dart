@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rotational_quiz/domain/models/boss_comparison.dart';
+import 'package:rotational_quiz/domain/models/fight_log.dart';
 import 'package:rotational_quiz/domain/models/finding.dart';
 import 'package:rotational_quiz/domain/use_cases/compare_fights.dart';
 import 'package:rotational_quiz/domain/use_cases/rank_findings.dart';
@@ -7,6 +8,7 @@ import 'package:rotational_quiz/utils/result.dart';
 
 import '../fake_warcraft_logs_repository.dart';
 import '../test_helpers.dart';
+import 'player_metrics_fixture_test.dart' show loadFixture;
 
 Future<BossComparison> compare(List<String> reports) async {
   final fake = FakeWarcraftLogsRepository();
@@ -28,7 +30,74 @@ Future<BossComparison> compare(List<String> reports) async {
   return CompareFights(spec)(fights, groups);
 }
 
+/// The Twin Fangs fixture cut in two at 30 s, wasting [waste] at each time.
+FightLog wasting(Map<double, int> waste) {
+  final log = loadFixture('twin_fangs_window');
+  final f = log.fight;
+  return FightLog(
+    reportCode: log.reportCode,
+    fight: LogFight(
+      id: f.id,
+      name: f.name,
+      encounterId: f.encounterId,
+      kill: f.kill,
+      duration: const Duration(seconds: 60),
+      difficulty: f.difficulty,
+      size: f.size,
+      phaseStarts: const [Duration(seconds: 30)],
+    ),
+    playerName: log.playerName,
+    playerId: log.playerId,
+    abilityNames: log.abilityNames,
+    casts: log.casts,
+    resourceGains: [
+      for (final e in waste.entries)
+        LogResourceGain(
+          time: Duration(milliseconds: (e.key * 1000).round()),
+          abilityId: 1,
+          type: maelstromResourceType,
+          amount: 10,
+          waste: e.value,
+          max: 100,
+        ),
+      LogResourceGain(
+        time: const Duration(seconds: 5),
+        abilityId: 1,
+        type: 0,
+        amount: 10,
+        waste: 99,
+        max: 100,
+      ),
+    ],
+    buffEvents: const [],
+    talents: log.talents,
+  );
+}
+
 void main() {
+  test('wasted resource is summed by stretch, on either side of the cut', () {
+    final c = CompareFights(spec)([
+      FightToCompare(label: 'You', log: wasting({10: 5, 29.9: 7, 30.1: 11})),
+      FightToCompare(label: 'Rank 1', log: wasting({10: 1, 40: 2})),
+    ], const []);
+    expect(c.stretches, hasLength(2));
+    expect(c.wastedResource, [
+      [12, 11],
+      [1, 2],
+    ]);
+    final f = const RankFindings()(c).findings
+        .firstWhere((f) => f.kind == FindingKind.wastedResource);
+    expect(f.stretchIndexes, [0, 1]);
+    // Worst first, and a stretch where the player wasted less is left out.
+    final better = CompareFights(spec)([
+      FightToCompare(label: 'You', log: wasting({10: 2, 40: 20})),
+      FightToCompare(label: 'Rank 1', log: wasting({10: 9, 40: 1})),
+    ], const []);
+    final g = const RankFindings()(better).findings
+        .firstWhere((f) => f.kind == FindingKind.wastedResource);
+    expect(g.stretchIndexes, [1]);
+  });
+
   test('leads with casts per minute, then orders by the difference, at most three', () async {
     final report = const RankFindings()(
       await compare([FakeWarcraftLogsRepository.mine, 'rank53', 'rank1']),
