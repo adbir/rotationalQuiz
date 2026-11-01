@@ -6,11 +6,14 @@ import 'package:provider/provider.dart';
 import 'app.dart';
 import 'data/repositories/apl_repository.dart';
 import 'data/repositories/keybind_repository.dart';
+import 'data/repositories/spell_icon_repository.dart';
 import 'data/repositories/talent_build_repository.dart';
 import 'data/services/apl_asset_service.dart';
 import 'data/services/local_store.dart';
 import 'data/services/simc_remote_service.dart';
+import 'data/services/spell_icon_service.dart';
 import 'domain/specs/elemental_shaman.dart';
+import 'ui/core/widgets/spell_icon.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +40,13 @@ Future<void> main() async {
           create: (_) => KeybindRepository(spec: spec, store: store),
         ),
       ],
-      child: const RotationalQuizApp(),
+      child: SpellIconScope(
+        repository: SpellIconRepository(
+          service: SpellIconService(),
+          store: store,
+        ),
+        child: const RotationalQuizApp(),
+      ),
     ),
   );
 }

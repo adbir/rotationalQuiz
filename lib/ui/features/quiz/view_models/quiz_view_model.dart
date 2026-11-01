@@ -146,6 +146,15 @@ class QuizViewModel extends ChangeNotifier {
   /// Off-GCD abilities already pressed for this question (hot keys).
   Set<String> get offGcdPressed => Set.unmodifiable(_offGcdPressed);
 
+  /// Off-GCD abilities the APL wanted pressed before a correct hot-key
+  /// answer but that weren't. The answer still counts; the UI reminds the
+  /// player.
+  List<String> get skippedOffGcd => [
+    if (_mode == QuizMode.hotkeys && isCorrect)
+      for (final action in _answer?.offGcd ?? const <Never>[])
+        if (!_offGcdPressed.contains(action.name)) action.name,
+  ];
+
   DateTime? _startedAt;
   Duration? _reactionTime;
 

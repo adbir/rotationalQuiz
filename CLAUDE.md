@@ -144,6 +144,8 @@ variable support in the evaluator before it will give correct answers.
      `requiredTalent`/`requiredSetBonus` (these hide it when not taken).
    - Set `quizChance`: the probability it's up in random quiz scenarios.
      `null` means the quiz never changes it.
+   - Set `spellId` (the buff's in-game spell id) so its icon shows. Check
+     it against SimC's `engine/dbc/generated/sc_spell_data.inc`.
 2. Nothing else is needed for the UI: `ScenarioEditor`, `StateSummary` and
    `GenerateScenario` all read `spec.auras`.
 3. `flutter test`. The coverage test fails if the APL reads an aura you
@@ -157,6 +159,7 @@ variable support in the evaluator before it will give correct answers.
    - `requiredBuff` is for spells that only exist during a proc, like
      Tempest.
    - `onActionBar: false` hides it from the quiz bar.
+   - `spellId`: the in-game spell id, for its icon (see the aura recipe).
 2. If it has a cooldown, add a `CooldownDefinition` (`maxCharges` for charge
    spells) and set `cooldownId`/`usesCharges` on the spell.
 3. Special rules go in `ElementalShaman.availability()` (e.g. Wind Shear
@@ -234,9 +237,17 @@ anything new the sandbox doesn't model.
 - **Keybinds** (`KeybindRepository`): stored per spec by physical key (USB
   HID usage, so they're layout independent) plus modifiers. Middle and side
   mouse buttons are stored as negative codes. A key maps to one ability.
+- **Spell icons** (`SpellIconRepository`, `ui/core/widgets/spell_icon.dart`):
+  Blizzard's artwork, so never committed (the repo is GPL). At runtime the
+  app asks Wowhead's tooltip API (`nether.wowhead.com/tooltip/spell/<id>`)
+  for the icon name and loads the image from `wow.zamimg.com`. Names are
+  cached in `LocalStore` under `spell_icons` and validated before use.
+  Without a `SpellIconScope`, offline, or on any error, buttons show their
+  coloured abbreviation and chips show text only. The cloud container
+  can't reach these hosts, so check icons on the live site.
 - **Persistence:** `LocalStore`, backed by `shared_preferences`
   (localStorage on the web). Keys are `keybinds.<spec>`,
-  `talent_builds.<spec>` and `active_talent_build.<spec>`. Imported builds
+  `talent_builds.<spec>`, `active_talent_build.<spec>` and `spell_icons`. Imported builds
   are re-decoded on load, so they pick up talent data updates.
 
 ## Testing

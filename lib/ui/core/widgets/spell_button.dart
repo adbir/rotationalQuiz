@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/models/spec_definition.dart';
 import '../theme.dart';
+import 'spell_icon.dart';
 
 /// Visual state of a [SpellButton].
 enum SpellButtonMark { none, recommended, correct, wrong, unavailable }
@@ -51,6 +52,7 @@ class SpellButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(size * 0.18),
         side: BorderSide(color: borderColor, width: borderWidth),
       ),
+      clipBehavior: Clip.antiAlias,
       elevation: mark == SpellButtonMark.recommended ? 6 : 1,
       child: InkWell(
         onTap: onPressed,
@@ -58,13 +60,22 @@ class SpellButton extends StatelessWidget {
           dimension: size,
           child: Stack(
             children: [
-              Center(
-                child: Text(
-                  spell.abbreviation,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: dimmed ? 0.5 : 1),
-                    fontWeight: FontWeight.w800,
-                    fontSize: size * 0.3,
+              Positioned.fill(
+                child: Opacity(
+                  opacity: dimmed ? 0.4 : 1,
+                  child: SpellIcon(
+                    spellId: spell.spellId,
+                    size: size,
+                    fallback: Center(
+                      child: Text(
+                        spell.abbreviation,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: size * 0.3,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

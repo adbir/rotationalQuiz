@@ -29,11 +29,30 @@ class QuizVerdict extends StatelessWidget {
       ),
       _ => (Icons.cancel, theme.colorScheme.error, 'Not quite.'),
     };
-    return Row(
+    final skipped = [
+      for (final id in vm.skippedOffGcd) vm.spec.spells[id]?.name ?? id,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: color),
-        const SizedBox(width: 8),
-        Text(text, style: theme.textTheme.titleLarge?.copyWith(color: color)),
+        Row(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: 8),
+            Text(
+              text,
+              style: theme.textTheme.titleLarge?.copyWith(color: color),
+            ),
+          ],
+        ),
+        if (skipped.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 32),
+            child: Text(
+              'Press ${skipped.join(' and ')} first: it is off the GCD.',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
       ],
     );
   }
