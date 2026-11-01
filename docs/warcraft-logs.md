@@ -514,6 +514,25 @@ check for a bare percentage, and is the right source for a second opinion.
 - **A cast-vs-debuff match** (a debuff event with no 188389 cast within about
   150 ms is Ascendance's) in the player metrics, kept apart from press counts.
 
+### Implemented (#55)
+
+- `WarcraftLogsService.events` takes `abilityId`; `WclEventType.debuffs` exists.
+  `loadFight` makes one extra `Debuffs` call per DoT aura of the spec
+  (`spec.auras`, `kind == AuraKind.dot`) and fills `FightLog.debuffEvents`
+  (`applydebuff`, `refreshdebuff`, `removedebuff`; `buffEvents` is untouched).
+- `LogFight.bossActorId` is the first `fights.enemyNPCs` entry with one copy
+  (196 on Sszorak; 255, Vexhul, on Twin Fangs, where Ithraz 256 is hit at the
+  same moment). `null` when there is none, and then `DebuffWindows` counts every
+  target.
+- `DebuffWindows.of(log, debuffId)` gives `windows`, `uptime`, `uptimePercent`
+  and `gaps` (1 s or longer). A window that begins with the debuff up has only
+  refreshes, so a refresh before any band opens one at the start.
+- The fixtures hold a `debuffs` key and `fight.enemyNPCs`. Both 75 s windows
+  (Sszorak 225 s to 300 s of the owner's log, Twin Fangs rank 1) show 100% uptime
+  on the boss: 6 and 15 refresh rows, no apply or remove (Twin Fangs also holds 3
+  applies on Spawn of Vexhul, which the boss filter drops). Fetching them cost
+  about 8 points (two report queries and two event queries).
+
 ## Raid support received
 
 Which query lists the buffs a player got from others (ticket #27). Checked on

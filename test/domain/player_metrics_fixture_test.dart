@@ -54,6 +54,9 @@ FightLog loadFixture([String name = 'sszorak_window']) {
       for (final r in rows('buffs')) ?WarcraftLogsMapper.buffEvent(r, start),
     ],
     talents: {...(json['talents'] as List).cast<String>()},
+    debuffEvents: [
+      for (final r in rows('debuffs')) ?WarcraftLogsMapper.buffEvent(r, start),
+    ],
   );
 }
 

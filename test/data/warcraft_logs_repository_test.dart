@@ -139,6 +139,20 @@ class FakeApi {
         },
         {'timestamp': _start + 5100, 'type': 'somethingelse'},
       ]),
+      'Debuffs' => _events([
+        {
+          'timestamp': _start + 3000,
+          'type': 'applydebuff',
+          'abilityGameID': 188389,
+          'targetID': 30,
+        },
+        {
+          'timestamp': _start + 9000,
+          'type': 'removedebuff',
+          'abilityGameID': 188389,
+          'targetID': 30,
+        },
+      ]),
       _ => _events([
         {
           'type': 'combatantinfo',
@@ -224,6 +238,31 @@ void main() {
       expect(buff.stack, 1);
 
       expect(log.talents, {'stormkeeper'}, reason: 'unknown ids are dropped');
+    });
+
+    test("reads the spec's DoT debuffs apart from the buffs", () async {
+      final result = await repo.loadFight(
+        reportCode: 'ycBr',
+        fightId: 58,
+        sourceId: 7,
+      );
+      final log = (result as Ok<FightLog>).value;
+
+      expect(log.fight.bossActorId, 30);
+      expect(log.debuffEvents.map((e) => e.change), [
+        LogBuffChange.apply,
+        LogBuffChange.remove,
+      ]);
+      expect(log.debuffEvents.first.targetId, 30);
+      expect(log.buffEvents, hasLength(1));
+      final debuffRequests = [
+        for (var i = 0; i < api.requests.length; i++)
+          if (api.variables(i)['type'] == 'Debuffs') api.variables(i),
+      ];
+      expect(debuffRequests, hasLength(1));
+      expect(debuffRequests.single['ability'], 188389);
+      expect(debuffRequests.single['source'], 7);
+      expect(debuffRequests.single['hostility'], 'Friendlies');
     });
 
     test('pages from the cursor the API returned', () async {

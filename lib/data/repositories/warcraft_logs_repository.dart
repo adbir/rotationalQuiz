@@ -1,6 +1,7 @@
 import '../../domain/models/enemy_group.dart';
 import '../../domain/models/enemy_presence.dart';
 import '../../domain/models/fight_log.dart';
+import '../../domain/models/spec_definition.dart';
 import '../../domain/specs/rotation_spec.dart';
 import '../../utils/result.dart';
 import '../services/warcraft_logs_service.dart';
@@ -38,10 +39,12 @@ class WarcraftLogsRepository {
       Future<List<JsonMap>> events(
         WclEventType type, {
         bool includeResources = false,
+        int? abilityId,
       }) => _service.events(
         code: reportCode,
         fightId: fightId,
         sourceId: id,
+        abilityId: abilityId,
         type: type,
         start: start,
         end: WarcraftLogsMapper.fightEnd(fight),
@@ -52,6 +55,11 @@ class WarcraftLogsRepository {
       final resources = await events(WclEventType.resources);
       final buffs = await events(WclEventType.buffs);
       final info = await events(WclEventType.combatantInfo);
+      final debuffs = <JsonMap>[
+        for (final aura in spec.auras)
+          if (aura.kind == AuraKind.dot && aura.spellId != null)
+            ...await events(WclEventType.debuffs, abilityId: aura.spellId),
+      ];
       final damage = includeTargetsHit
           ? await events(WclEventType.damageDone)
           : const <JsonMap>[];
@@ -85,6 +93,10 @@ class WarcraftLogsRepository {
             for (final row in buffs) ?WarcraftLogsMapper.buffEvent(row, start),
           ],
           talents: _talentTokens(info),
+          debuffEvents: [
+            for (final row in debuffs)
+              ?WarcraftLogsMapper.buffEvent(row, start),
+          ],
         ),
       );
     } on Exception catch (e) {

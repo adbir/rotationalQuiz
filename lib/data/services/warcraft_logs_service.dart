@@ -14,6 +14,7 @@ enum WclEventType {
   casts('Casts'),
   resources('Resources'),
   buffs('Buffs'),
+  debuffs('Debuffs'),
   combatantInfo('CombatantInfo'),
   deaths('Deaths'),
   damageDone('DamageDone'),
@@ -88,10 +89,10 @@ query ($code: String!, $fight: Int!) {
 }''';
 
   static const _eventsQuery = r'''
-query ($code: String!, $fight: Int!, $source: Int, $type: EventDataType!, $start: Float!, $end: Float!, $resources: Boolean!, $hostility: HostilityType!) {
+query ($code: String!, $fight: Int!, $source: Int, $type: EventDataType!, $start: Float!, $end: Float!, $resources: Boolean!, $hostility: HostilityType!, $ability: Float) {
   reportData {
     report(code: $code) {
-      events(fightIDs: [$fight], sourceID: $source, dataType: $type, startTime: $start, endTime: $end, limit: 5000, includeResources: $resources, hostilityType: $hostility) {
+      events(fightIDs: [$fight], sourceID: $source, dataType: $type, startTime: $start, endTime: $end, limit: 5000, includeResources: $resources, hostilityType: $hostility, abilityID: $ability) {
         nextPageTimestamp
         data
       }
@@ -141,11 +142,12 @@ query ($code: String!, $fight: Int!, $source: Int, $type: EventDataType!, $start
   /// events (its id from `enemyNPCs`) instead of a player's. Without a
   /// [sourceId] every source's events come back, which is how all enemy
   /// deaths come in one query. `DamageTaken` with [enemy] filters on the one
-  /// taking the damage.
+  /// taking the damage. [abilityId] keeps only that ability's events.
   Future<List<JsonMap>> events({
     required String code,
     required int fightId,
     int? sourceId,
+    int? abilityId,
     required WclEventType type,
     required num start,
     required num end,
@@ -167,6 +169,7 @@ query ($code: String!, $fight: Int!, $source: Int, $type: EventDataType!, $start
         'end': end,
         'resources': includeResources,
         'hostility': enemy ? 'Enemies' : 'Friendlies',
+        'ability': abilityId,
       });
       final report = _map(_map(data['reportData'])?['report']);
       final result = _map(report?['events']);
