@@ -3,6 +3,8 @@ import '../models/log_rules.dart';
 import '../models/spec_definition.dart';
 import '../talents/generated/shaman_talent_tree.g.dart';
 import '../talents/talent_tree.dart';
+import 'restoration_shaman_data.dart';
+import 'restoration_shaman_log_data.dart';
 import 'rotation_spec.dart';
 
 /// Restoration Shaman. It has no APL, so the sandbox and quiz don't apply;
@@ -38,21 +40,20 @@ class RestorationShaman extends RotationSpec {
   @override
   String get resourceLabel => 'Mana';
 
-  /// A placeholder, so a build is always selected. The top-log build replaces
-  /// it once the research ticket supplies one.
   @override
-  List<TalentLoadout> get loadouts => const [
-    TalentLoadout(
-      id: 'restoration_none',
-      name: 'No build yet',
-      talents: {},
-      description: 'Import your build in Setup.',
-    ),
-  ];
+  Map<String, SpellDefinition> get spells => restorationSpells;
 
-  /// Warcraft Logs' resource type 0 is mana.
   @override
-  SpecLogRules get logRules => const SpecLogRules(resourceType: 0);
+  List<AuraDefinition> get auras => restorationAuras;
+
+  @override
+  List<CooldownDefinition> get cooldowns => restorationCooldowns;
+
+  @override
+  List<TalentLoadout> get loadouts => restorationLoadouts;
+
+  @override
+  SpecLogRules get logRules => restorationLogRules;
 
   @override
   double maxResource(Set<String> talents) => 100;

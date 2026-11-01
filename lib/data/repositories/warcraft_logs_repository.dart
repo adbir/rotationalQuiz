@@ -302,6 +302,7 @@ class WarcraftLogsRepository {
           specName: spec.logSpecName,
           difficulty: difficulty,
           page: page,
+          metric: spec.logRules.rankingMetric,
         );
         final rows = result['rankings'];
         if (rows is! List || rows.isEmpty) break;

@@ -61,11 +61,16 @@ class WarcraftLogsService {
   /// beyond any real fight.
   static const _maxPages = 100;
 
-  static const _rankingsQuery = r'''
+  /// [metric] is a ranking metric name (`dps`, `hps`), which the API takes as
+  /// an enum, so it is written into the query rather than passed as a variable.
+  static String rankingsQuery(String metric) =>
+      r'''
 query ($encounter: Int!, $class: String!, $spec: String!, $difficulty: Int!, $page: Int!) {
   worldData {
     encounter(id: $encounter) {
-      characterRankings(className: $class, specName: $spec, metric: dps, difficulty: $difficulty, page: $page)
+      characterRankings(className: $class, specName: $spec, metric: '''
+      '$metric'
+      r''', difficulty: $difficulty, page: $page)
     }
   }
 }''';
@@ -120,8 +125,12 @@ query ($code: String!, $fight: Int!, $source: Int!, $start: Float!, $end: Float!
     required String specName,
     required int difficulty,
     required int page,
+    String metric = 'dps',
   }) async {
-    final data = await _query(_rankingsQuery, {
+    if (!RegExp(r'^[a-z]+$').hasMatch(metric)) {
+      throw WarcraftLogsException('Unknown ranking metric "$metric".');
+    }
+    final data = await _query(rankingsQuery(metric), {
       'encounter': encounterId,
       'class': className,
       'spec': specName,
