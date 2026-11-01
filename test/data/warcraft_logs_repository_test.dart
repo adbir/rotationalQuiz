@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:rotational_quiz/data/repositories/warcraft_logs_mapper.dart';
 import 'package:rotational_quiz/data/repositories/warcraft_logs_repository.dart';
 import 'package:rotational_quiz/data/services/warcraft_logs_service.dart';
 import 'package:rotational_quiz/domain/models/enemy_group.dart';
@@ -175,6 +176,7 @@ class FakeApi {
 }
 
 void main() {
+  _castAliasTests();
   late FakeApi api;
   late WarcraftLogsRepository repo;
 
@@ -346,5 +348,16 @@ void main() {
       expect((result as Ok<List<RankedLog>>).value, hasLength(2));
       expect(api.requests, hasLength(2));
     });
+  });
+}
+
+void _castAliasTests() {
+  test('a cursor Earthquake loads as the target version', () {
+    final cast = WarcraftLogsMapper.cast(
+      {'type': 'cast', 'timestamp': 1500, 'abilityGameID': 61882},
+      1000,
+      aliases: spec.logRules.castAliases,
+    );
+    expect(cast?.abilityId, 462620);
   });
 }

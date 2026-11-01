@@ -216,29 +216,60 @@ phases. The owner reached the first five Vexhul waves and all six Bulwark waves.
 Rank 53 killed at 415 s: its 408 s Broodlings came, its Vexhul spawns did not
 log. There are no phase changes in the log.
 
-Mean Maelstrom in the 8 s before each Vexhul wave, then spenders cast in the 8
-s after (fight mean in brackets):
+Per wave (the Broodlings' first cast, about 0.5 s after the spawn): the
+rebuilt Maelstrom at the spawn, the lowest and highest in the 10 s before,
+spenders cast in those 10 s, seconds since the last spender, and the first
+spender after with its offset (Earthquake is EQ, Elemental Blast EB). A wave
+reads as held when the gap since the last spender is over 10 s or twice the
+player's median gap, and a spender follows within 5 s. Held waves are marked *.
 
-| Wave (s) | 37 | 98 | 192 | 253 | 347 | 408 |
-| --- | --- | --- | --- | --- | --- | --- |
-| Owner (81) | 38 / 2 | 21 / 1 | 89 / 3 | 115 / 3 | 76 / 0 | not reached |
-| Rank 53 (67) | 76 / 1 | 75 / 3 | 53 / 2 | 79 / 1 | 68 / 2 | not reached |
-| Rank 1 (65) | 54 / 2 | 80 / 3 | 66 / 2 | 71 / 2 | 52 / 3 | 90 / 0 |
+Rank 1 (median gap between spenders 5.2 s):
 
-Do top players pool? Not as a plan. Averaged over the waves, rank 1 holds 69
-before them and rank 53 holds 70, against fight means of 65 and 67, and they
-cast 2.0 and 1.8 spenders after. Spenders after a wave are the AoE
-Earthquakes the APL's `aoe` list calls for, not a hoard. Only the owner's 253 s
-wave reads as pooled (mean 115, none cast in the 8 s before, three after), and
-the owner was also at the cap there for the stretch before it.
+| Wave (s) | At spawn | Low / high | Spenders | Since last | First after |
+| --- | --- | --- | --- | --- | --- |
+| 37 | 40 | 11 / 101 | 1 | 4.6 s | +5.1 s EQ |
+| 98 * | 103 | 50 / 103 | 0 | 17.8 s | +3.3 s EQ |
+| 192 * | 125 | 30 / 125 | 0 | 17.0 s | +0.5 s EQ |
+| 253 * | 100 | 29 / 100 | 0 | 15.3 s | +2.1 s EQ |
+| 347 * | 76 | 26 / 76 | 0 | 11.6 s | +2.7 s EQ |
+| 408 | 22 | 22 / 112 | 3 | 0.6 s | +10.2 s EB |
 
-`DetectPooling` at its defaults (8 s, 8 s, 15 points) flags 2 of the 16 waves
-(rank 1 at 98 s, the owner at 253 s), and 1 of 6 Bulwark waves in each top log,
-but it also flags 4 of 31 (rank 1) and 8 of 33 (rank 53) moments chosen away
-from any wave. Over leads of 4 to 12 s, follows of 6 to 10 s and margins of 0 to
-20, no setting flagged waves more often than other moments. No thresholds were tuned, and the
-defaults stay guesses. A pooling score for this boss needs a reason beyond this check, such as the owner
-holding Maelstrom for the Bulwark waves.
+Rank 53 (median 5.9 s):
+
+| Wave (s) | At spawn | Low / high | Spenders | Since last | First after |
+| --- | --- | --- | --- | --- | --- |
+| 37 | 106 | 48 / 106 | 1 | 9.3 s | +2.0 s EQ |
+| 98 * | 89 | 55 / 89 | 0 | 19.4 s | +2.3 s EQ |
+| 192 | 125 | 34 / 125 | 1 | 8.8 s | +2.2 s EQ |
+| 253 | 19 | 13 / 103 | 1 | 1.8 s | +4.8 s EQ |
+| 347 | 12 | 6 / 96 | 1 | 2.2 s | +4.6 s EQ |
+| 408 | 51 | 35 / 125 | 3 | 3.3 s | none before the kill |
+
+Owner, 394 s wipe (median 6.9 s; the build's cap is above 125, so levels pass
+it):
+
+| Wave (s) | At spawn | Low / high | Spenders | Since last | First after |
+| --- | --- | --- | --- | --- | --- |
+| 37 | 69 | 16 / 106 | 1 | 7.7 s | +1.1 s EQ |
+| 98 | 33 | 9 / 99 | 1 | 8.9 s | +4.7 s EB |
+| 192 * | 155 | 66 / 155 | 0 | 15.0 s | +1.6 s EQ |
+| 253 * | 133 | 85 / 133 | 0 | 11.0 s | +1.8 s EQ |
+| 347 | 50 | 34 / 124 | 1 | 4.5 s | +15.2 s EB |
+
+Do top players hold a spender for the waves? Yes, about every other one. Rank
+1 goes 11 to 18 s without a spender before the waves at 98, 192, 253 and 347 s
+(against a 5.2 s median), climbs from the 30s to 76 to 125, and casts
+Earthquake 0.5 to 3.3 s after the spawn. It does not at 37 s (it had just
+spent) or 408 s. Rank 53 does at 98 s, and sits at 125 with an 8.8 s gap at
+192 s, just short of the rule. The owner does at 192 and 253 s. The waves where
+a spender is simply cast soon after, such as 37 s, are ordinary play, which is
+why the gap since the last spender is the test and not the spenders after.
+
+The earlier mean test (`isPooled`: the mean of the 8 s before, 15 above the
+fight mean) read these holds as 52 to 80 against a fight mean of 65 and
+flagged only 2 of 16 waves, no better than moments away from any wave, so this
+section first said wrongly that top players don't pool. The mean still comes
+out in the report, but the held-spender rule (`isHeld`) is the test.
 
 ### Rebuild check
 
@@ -251,5 +282,5 @@ the same-millisecond case above.
 
 The committed fixture is `test/fixtures/twin_fangs_window.json`: rank 1 from
 225 s to 300 s, which holds the 253 s Vexhul wave and the 227 s Bulwark wave. It
-rebuilds with no drift over 17 readings, and the player is not pooled (mean 71
-against a window mean of 65, two spenders after). The owner's log is not in it.
+rebuilds with no drift over 17 readings, and the 253 s wave reads as held (15 s
+since the last spender, Earthquake 2.1 s after the spawn). The owner's log is not in it.

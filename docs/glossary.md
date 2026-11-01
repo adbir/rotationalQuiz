@@ -366,11 +366,14 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   `buff.master_of_the_elements.up` or `maelstrom.deficit<15`, whatever is coming
   next. So pooling always shows up as a [deviation](#deviation), and that
   deviation can be the right play.
-- **Measured here as:** `DetectPooling`: the mean Maelstrom in the 8 s before
-  an event is at least 15 points above the fight's mean, and a spender is cast
-  in the 8 s after. Both limits are guesses. On Twin Fangs no setting separated
-  add waves from other moments, so they were not tuned (see
-  [warcraft-logs.md](warcraft-logs.md)).
+- **Measured here as:** `DetectPooling.isHeld`: the gap since the player's last
+  [spender](#spender) at the event is over 10 s or twice their own median gap
+  between spenders over the fight, and a spender is cast within 5 s after. The
+  report also gives Maelstrom at the event, its low and high in the 10 s before,
+  and the first spender after. Checked on Twin Fangs: rank 1 held at 98, 192,
+  253 and 347 s, not at 37 or 408 s (see [warcraft-logs.md](warcraft-logs.md)).
+  The older `isPooled` (mean Maelstrom 15 above the fight's mean) missed those
+  holds and stays only for comparison.
 - **Not to be confused with:** [overcap](#overcap-overcapping-capped), and with
   holding a resource when nothing is coming, which is a
   [mistake](#mistake).

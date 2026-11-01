@@ -18,6 +18,9 @@ const elementalLogRules = SpecLogRules(
   resourceType: maelstromResourceType,
   // Fires with every Flame Shock (188389) cast.
   duplicateCastIds: {470411},
+  // Earthquake cast on the cursor (61882) is the same press as on the target
+  // (462620), the id in the spell table.
+  castAliases: {61882: 462620},
   spenderBuffId: 260734,
   spenderBuffTalent: ElementalTalents.masterOfTheElements,
   // With Flowing Elements and Overcharge! both up, a spender is right even
