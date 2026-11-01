@@ -591,10 +591,13 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   across logs. Measured here as the first cast by each copy of an enemy NPC
   (`EnemyGroup.arrivals`), a second or so after the spawn; a wave starts when
   none of its group has arrived for 15 s. Twin Fangs waves repeat to within
-  0.2 s between pulls.
+  0.2 s between pulls. Coiled Altar's Spiteful Soulcoilers (two at a time)
+  repeat to within 0.7 s of the phase they follow, but not of the pull, since
+  the phases are not on a timer.
 - **Not a target:** Twin Fangs' Barbed Bulwark is removed by crowd control or a
   stun, not killed (the owner). It never counts as an enemy alive: an add counts
-  only if the player damaged it.
+  only if the player damaged it. Coiled Altar's Manifestations of Dread and
+  Axegrinders are left out the same way (the player never hits them).
 - **Status:** `needs checking`
 
 ### AoE (area of effect)

@@ -175,4 +175,35 @@ void main() {
       );
     },
   );
+
+  test(
+    'finds the Coiled Altar Soulcoiler waves and leaves the objects out',
+    skip: env['WCL_LIVE'] == null,
+    timeout: const Timeout(Duration(minutes: 3)),
+    () async {
+      final token = await _clientToken();
+      final repo = WarcraftLogsRepository(
+        spec: spec,
+        service: WarcraftLogsService(accessToken: () async => token),
+      );
+      // Rank 1 on 2026-11-01: report, fight and player.
+      final result = await repo.loadEnemyPresence(
+        reportCode: 'n4jBN71KbyRkt28X',
+        fightId: 36,
+        playerId: 68,
+      );
+      final presence = switch (result) {
+        Ok(:final value) => value,
+        Error(:final error) => fail('$error'),
+      };
+      final names = presence.groups.map((g) => g.name).toSet();
+      // The player never damages Manifestation of Dread or Axegrinder.
+      expect(names, {'Spiteful Soulcoiler', "Zul'jan", 'Hex Lord Malacrass'});
+      final waves = presence.groups
+          .singleWhere((g) => g.name == 'Spiteful Soulcoiler')
+          .waveStarts();
+      expect(waves, hasLength(5));
+      expect(waves[2].inMilliseconds, closeTo(249500, 200));
+    },
+  );
 }
