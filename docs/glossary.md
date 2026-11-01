@@ -774,9 +774,10 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - **In a log:** Which bonus was active. Gear may be in `playerDetails`, unverified.
   A proxy is the set's [proc](#proc) buffs appearing.
 - **Status:** `needs checking`
-- **In this repo:** `set_bonus.mid2_4pc`, with procs `buff.flowing_elements` and
-  `buff.overcharge_tier`. The 4-piece changes how the APL times Stormkeeper and
-  Ascendance, so compare like with like.
+- **In this repo:** `set_bonus.mid2_4pc`, on by default, with procs
+  [Flowing Elements](#flowing-elements) and [Overcharge!](#overcharge). The
+  4-piece changes how the APL times Stormkeeper and Ascendance, so compare like
+  with like.
 
 ## Elemental Shaman terms
 
@@ -886,6 +887,20 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 - **To check:** How it interacts with Lava Burst in Midnight. The app doesn't
   model any link between them.
 
+### Flowing Elements
+
+- **Meaning:** A Season 2 [tier set](#tier-set-set-bonus) buff. Stormkeeper or
+  Ascendance fading gives 2 stacks. Each builder cast spends one, deals 25% more
+  damage and gives [Overcharge!](#overcharge).
+- **In a log:** Buff id 1300219, from `applybuff`, `applybuffstack`,
+  `removebuffstack` and `removebuff` events. Stacks gained per trigger, and stacks
+  that ended unused (count).
+- **Status:** `confirmed`
+- **In this repo:** `buff.flowing_elements`. It stacks to 4. If Stormkeeper fades
+  during Ascendance, its stacks wait for Ascendance to end, so both arrive together.
+- **To check:** That waiting rule rests on one direct example in a log and the
+  project owner's experience.
+
 ### Lava Burst (LvB)
 
 - **Meaning:** A cast-time attack on a [cooldown](#cooldown-cd) with charges. It
@@ -928,6 +943,17 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 - **Note:** Flame Shock doesn't consume it. The APL comment "Consume spare MotE to
   buff Flame Shock" doesn't match the game, so don't read that line as a use of
   the buff.
+
+### Overcharge!
+
+- **Meaning:** A Season 2 [tier set](#tier-set-set-bonus) buff that makes your next
+  [spender](#spender) free. [Flowing Elements](#flowing-elements) gives it.
+- **In a log:** Buff id 1300222. Gains (count), and free spender casts (count), which
+  have no `cost` in `classResources`. In three logs, 61 of 121 Elemental Blasts were
+  free.
+- **Status:** `confirmed`
+- **In this repo:** `buff.overcharge_tier`. Don't confuse it with the Overcharge
+  talent (1251026), an unrelated critical strike effect.
 
 ### Stormbringer
 

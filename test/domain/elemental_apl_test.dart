@@ -82,6 +82,46 @@ void main() {
     });
   });
 
+  group('Season 2 set bonus', () {
+    const setBonus = 'mid2_4pc';
+    final flowing = spec.auraDefinition('flowing_elements', AuraKind.buff)!;
+    final overcharge = spec.auraDefinition('overcharge_tier', AuraKind.buff)!;
+
+    test('is on by default', () {
+      expect(spec.defaultState(farseer).setBonuses, contains(setBonus));
+    });
+
+    test('its procs need the set, and have the right data', () {
+      expect(flowing.requiredSetBonus, setBonus);
+      expect(overcharge.requiredSetBonus, setBonus);
+      expect(flowing.maxStacks, 4);
+      expect(flowing.spellId, 1300219);
+      expect(overcharge.spellId, 1300222);
+    });
+
+    test('Overcharge! makes spenders free', () {
+      final blast = spec.spells['elemental_blast']!;
+      final quake = spec.spells['earthquake']!;
+      final poor = base().copyWith(resource: 10);
+      expect(spec.costOf(blast, poor), 90);
+      expect(spec.availability('elemental_blast', poor).isAvailable, isFalse);
+
+      final free = poor.withBuff('overcharge_tier', const AuraState.up());
+      expect(spec.costOf(blast, free), 0);
+      expect(spec.costOf(quake, free), 0);
+      expect(spec.availability('elemental_blast', free).isAvailable, isTrue);
+    });
+
+    test('the APL spends both procs on Elemental Blast at low Maelstrom', () {
+      final state = base()
+          .copyWith(resource: 10)
+          .withBuff('flowing_elements', const AuraState.up())
+          .withBuff('overcharge_tier', const AuraState.up());
+      final result = evaluator.recommend(document, state);
+      expect(result.selectedSpellId, 'elemental_blast');
+    });
+  });
+
   group('cooldowns', () {
     test('match the in-game tooltips and talents', () {
       double? duration(String id) => spec.cooldownDefinition(id)?.duration;

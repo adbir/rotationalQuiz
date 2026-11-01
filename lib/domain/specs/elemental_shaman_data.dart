@@ -271,15 +271,20 @@ const elementalAuras = <AuraDefinition>[
     id: 'flowing_elements',
     spellId: 1300219,
     name: 'Flowing Elements',
-    description: 'Tier set proc.',
-    quizChance: 0.1,
+    maxStacks: 4,
+    requiredSetBonus: 'mid2_4pc',
+    description:
+        'Each Stormkeeper or Ascendance fading gives 2 stacks. A builder spends '
+        'one for 25% more damage and gives Overcharge!.',
+    quizChance: 0.25,
   ),
   AuraDefinition(
     id: 'overcharge_tier',
-    spellId: 1251026,
-    name: 'Overcharge',
-    description: 'Tier set proc.',
-    quizChance: 0.1,
+    spellId: 1300222,
+    name: 'Overcharge!',
+    requiredSetBonus: 'mid2_4pc',
+    description: 'Next Earth Shock, Elemental Blast or Earthquake is free.',
+    quizChance: 0.2,
   ),
   AuraDefinition(
     id: 'ancestral_swiftness',
