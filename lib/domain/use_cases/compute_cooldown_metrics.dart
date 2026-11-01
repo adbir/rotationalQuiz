@@ -63,7 +63,8 @@ class ComputeCooldownMetrics {
         _cooldown(cooldown, spell),
   ];
 
-  /// The spell behind [cooldown], if the player has it and it isn't charged.
+  /// The spell behind [cooldown], if the player has it and it isn't charged,
+  /// or a rule counts its possible casts.
   SpellDefinition? _tracked(CooldownDefinition cooldown) {
     final spell = spec.spells[cooldown.id];
     final talents = log.talents;
@@ -72,7 +73,28 @@ class ComputeCooldownMetrics {
             talents.contains(cooldown.requiredTalent)) &&
         !talents.contains(spell?.replacedByTalent);
     final isSimple = spec.maxCharges(cooldown, talents) == null;
-    return isKnown && isSimple ? spell : null;
+    return isKnown && (isSimple || _possibleRule(cooldown) != null)
+        ? spell
+        : null;
+  }
+
+  PossibleCastsRule? _possibleRule(CooldownDefinition cooldown) => spec
+      .logRules
+      .possibleCasts
+      .where((r) => r.cooldownId == cooldown.id)
+      .firstOrNull;
+
+  /// Charges, one more per full cooldown in the fight, and one per cast that
+  /// restores a charge.
+  int? _possible(CooldownDefinition cooldown, double seconds) {
+    final rule = _possibleRule(cooldown);
+    if (rule == null) return null;
+    final charges = spec.maxCharges(cooldown, log.talents) ?? 1;
+    final cycles = log.fight.duration.inMilliseconds ~/ (seconds * 1000);
+    final restored = _presses
+        .where((c) => rule.restoredByCastIds.contains(c.abilityId))
+        .length;
+    return charges + cycles + restored;
   }
 
   CooldownMetrics _cooldown(
@@ -86,11 +108,13 @@ class ComputeCooldownMetrics {
     final rule = _shorteningRule(cooldown);
     final proc = rule == null ? null : ComputeChanceProcMetrics(rule);
     final procTimes = proc?.times(log) ?? const <Duration>[];
+    // Drift assumes one charge: a second can be pressed at once.
+    final hasCharges = spec.maxCharges(cooldown, log.talents) != null;
 
     final drifts = <double>[];
     final procCounts = <int>[];
     var early = 0;
-    for (var i = 1; i < normal.length; i++) {
+    for (var i = 1; i < normal.length && !hasCharges; i++) {
       final used = normal[i - 1].time;
       var ready = used + _duration(base);
       var procs = 0;
@@ -119,6 +143,7 @@ class ComputeCooldownMetrics {
           ? null
           : _shortening(rule, procCounts),
       raidDependsOn: spec.logRules.raidCooldownSupport[cooldown.id] ?? const [],
+      possible: _possible(cooldown, base),
     );
   }
 

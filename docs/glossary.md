@@ -547,9 +547,11 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - **Meaning:** How many uses of a [cooldown](#cooldown-cd) a player got, compared
   with the most they could have had in that fight.
 - **In a log:** Percent: casts divided by possible casts. For a one-charge
-  ability, possible casts are about `1 + floor(kill time / cooldown)`. The
-  cooldown comes from game data, and the app's values are approximations that
-  ignore cooldown reduction.
+  ability, possible casts are about `1 + floor(kill time / cooldown)`; with
+  charges, the charges plus `floor(kill time / cooldown)`, plus one per cast
+  that restores a charge (`PossibleCastsRule`, #78). The cooldown comes from
+  game data, and the app's values are approximations that ignore cooldown
+  reduction.
 - **Status:** `needs checking`
 - **Not to be confused with:** a verdict. A cooldown held for an
   [add wave](#add-wave) lowers this number and can still be correct. See
@@ -1167,6 +1169,9 @@ Measured on three Heroic Coiled Altar logs: see "Restoration Shaman" in
   or Spirit Link Totem. Raids plan them so healers don't overlap.
 - **In a log:** Casts against possible, `floor(fight length / cooldown) + 1`.
   Whether a press met heavy damage or overlapped another healer's: not measured.
+- **What to try (Boss Evaluation):** "Cast Ascendance each time it comes off
+  cooldown." and the same for each such cooldown (generic: "Cast it each time
+  it comes off cooldown.")
 - **Status:** `needs checking` (cooldowns are tooltip base values)
 
 ### Upkeep
@@ -1175,7 +1180,24 @@ Measured on three Heroic Coiled Altar logs: see "Restoration Shaman" in
   Surging Totem or a Riptide on someone.
 - **In a log:** Uptime: `totalUptime` over fight length from
   `table(dataType: Buffs)`, `sourceID: P` for buffs on the healer, `targetID: P`
-  for buffs the healer put on others.
+  for buffs the healer put on others. In the app: `UpkeepAura` rules give
+  `PlayerMetrics.upkeep` (#78).
+- **What to try (Boss Evaluation):** the spec's sentence for the aura, such as
+  "Keep Surging Totem down so Healing Rain never stops." (generic: "Keep it up
+  all fight.")
+- **Status:** `confirmed`
+
+### Proc hold time
+
+- **Meaning:** How long a [proc](#proc) the player must spend, such as
+  Stormstream Totem, waited before it went.
+- **In a log:** From the player's buff events: each application or added stack
+  waits until a stack goes, oldest first; the average over procs that went
+  (`HeldProcMetrics`, #78). Procs still up at the end are counted apart. A proc
+  that ran out counts as held until it did. The buff table's `totalUptime` over
+  `totalUses` gives nearly the same number, lower when two procs stack.
+- **What to try (Boss Evaluation):** "Cast Stormstream Totem as soon as it
+  procs." (generic: "Spend the proc as soon as it comes.")
 - **Status:** `confirmed`
 
 ### Mana
@@ -1185,6 +1207,11 @@ Measured on three Heroic Coiled Altar logs: see "Restoration Shaman" in
 - **In a log:** Mana percent over time: `classResources` type 0 `amount` over
   `max` on each cast, from `events(dataType: Casts, includeResources: true)`.
   Mana from others (Innervate 29166, Source of Magic 369459) is raid support.
+  In the app: `ResourceLevelMetrics` (at each phase change, at the end, the
+  lowest), when `SpecLogRules.readsResourceLevel` is set (#78).
+- **What to try (Boss Evaluation), on mana at the end:** "Spend your mana so
+  that it runs out as the boss dies." Mana at phase changes is shown, not
+  ranked.
 - **Status:** `confirmed`
 
 ## Raid notes

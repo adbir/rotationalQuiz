@@ -7,6 +7,7 @@ import 'package:rotational_quiz/data/services/warcraft_logs_service.dart';
 import 'package:rotational_quiz/domain/models/enemy_group.dart';
 import 'package:rotational_quiz/domain/models/enemy_presence.dart';
 import 'package:rotational_quiz/domain/models/fight_log.dart';
+import 'package:rotational_quiz/domain/models/log_rules.dart';
 import 'package:rotational_quiz/domain/models/player_metrics.dart';
 import 'package:rotational_quiz/domain/use_cases/compute_player_metrics.dart';
 
@@ -15,7 +16,9 @@ import '../test_helpers.dart';
 /// 75 seconds of a real Mythic Sszorak kill (the default fixture), as raw Warcraft Logs events with
 /// the player's details removed. The window runs from 225 s to 300 s of the
 /// pull, so it starts with buffs already up. Times below are from its start.
-FightLog loadFixture([String name = 'sszorak_window']) {
+/// [rules] are the log rules of the fixture's spec, Elemental by default.
+FightLog loadFixture([String name = 'sszorak_window', SpecLogRules? rules]) {
+  final logRules = rules ?? spec.logRules;
   final json = jsonDecode(
     File('test/fixtures/$name.json').readAsStringSync(),
   ) as JsonMap;
@@ -35,16 +38,12 @@ FightLog loadFixture([String name = 'sszorak_window']) {
     casts: WarcraftLogsMapper.withTargetsHit(
       [
         for (final r in rows('casts'))
-          ?WarcraftLogsMapper.cast(
-            r,
-            start,
-            aliases: spec.logRules.castAliases,
-          ),
+          ?WarcraftLogsMapper.cast(r, start, aliases: logRules.castAliases),
       ],
       json.containsKey('damage') ? rows('damage').toList() : const [],
       start,
       json['playerId'] as int,
-      spec.logRules.aoeDamage,
+      logRules.aoeDamage,
     ),
     resourceGains: [
       for (final r in rows('resources'))
@@ -59,6 +58,9 @@ FightLog loadFixture([String name = 'sszorak_window']) {
     ],
     receivedBuffs: WarcraftLogsMapper.receivedBuffs({
       'auras': json['receivedBuffs'],
+    }),
+    appliedBuffs: WarcraftLogsMapper.receivedBuffs({
+      'auras': json['appliedBuffs'],
     }),
   );
 }

@@ -150,8 +150,28 @@ string is rank 1's whole tree written by the same bit layout the codec reads
 (zero tree hash, as third-party tools write it); it decodes to spec 264, hero
 tree 54. Not tried in game.
 
+**The Mythic build (#78).** Rankings again on 2026-11-01
+(`characterRankings(metric: hps, difficulty: 5, includeCombatantInfo: true)`,
+page 1, 2 points): the top 20's most common spec and hero build is at ranks 1,
+5, 6, 9 and 18. It **ties** with the Heroic build (ranks 4, 15, 16, 17 and 19,
+5 each). Next: Acid Rain for Torrent alone (4), then two builds with 2 each. The
+second loadout, "Top Mythic logs, Totemic, 2026-11-01", is the Heroic build with
+Acid Rain for Torrent and Oversurge for Amplification Core, 43 tokens. Its export
+string is Mythic rank 1's (`nDhy4JNt3kYamjwV`, fight 1) ranking `talents`
+written the same way as the Heroic one (76 nodes taken, none granted or partly
+ranked, 15 choices, the same as the Heroic string). It decodes to spec 264,
+hero tree 54, with exactly those tokens. Not tried in game. The Heroic build
+stays first.
+
+**Earth Shield on whom.** Rank 50's buff table by caster has Earth Shield 383648
+(self) at 100% and no 974 (others): it kept Earth Shield on itself, not on a
+tank. The metrics rank 974 and show 383648 (see "Metrics and findings" in
+[warcraft-logs.md](warcraft-logs.md)).
+
 ## Open questions
 
-- What shortens Riptide's cooldown in the Totemic build.
+- What shortens Riptide's cooldown in the Totemic build. The generated tree
+  holds talent names only, and no talent name in the build says so (#78 looked;
+  the spell text wasn't checked).
 - Heroic against Mythic: top-20 Mythic kills last 502 to 627 s, Heroic 250 to
   489 s, so pair Heroic with Heroic until someone checks.

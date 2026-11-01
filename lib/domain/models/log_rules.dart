@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'finding.dart';
+
 /// How a spec shows up in a Warcraft Logs fight, as a table the metrics read.
 ///
 /// Ids are the ones logged, and a buff's id can differ from its cast's. Spell
@@ -26,7 +28,28 @@ class SpecLogRules {
     this.rankingMetric = 'dps',
     this.unobservableAuras = const {},
     this.aoeDamage = const {},
+    this.possibleCasts = const [],
+    this.upkeepAuras = const [],
+    this.heldProcs = const [],
+    this.readsResourceLevel = false,
+    this.findings = const FindingRules([]),
   });
+
+  /// Cooldowns counted against the most casts the fight allowed.
+  final List<PossibleCastsRule> possibleCasts;
+
+  /// Auras the player keeps up, on themselves or on others.
+  final List<UpkeepAura> upkeepAuras;
+
+  /// Procs whose buff should be spent soon after it comes.
+  final List<HeldProcRule> heldProcs;
+
+  /// Whether the metrics read the resource's level from cast readings: at
+  /// each phase change, at the end and at its lowest.
+  final bool readsResourceLevel;
+
+  /// Which metrics are ranked against rank 1, and what "behind" means.
+  final FindingRules findings;
 
   /// Warcraft Logs' number for the spec's primary resource.
   final int resourceType;
@@ -185,4 +208,42 @@ class ChanceProcRule {
 
   /// Anything known to be missing from the expected number.
   final String? note;
+}
+
+/// A cooldown whose casts are counted against the most the fight allowed:
+/// its charges, one more per full cooldown, and one per cast that restores a
+/// charge. The cooldown is the spec's own, before anything shortens it.
+@immutable
+class PossibleCastsRule {
+  const PossibleCastsRule(this.cooldownId, {this.restoredByCastIds = const {}});
+
+  final String cooldownId;
+
+  /// Casts that each give back one charge.
+  final Set<int> restoredByCastIds;
+}
+
+/// An aura the player keeps up. Its uptime comes from the log's buff table:
+/// the player's own for an aura on them, the one of buffs they cast for an
+/// aura on others. On others, the table counts it up while it is on anyone.
+@immutable
+class UpkeepAura {
+  const UpkeepAura({
+    required this.buffId,
+    required this.name,
+    this.onOthers = false,
+  });
+
+  final int buffId;
+  final String name;
+  final bool onOthers;
+}
+
+/// A proc whose buff waits on the player to spend it.
+@immutable
+class HeldProcRule {
+  const HeldProcRule({required this.buffId, required this.name});
+
+  final int buffId;
+  final String name;
 }

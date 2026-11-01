@@ -1,6 +1,7 @@
 // How Elemental Shaman appears in Warcraft Logs. Ids and rates were checked
 // against three Mythic Sszorak logs (issue #10).
 import '../models/fight_log.dart';
+import '../models/finding.dart';
 import '../models/log_rules.dart';
 import 'elemental_shaman_data.dart';
 
@@ -18,6 +19,20 @@ const _ascendance = 114050;
 
 const elementalLogRules = SpecLogRules(
   resourceType: maelstromResourceType,
+  // Decided in #28: casts per minute leads, the rest by how far behind in
+  // their own unit (Maelstrom, free spenders, held spenders).
+  findings: FindingRules([
+    RankedMetric(FindingKind.castsPerMinute, higherIsBetter: true),
+    RankedMetric(FindingKind.wastedResource),
+    RankedMetric(FindingKind.lostFreeSpenders),
+    RankedMetric(FindingKind.castBeforeWindow, onlyWhenSeen: true),
+    RankedMetric(
+      FindingKind.dotUptime,
+      higherIsBetter: true,
+      onlyWhenSeen: true,
+    ),
+    RankedMetric(FindingKind.heldSpenders, higherIsBetter: true),
+  ]),
   // Fires with every Flame Shock (188389) cast.
   duplicateCastIds: {470411},
   // Earthquake cast on the cursor (61882) is the same press as on the target

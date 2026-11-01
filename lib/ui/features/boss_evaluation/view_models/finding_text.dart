@@ -53,6 +53,21 @@ class FindingText {
       FindingKind.heldSpenders =>
         'Rank 1 held a spender before ${_events(f.rank1.round())} and cast '
             'one within 5 s. You held before $you.',
+      FindingKind.castsAgainstPossible =>
+        'You cast ${f.subject} ${_p(f.yours)}% of the times you could. '
+            'Rank 1: ${_p(f.rank1)}%.',
+      FindingKind.upkeep =>
+        '${f.subject} was up ${_p(f.yours)}% of the fight. '
+            'Rank 1: ${_p(f.rank1)}%.',
+      FindingKind.procHoldTime =>
+        'You held ${f.subject} procs ${_p(f.yours)} s on average. '
+            'Rank 1: ${_p(f.rank1)} s.',
+      FindingKind.abilityCastsPerMinute =>
+        'You cast ${f.subject} ${_p(f.yours)} times a minute. '
+            'Rank 1: ${_p(f.rank1)}.',
+      FindingKind.resourceAtEnd =>
+        'You ended with ${_p(f.yours)}% $resourceLabel. '
+            'Rank 1: ${_p(f.rank1)}%.',
     };
   }
 
@@ -86,6 +101,12 @@ class FindingText {
         ].join(', ');
       case FindingKind.dotUptime:
         return 'down ${[for (final g in _dot().gaps) '${_s(g.start)}-${_s(g.start + g.length)} s'].join(', ')}';
+      case FindingKind.castsAgainstPossible ||
+          FindingKind.upkeep ||
+          FindingKind.procHoldTime ||
+          FindingKind.abilityCastsPerMinute ||
+          FindingKind.resourceAtEnd:
+        return 'the whole fought portion, ${comparison.fought.inSeconds} s.';
       case FindingKind.wastedResource:
         if (f.stretchIndexes.isEmpty || comparison.stretches.length == 1) {
           return 'the whole fought portion, ${comparison.fought.inSeconds} s.';
@@ -137,25 +158,45 @@ class FindingText {
   }
 
   /// "Same as rank 1: casts per minute, gaps." Empty when nothing is.
-  String sameAsRank1(List<FindingKind> kinds) => kinds.isEmpty
+  String sameAsRank1(List<Finding> same) => same.isEmpty
       ? ''
-      : 'Same as rank 1: ${[for (final k in kinds) _label(k)].join(', ')}.';
+      : 'Same as rank 1: ${[for (final f in same) _label(f.kind, f.subject)].join(', ')}.';
 
-  String _label(FindingKind kind) => switch (kind) {
+  String _label(FindingKind kind, [String? subject]) => switch (kind) {
     FindingKind.castsPerMinute => 'casts per minute',
     FindingKind.wastedResource => 'wasted ${resourceLabel.toLowerCase()}',
     FindingKind.lostFreeSpenders => 'free spenders',
     FindingKind.heldSpenders => 'held spenders',
     FindingKind.castBeforeWindow => 'Stormkeeper during Ascendance',
     FindingKind.dotUptime => '${_dot().name} uptime',
+    FindingKind.castsAgainstPossible => '$subject casts',
+    FindingKind.upkeep => '$subject uptime',
+    FindingKind.procHoldTime => '$subject hold time',
+    FindingKind.abilityCastsPerMinute => '$subject casts per minute',
+    FindingKind.resourceAtEnd => '${resourceLabel.toLowerCase()} at the end',
   };
 
   /// The column title for a metric's evidence rows.
-  String metricName(FindingKind kind) => switch (kind) {
+  String metricName(Finding f) => switch (f.kind) {
     FindingKind.wastedResource => '$resourceLabel wasted',
     FindingKind.lostFreeSpenders => 'Free spenders lost',
     FindingKind.dotUptime => '${_dot().name} uptime, %',
-    _ => _label(kind),
+    FindingKind.castsAgainstPossible => '${f.subject} of possible, %',
+    FindingKind.upkeep => '${f.subject} uptime, %',
+    FindingKind.procHoldTime => '${f.subject} hold, s',
+    FindingKind.resourceAtEnd => '$resourceLabel at the end, %',
+    _ => _label(f.kind, f.subject),
+  };
+
+  /// One evidence value: whole counts, or one decimal for a percentage,
+  /// seconds or a rate.
+  String value(Finding f, double v) => switch (f.kind) {
+    FindingKind.dotUptime => '${_p(v)}%',
+    FindingKind.castsAgainstPossible ||
+    FindingKind.upkeep ||
+    FindingKind.resourceAtEnd => '${_p(v)}%',
+    FindingKind.procHoldTime || FindingKind.abilityCastsPerMinute => _p(v),
+    _ => _n(v),
   };
 
   static String _p(double v) => v.toStringAsFixed(1);
