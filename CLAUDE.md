@@ -359,6 +359,15 @@ use it rather than creating a parallel file or class.
 | A widget used by two features | `ui/core/widgets/` | copy-pasted private widgets |
 | Feature behaviour | the feature's ViewModel | logic in `build()` |
 
+**The third-spec test.** The app has two specs (Elemental, Restoration) and
+will get a third, another DPS or healer; tanks are out of scope. Before a PR
+merges, ask of every changed file outside `lib/domain/specs/`: would adding a
+third spec mean editing this file? If yes, the spec knowledge belongs in the
+spec's tables or `SpecLogRules`, not here. Names of abilities, buffs and
+resources in UI text come from the spec; a use case or widget that spells one
+out is spec logic in the wrong layer. Every PR gets a review against this
+file's standards and the issue it fixes before the owner merges it.
+
 When a new file *is* justified:
 - **A new responsibility,** not "more of the same". A second screen, a new
   repository, or a new use case qualifies; a helper for one function does
