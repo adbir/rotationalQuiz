@@ -89,6 +89,19 @@ void main() {
     expect(noneSource, StretchSource.wholeFight);
   });
 
+  test('PickStretchStarts prefers the waves the caller scores highest', () {
+    final (_, starts) = const PickStretchStarts()(
+      end: const Duration(seconds: 100),
+      phaseStarts: const [],
+      groups: [
+        adds([10, 40, 70]),
+        adds([20, 50]),
+      ],
+      preference: (waves) => waves.first.inSeconds == 20 ? 1 : 0,
+    );
+    expect([for (final s in starts) s.inSeconds], [20, 50]);
+  });
+
   test('CompareFights cuts the fought portion at the player waves', () {
     final log = loadFixture('twin_fangs_window');
     final comparison = const CompareFights(spec)(
