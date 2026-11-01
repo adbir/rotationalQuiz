@@ -27,6 +27,8 @@ class SetupScreen extends StatelessWidget {
         return LayoutBuilder(
           builder: (context, constraints) {
             const picker = SpecPicker();
+            // Keybinds drive the quiz, so a spec without an APL has none.
+            final hasApl = viewModel.spec.hasApl;
             final talents = TalentBuildSection(viewModel: viewModel);
             final keybinds = KeybindSection(viewModel: viewModel);
             final logs = WarcraftLogsSection(viewModel: viewModel);
@@ -46,13 +48,15 @@ class SetupScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const VerticalDivider(width: 1),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [keybinds],
+                  if (hasApl) ...[
+                    const VerticalDivider(width: 1),
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [keybinds],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               );
             }
@@ -64,8 +68,7 @@ class SetupScreen extends StatelessWidget {
                 talents,
                 const SizedBox(height: 24),
                 logs,
-                const SizedBox(height: 24),
-                keybinds,
+                if (hasApl) ...[const SizedBox(height: 24), keybinds],
               ],
             );
           },

@@ -46,8 +46,10 @@ class _TalentBuildSectionState extends State<TalentBuildSection> {
         Text('Your talent build', style: theme.textTheme.titleLarge),
         const SizedBox(height: 4),
         Text(
-          'The sandbox and quiz use the active build: it decides which '
-          'buttons you have and which APL lines apply.',
+          vm.spec.hasApl
+              ? 'The sandbox and quiz use the active build: it decides which '
+                    'buttons you have and which APL lines apply.'
+              : 'Boss Evaluation uses the active build to know your talents.',
           style: theme.textTheme.bodySmall,
         ),
         const SizedBox(height: 12),
