@@ -20,7 +20,9 @@ class FightToCompare {
 /// Lines logs of one encounter up: their metrics, casts per minute by stretch
 /// and the resource before each stretch. Only the portion every log fought is
 /// compared. The stretches are cut at the first log's add waves (or phases) and
-/// reused for the rest, since waves come on a timer.
+/// reused for the rest, since waves come on a timer. When several kinds of add
+/// come in waves, the kind the top log holds spenders for wins: that is the
+/// wave the rotation reacts to.
 class CompareFights {
   const CompareFights(this.spec);
 
@@ -34,10 +36,18 @@ class CompareFights {
     final fought = fights
         .map((f) => f.log.fight.duration)
         .reduce((a, b) => a < b ? a : b);
+    // The last of [fights] is the top log (rank 1).
+    final top = fights.last.log;
+    final topTimeline = RebuildResourceTimeline(spec)(top);
     final (source, starts) = const PickStretchStarts()(
       end: fought,
       phaseStarts: fights.first.log.fight.phaseStarts,
       groups: playerEnemyGroups,
+      preference: (waves) => DetectPooling(spec)(
+        top,
+        topTimeline,
+        waves,
+      ).where((r) => r.isHeld).length,
     );
     final edges = [Duration.zero, ...starts, fought];
     final stretches = [
