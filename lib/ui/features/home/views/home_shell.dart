@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../data/repositories/apl_repository.dart';
 import '../../../../data/repositories/keybind_repository.dart';
 import '../../../../data/repositories/talent_build_repository.dart';
+import '../../../../data/services/pkce_access_token_source.dart';
 import '../../apl_viewer/view_models/apl_viewer_view_model.dart';
 import '../../apl_viewer/views/apl_viewer_screen.dart';
 import '../../quiz/view_models/quiz_view_model.dart';
@@ -54,7 +55,11 @@ class _HomeShellState extends State<HomeShell> {
       keybinds: keybinds,
     );
     _aplViewer = AplViewerViewModel(repository: repository);
-    _setup = SetupViewModel(talentBuilds: talentBuilds, keybinds: keybinds);
+    _setup = SetupViewModel(
+      talentBuilds: talentBuilds,
+      keybinds: keybinds,
+      warcraftLogs: context.read<PkceAccessTokenSource>(),
+    );
   }
 
   @override

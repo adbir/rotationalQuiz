@@ -80,6 +80,7 @@ void main() {
           ChangeNotifierProvider.value(value: repos.apl),
           ChangeNotifierProvider.value(value: repos.talentBuilds),
           ChangeNotifierProvider.value(value: repos.keybinds),
+          ChangeNotifierProvider.value(value: repos.warcraftLogs),
         ],
         child: const RotationalQuizApp(),
       ),
@@ -98,13 +99,18 @@ void main() {
       ('Multiple choice', 'quiz_multiple_choice'),
       ('Hot keys', 'quiz_hot_keys'),
       ('APL', 'apl'),
-      ('Setup', 'setup'),
+      ('Setup', 'setup_signed_out'),
     ]) {
       await tester.tap(find.text(tab).last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       await shot(name);
     }
+
+    // Setup again, now signed in to Warcraft Logs.
+    await tester.runAsync(repos.signInWithCode);
+    await tester.pump();
+    await shot('setup_signed_in');
 
     // Let the hot-key countdown expire so no timers are left pending.
     await tester.pumpWidget(const SizedBox());

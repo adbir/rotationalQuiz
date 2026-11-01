@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../view_models/setup_view_model.dart';
 import 'widgets/keybind_section.dart';
 import 'widgets/talent_build_section.dart';
+import 'widgets/warcraft_logs_section.dart';
 
 /// Your talent build and keybinds.
 class SetupScreen extends StatelessWidget {
@@ -26,6 +27,7 @@ class SetupScreen extends StatelessWidget {
           builder: (context, constraints) {
             final talents = TalentBuildSection(viewModel: viewModel);
             final keybinds = KeybindSection(viewModel: viewModel);
+            final logs = WarcraftLogsSection(viewModel: viewModel);
             if (constraints.maxWidth >= 1000) {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,7 +35,7 @@ class SetupScreen extends StatelessWidget {
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.all(16),
-                      children: [talents],
+                      children: [talents, const SizedBox(height: 24), logs],
                     ),
                   ),
                   const VerticalDivider(width: 1),
@@ -48,7 +50,13 @@ class SetupScreen extends StatelessWidget {
             }
             return ListView(
               padding: const EdgeInsets.all(16),
-              children: [talents, const SizedBox(height: 24), keybinds],
+              children: [
+                talents,
+                const SizedBox(height: 24),
+                logs,
+                const SizedBox(height: 24),
+                keybinds,
+              ],
             );
           },
         );

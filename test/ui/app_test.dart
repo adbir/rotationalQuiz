@@ -18,6 +18,7 @@ void main() {
           ChangeNotifierProvider.value(value: repos!.apl),
           ChangeNotifierProvider.value(value: repos.talentBuilds),
           ChangeNotifierProvider.value(value: repos.keybinds),
+          ChangeNotifierProvider.value(value: repos.warcraftLogs),
         ],
         child: const RotationalQuizApp(),
       ),

@@ -25,8 +25,30 @@ and `api/v2/user` from `https://adbir.github.io`, so no backend is needed: each
 user signs in with their own account through PKCE. `WarcraftLogsService` takes
 its token from an `AccessTokenSource`, so sign-in plugs in there.
 
-PKCE hasn't been run end to end. It belongs with issue #13, and needs a public
-client registered on Warcraft Logs with the site's redirect URL.
+`PkceAccessTokenSource` (`lib/data/services/`) does the sign-in:
+
+- **Client:** the public client ID is the constant `wclPublicClientId`. There is
+  no secret. Never read or copy `WCL_CLIENT_SECRET`.
+- **Start:** the Setup screen's Sign in button stores a random verifier and
+  `state` in `LocalStore` and sends the browser to
+  `https://www.warcraftlogs.com/oauth/authorize` with `response_type=code` and
+  an S256 challenge.
+- **Return:** `main()` calls `handleRedirect()` on startup. A `?code=` (with a
+  matching `state`) is exchanged at `oauth/token`, and the query is removed from
+  the address bar.
+- **Token:** stored in `LocalStore` under `wcl_token` as
+  `{access_token, expires_at}`. There is no refresh: once it expires the user
+  signs in again.
+  `PkceAccessTokenSource.call` is the `AccessTokenSource`, and throws when
+  signed out.
+- **Redirect URLs:** `https://adbir.github.io/rotationalQuiz/` on the site and
+  `http://localhost:5000/` locally (`flutter run -d chrome --web-port 5000`).
+  Both must be registered on the Warcraft Logs client.
+- **Tests:** the URL, exchange, expiry and sign-out are unit tested with a mock
+  HTTP client. The real browser round trip can't run headless; check it by hand
+  on the live site.
+
+The sign-in is not yet used by a screen that loads logs. That belongs with #13.
 
 ## Current raid
 

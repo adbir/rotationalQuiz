@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../data/repositories/keybind_repository.dart';
 import '../../../../data/repositories/talent_build_repository.dart';
+import '../../../../data/services/pkce_access_token_source.dart';
 import '../../../../domain/models/keybind.dart';
 import '../../../../domain/models/spec_definition.dart';
 import '../../../../domain/specs/rotation_spec.dart';
@@ -29,13 +30,19 @@ class BuildPreview {
 
 /// Lets the user import their talent build and bind their abilities.
 class SetupViewModel extends ChangeNotifier {
-  SetupViewModel({required this._talentBuilds, required this._keybinds}) {
+  SetupViewModel({
+    required this._talentBuilds,
+    required this._keybinds,
+    required this._warcraftLogs,
+  }) {
     _talentBuilds.addListener(notifyListeners);
     _keybinds.addListener(notifyListeners);
+    _warcraftLogs.addListener(notifyListeners);
   }
 
   final TalentBuildRepository _talentBuilds;
   final KeybindRepository _keybinds;
+  final PkceAccessTokenSource _warcraftLogs;
 
   RotationSpec get spec => _talentBuilds.spec;
 
@@ -107,6 +114,15 @@ class SetupViewModel extends ChangeNotifier {
     );
   }
 
+  // ---- Warcraft Logs ------------------------------------------------------
+
+  bool get isSignedInToWarcraftLogs => _warcraftLogs.isSignedIn;
+  String? get warcraftLogsError => _warcraftLogs.error;
+
+  Future<void> signInToWarcraftLogs() => _warcraftLogs.signIn();
+
+  Future<void> signOutOfWarcraftLogs() => _warcraftLogs.signOut();
+
   // ---- Keybinds -----------------------------------------------------------
 
   /// Every ability the active build knows, GCD abilities first.
@@ -138,6 +154,7 @@ class SetupViewModel extends ChangeNotifier {
   void dispose() {
     _talentBuilds.removeListener(notifyListeners);
     _keybinds.removeListener(notifyListeners);
+    _warcraftLogs.removeListener(notifyListeners);
     super.dispose();
   }
 }
