@@ -280,3 +280,81 @@ The committed fixture is `test/fixtures/twin_fangs_window.json`: rank 1 from
 225 s to 300 s, which holds the 253 s Vexhul wave and the 227 s Bulwark wave. It
 rebuilds with no drift over 17 readings, and the 253 s wave reads as held (15 s
 since the last spender, Earthquake 2.1 s after the spawn). The owner's log is not in it.
+
+## Raid support received
+
+Which query lists the buffs a player got from others (ticket #27). Checked on
+2026-11-01 against the three Sszorak logs above, with a client token on the
+owner's PC. The player ids are 278 (rank ~1133), 11 (rank 18) and 21 (rank 1).
+
+### The `sourceID` / `targetID` swap
+
+For `dataType: Buffs`, in both `table` and `events`, **`sourceID` is the player
+who holds the buff and `targetID` is who cast it.** `table(dataType: Buffs,
+targetID: <player>)`, the query first tried, lists only what the player cast
+(Skyfury, Bloodlust). It had no Time Spiral, Power Infusion or Blessing of the
+Bronze in any log. With `targetID: P` the events all have `sourceID` P too, and
+`filterExpression: "source.id != P"` changed nothing (2,101, 1,996 and 2,008
+events either way), so it is not a way to select external buffs. `FightLog`
+already asks for `sourceID` = player, which is why Time Spiral reached it.
+
+### Queries and cost
+
+Cost is the change in `rateLimitData.pointsSpentThisHour` across the call.
+
+| Query | Cost | Result |
+| --- | --- | --- |
+| (a) `table(dataType: Buffs, fightIDs: [F], sourceID: P)` | 1 point | 79 to 90 auras, each `{guid, name, totalUptime, totalUses, type}`, in ms. No caster. Includes Blessing of the Bronze. |
+| (b) `events(dataType: Buffs, sourceID: P, startTime, endTime, limit: 10000)` | 1 point per page (about 2,000 events, one page) | Every apply, refresh and remove, with `sourceID` (caster) and `targetID` (P). The app's existing call. No Blessing of the Bronze. |
+| (c) as (b) plus `filterExpression: "source.id != P"` | 1 point | The same events as (b). No use. |
+| (d) as (a) with `targetID: P` | 1 point | What P cast. The wrong query. |
+
+### What each log received
+
+Uptime is `totalUptime` over the kill length (371, 370 and 288 s), then the
+table's `totalUses`. Casters are the `sourceID`s in (b).
+
+| Buff (id) | Rank ~1133 | Rank 18 | Rank 1 |
+| --- | --- | --- | --- |
+| Blessing of the Bronze (381756), table only | 100%, 1 | 100%, 1 | 100%, 1 |
+| Power Infusion (10060) | 13.5%, 4 (priest 276) | 12.2%, 3 (priest 19) | 15.6%, 3 (priest 19) |
+| Ebon Might (395152) | 90.0%, 43 (Aug 274) | 88.0%, 42 (Aug 12) | 93.7%, 40 (Aug 17) |
+| Prescience (410089) | none | 21.2%, 3 (Aug 12) | none |
+| Shifting Sands (413984) | none | 10.3%, 3 (Aug 12) | 8.9%, 2 (Aug 17) |
+| Time Spiral (375256) | 6.7%, 5 (274 and 9) | 4.6%, 6 (7 and 12) | 2.6%, 2 (17) |
+| Raid haste | Fury of the Aspects 390386: 10.8%, 1 (Evoker 9) | Time Warp 80353: 10.8%, 1 (mage 6) | Bloodlust 2825: 13.9%, 1 (cast by the player) |
+
+Breath of Eons put no buff on the player in any log. Also seen, from the Aug or
+other Evokers: Inferno's Blessing 410263 (ranks 18 and 1), Black / Bronze
+Attunement 403295 / 403296 (ranks 18 and 1), Chrono Ward 409678 (rank ~1133),
+Rewind 363534 and Temporal Anomaly 373862 (all three). Their effect on a
+cooldown or haste is not checked.
+
+### Why Blessing of the Bronze was missing
+
+It is applied before the pull and lasts through it, so no event falls inside the
+fight window. (b) never has it, while the table reports it at 100% with one use.
+A window starting 900 s before the pull (rank 18, `ability.id = 381756`, 1
+point) returned only `removebuff` events at the ends of the two earlier pulls
+(fights 36 and 37), no `applybuff`. So an earlier window can't find the apply
+either. The cause is the buff carrying over, not a filter or the source.
+
+### Recommendation
+
+Add query (a) to every comparison: 1 point per log, no extra paging. It is the
+only route to Blessing of the Bronze, and it gives uptime and uses for every
+other external. Keep (b), which `FightLog` already loads, for timing (Time
+Spiral windows, Power Infusion, Time Warp) and for the caster.
+
+`FightLog` would need:
+
+- `LogBuffEvent.sourceId`. The mapper reads `targetID` and drops `sourceID`, so
+  nobody can tell a player's own buff from a raid buff, or tell Evokers apart.
+- A list of `{abilityId, name, uptime, uses}` from (a) for the player, such as
+  `receivedBuffs`.
+- A raid-support list in `SpecLogRules` (Blessing of the Bronze 381756, Power
+  Infusion 10060, Ebon Might 395152, Prescience 410089, Shifting Sands 413984,
+  Time Spiral 375256, and the lust ids 2825, 80353, 390386), replacing the
+  hard-coded names in `raidCooldownSupport`.
+
+Not implemented. The source is the v2 API responses above.
