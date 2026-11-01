@@ -1,0 +1,1041 @@
+# World of Warcraft raider glossary
+
+This file does two jobs for Rotational Quiz:
+
+1. It is the shared vocabulary, so the owner and future agents use words the
+   same way.
+2. It is the spec for **Boss Evaluation**, the planned feature that compares a
+   player's Warcraft Logs (WCL) log with top-ranked logs on the same boss and
+   explains the difference. WCL is the website that stores uploaded combat logs
+   and ranks players. Each term that can be measured says how.
+
+The app may later reuse these definitions as tooltips.
+
+**The rule that matters most:** a difference from the APL is not automatically
+a mistake. See [Deviations: mistakes and plans](#deviations-mistakes-and-plans).
+
+## How to read an entry
+
+- **Meaning:** one or two plain sentences for a newer raider.
+- **In a log:** the metric and its unit. Only present where it makes sense.
+- **Status:** whether the measure can be relied on. See below.
+- **In this repo:** the matching SimC identifiers and how the app uses the
+  term. Only present where useful.
+- **To check:** game behaviour we have not verified for Midnight. Don't state
+  these as fact in the UI until someone has checked them.
+- **Not to be confused with:** only where terms really do get mixed up.
+
+Status describes the measure, not the meaning. It has three values:
+
+| Status | What it means |
+| ------ | ------------- |
+| `confirmed` | Every API name the measure needs is on the [verified list](#verified-wcl-api-facts). Raw units and argument values are not covered: see [not yet verified](#not-yet-verified). |
+| `needs checking` | The measure depends on something unverified: a log field, an ability id or a game number. Every Maelstrom-based metric is here. |
+| `not measurable from logs` | A log cannot show this. |
+
+An entry with one confirmed route and one unverified route takes its status
+from the route written first. The unverified route says so in its text.
+
+Game facts come from `lib/domain/specs/elemental_shaman_data.dart`,
+`assets/apl/shaman_elemental.simc` and the generated talent tree (WoW build
+12.1.0.69933). Spell numbers in those files are approximations.
+
+### Verified WCL API facts
+
+Checked against the real v2 GraphQL API on 2026-11-01:
+
+- `reportData.report.events` takes `dataType`, `sourceID`, `fightIDs`,
+  `includeResources`, `filterExpression`, `limit`, `startTime` and `endTime`,
+  among others. Results are paged with `nextPageTimestamp`.
+- Cast events have `timestamp`, `type` (`begincast` or `cast`), `sourceID`,
+  `targetID`, `abilityGameID`, `x`, `y`, `facing`, `hitPoints`, `itemLevel`, and
+  a `classResources` array of `{amount, max, type, cost}` entries.
+- `worldData.zone.encounters.characterRankings(className, specName, metric,
+  difficulty, page)` returns ranked entries with `amount`, `duration`,
+  `report {code, fightID}`, `guild`, `server` and `bracketData`.
+- A report also has `fights`, `masterData`, `playerDetails`, `rankings`,
+  `table`, `graph` and `phases`.
+
+### Not yet verified
+
+- Whether Maelstrom appears in `classResources`. The only sample seen showed
+  Mana, type 0.
+- The raw units of `timestamp`, `duration`, `amount`, `x` and `y`.
+- What `amount` holds for each `metric`.
+- The accepted values of `dataType`, `metric` and `difficulty`.
+- The fields inside `fights`, `masterData`, `playerDetails`, `rankings`,
+  `table`, `graph`, `phases` and `bracketData`.
+- Any event that is not a cast: damage, healing, buffs, debuffs, resource gains
+  and deaths. Their field names are unknown, so this file doesn't name any.
+- Whether `includeResources` is what adds `classResources`, `x` and `y` to cast
+  events.
+- Whose hit points and item level `hitPoints` and `itemLevel` report.
+- Whether `abilityGameID` matches the app's `spellId` for every ability. Some
+  abilities have two ids in the app's tables, one for the cast and one for the
+  buff: Tempest (452201, 454015) and Ancestral Swiftness (443454, 448861).
+
+## Logs and ranking
+
+### Cast event
+
+- **Meaning:** A log record of a player starting or finishing a spell.
+- **In a log:** An entry from `events` with `type` `begincast` (started) or
+  `cast` (finished). Casts per minute: count of `cast` entries for one
+  `abilityGameID` and `sourceID`, divided by [kill time](#kill-time).
+- **Status:** `confirmed`
+
+### Cohort
+
+- **Meaning:** A group of ranked logs treated as one for comparison, such as
+  rank 1-10 or rank 200-250, on the same boss, spec and difficulty. This is a
+  project word, not raider slang.
+- **In a log:** `characterRankings` entries, walked by `page` until the rank
+  range is covered. See [rank](#rank).
+- **Status:** `confirmed`
+
+### DPS (damage per second)
+
+- **Meaning:** Damage done divided by fight length. It is the main measure for
+  a damage dealer.
+- **In a log:** Damage per second. Probably `amount` on a ranked entry when
+  `metric` selects damage. For a player's own log the likely routes are
+  `rankings` or `table` on the report, which are also unverified.
+- **Status:** `needs checking`
+- **Not to be confused with:** [HPS](#hps-healing-per-second). Also, WCL may
+  rank on a metric that moves support damage between players, so a DPS number
+  can depend on the metric. See
+  [Augmentation support](#augmentation-support-aug).
+
+### Event
+
+- **Meaning:** One timestamped record in a log, such as a cast.
+- **In a log:** `reportData.report.events`, narrowed with `sourceID`, `fightIDs`
+  and `filterExpression`. Keep requesting from `nextPageTimestamp` until it runs
+  out. So far only [cast events](#cast-event) have been seen.
+- **Status:** `confirmed`
+
+### HPS (healing per second)
+
+- **Meaning:** Healing done divided by fight length. It is the main measure for
+  a healer, and Elemental Shaman is rarely judged on it.
+- **In a log:** Healing per second. Probably `amount` on a ranked entry when
+  `metric` selects healing.
+- **Status:** `needs checking`
+- **Not to be confused with:** [DPS](#dps-damage-per-second).
+
+### Item-level bracket (ilvl bracket)
+
+- **Meaning:** A ranking that groups players by item level, the number that
+  sums up how strong their gear is. It compares a player with others in similar
+  gear rather than with everyone.
+- **In a log:** Item level. `bracketData` on a ranked entry is the likely source,
+  but its contents are unverified. `itemLevel` on cast events is a second
+  candidate.
+- **Status:** `needs checking`
+- **Not to be confused with:** [parse percentile](#parse-percentile-percentile),
+  which may be measured against all players or only a bracket. Always say which.
+
+### Kill time
+
+- **Meaning:** How long a successful [pull](#pull-fight-attempt) lasted, from
+  the start of the fight to the boss's death. It changes how many
+  [cooldown](#cooldown-cd) uses fit into a fight, so it affects any comparison.
+- **In a log:** `duration` on a ranked entry, shown in seconds. A log outside
+  the ranked list would need `fights`, whose fields are unverified.
+- **Status:** `confirmed`
+
+### Parse
+
+- **Meaning:** One player's ranked performance on one boss kill. "A 90 parse"
+  is shorthand for a [parse percentile](#parse-percentile-percentile) of 90.
+- **In a log:** One ranked entry. `report {code, fightID}` leads to the log
+  behind it.
+- **Status:** `confirmed`
+- **Not to be confused with:** [rank](#rank), which is a position in a list.
+
+### Parse percentile (percentile)
+
+- **Meaning:** The share of comparable parses that this parse beat, from 0
+  to 100. A percentile of 95 beat about 95% of them.
+- **In a log:** Percent. The field name is unverified. `rankings` on a report
+  is the likely source. Don't derive it from [rank](#rank) without knowing how
+  many parses exist in total.
+- **Status:** `needs checking`
+- **Not to be confused with:** [rank](#rank). The same rank can be a different
+  percentile on different bosses, because the number of parses differs.
+
+### Patchwerk
+
+- **Meaning:** A fight with one target, no [adds](#add) and almost no
+  [movement](#movement), where only the rotation matters. It is named after an
+  old raid boss, and SimC uses the same name for this kind of simulated fight.
+- **In a log:** Two proxies: percent of the player's casts on the boss
+  (`targetID`), and [movement](#movement) per minute. Telling which `targetID`
+  is the boss needs `masterData`, whose fields are unverified.
+- **Status:** `needs checking`
+
+### Rank
+
+- **Meaning:** A log's position in the list for one boss, spec, difficulty and
+  metric. Rank 1 is the best.
+- **In a log:** Position in the `characterRankings` pages. Page size is not on
+  the verified list, so count the entries a page returns.
+- **Status:** `confirmed`
+- **Not to be confused with:** [parse percentile](#parse-percentile-percentile).
+
+### Report (log upload)
+
+- **Meaning:** One uploaded combat log, often a whole raid night with many
+  [pulls](#pull-fight-attempt). In this file, "a log" means one player's record
+  of one pull inside a report.
+- **In a log:** `reportData.report`, found by `code`.
+- **Status:** `confirmed`
+
+## Resources and casting
+
+### ABC (always be casting)
+
+- **Meaning:** The habit of always having a spell in progress, because time
+  spent doing nothing is lost damage.
+- **In a log:** Idle seconds per minute: the gaps between one cast ending and
+  the next starting, minus one [GCD](#gcd-global-cooldown) where the last cast
+  was instant. The GCD length is not in the log.
+- **Status:** `needs checking`
+- **Not to be confused with:** [active time](#active-time-uptime-activity). ABC
+  is the habit, active time is the number.
+
+### Active time (uptime, activity)
+
+- **Meaning:** The share of a fight the player spent casting or locked by the
+  [GCD](#gcd-global-cooldown). Raiders also call this "uptime".
+- **In a log:** Percent of [kill time](#kill-time). Add up each
+  `begincast`-to-`cast` span, add one GCD for each instant cast, then divide by
+  kill time. The GCD length is not in the log, and telling instants apart needs
+  [instant cast](#instant-cast) to be verified.
+- **Status:** `needs checking`
+- **Not to be confused with:** buff or DoT uptime, the share of a fight an
+  effect was active. See [buff](#buff-aura). Write "active time" or "buff
+  uptime" in this project, never "uptime" alone.
+
+### Builder (generator)
+
+- **Meaning:** A spell that gives you more of a [resource](#resource) to spend
+  later.
+- **In a log:** Maelstrom gained per cast, from the change in `classResources`
+  across the cast.
+- **Status:** `needs checking`
+- **In this repo:** The APL uses the word in a comment ("next builder").
+  It stops Lava Burst near the cap with `maelstrom.deficit>15`.
+- **To check:** How much Maelstrom each spell gives. The app's tables hold costs
+  but no gains.
+- **Not to be confused with:** [spender](#spender).
+
+### Cast time
+
+- **Meaning:** How long a spell takes from starting it to finishing it.
+  [Haste](#haste) shortens it, and an [instant cast](#instant-cast) has none.
+- **In a log:** Seconds: `timestamp` of a `cast` minus `timestamp` of the
+  `begincast` before it, for the same `sourceID` and `abilityGameID`. A
+  `begincast` with no `cast` after it is probably a cancelled or interrupted
+  cast.
+- **Status:** `confirmed`
+- **Not to be confused with:** [GCD](#gcd-global-cooldown).
+
+### Filler
+
+- **Meaning:** The spell you cast when nothing better is available. It is
+  always usable, so it sits at the bottom of the priority.
+- **In a log:** Percent of all casts. A high share can come from few
+  [procs](#proc) rather than poor play.
+- **Status:** `needs checking`
+- **In this repo:** The APL labels it "Filler spell. Always available. Always
+  the bottom line." That is `lightning_bolt` on one target and
+  `chain_lightning` on two. While moving it falls through to `flame_shock`,
+  `voltaic_blaze` and `frost_shock` with `moving=1`.
+
+### GCD (global cooldown)
+
+- **Meaning:** A short lockout after most spells, during which you can't start
+  another spell that uses it. [Haste](#haste) shortens it.
+- **In a log:** Seconds. There is no verified field. One estimate is the
+  smallest gap between two instant on-GCD casts, which is an upper limit.
+- **Status:** `needs checking`
+- **In this repo:** APL identifiers `gcd` and `gcd.max`. The sandbox default of
+  1.2 seconds in `CombatState` is a starting value, not game data.
+- **To check:** The base length and the minimum in Midnight.
+- **Not to be confused with:** [cooldown](#cooldown-cd),
+  [cast time](#cast-time).
+
+### Haste
+
+- **Meaning:** A stat that makes spells cast faster and shortens the
+  [GCD](#gcd-global-cooldown), so you fit in more casts per minute.
+- **In a log:** Percent: base [cast time](#cast-time) divided by observed cast
+  time, minus 1. Base cast times come from game data, and the app's values are
+  approximations. The stat itself may be in `playerDetails`, unverified.
+- **Status:** `needs checking`
+- **To check:** Whether haste also speeds up Flame Shock ticks and cooldown
+  recharge for Elemental in Midnight.
+
+### Instant cast
+
+- **Meaning:** A spell with no [cast time](#cast-time), so it can be used while
+  moving. It still uses the [GCD](#gcd-global-cooldown) unless it is also
+  [off-GCD](#off-gcd).
+- **In a log:** A `cast` with no `begincast` before it, as a percent of casts.
+  The verified list doesn't say instants never produce a `begincast`, so check
+  this on a sample.
+- **Status:** `needs checking`
+- **Not to be confused with:** [off-GCD](#off-gcd).
+
+### Maelstrom
+
+- **Meaning:** The [resource](#resource) Elemental Shaman builds and spends.
+- **In a log:** Points, from `classResources` if Maelstrom is there at all.
+- **Status:** `needs checking`
+- **In this repo:** `maelstrom`, `maelstrom.deficit` (points below the cap),
+  `maelstrom.max` and `maelstrom.pct`. The cap is 100, or 150 with the Swelling
+  Maelstrom talent (in-game tooltip).
+
+### Off-GCD
+
+- **Meaning:** An ability that neither uses nor waits for the
+  [GCD](#gcd-global-cooldown), so you can press it alongside another spell.
+- **In a log:** A `cast` closer to the previous cast than one GCD allows, as a
+  count per minute. Better, keep a list of known off-GCD abilities, since the
+  GCD length is not in the log.
+- **Status:** `needs checking`
+- **In this repo:** `offGcd: true` on Ancestral Swiftness, Nature's Swiftness,
+  Spiritwalker's Grace and Wind Shear. In the APL, `use_off_gcd=1` lets SimC use
+  an item during the GCD.
+- **Not to be confused with:** [instant cast](#instant-cast). Most instants
+  still use the GCD.
+
+### Overcap (overcapping, capped)
+
+- **Meaning:** Gaining a [resource](#resource) while already at the maximum, so
+  the gain is lost. The same word is used for charges and proc stacks.
+- **In a log:** Maelstrom gained while at max, as wasted Maelstrom per minute.
+  `amount` equal to `max` at a cast shows being capped at that moment, but not
+  how much was lost. Exact waste needs a stream of resource gains, and no such
+  `dataType` is verified.
+- **Status:** `needs checking`
+- **Not to be confused with:** [pooling](#pooling), which stays below the cap.
+
+### Pooling
+
+- **Meaning:** Deliberately not spending a [resource](#resource) in the seconds
+  before a known event, usually [adds](#add) spawning, while staying below the
+  cap, so it can all be spent when the event starts.
+- **In a log:** Around each event: Maelstrom at the moment the event starts
+  (points), [spender](#spender) casts per minute in the seconds before and after
+  it, and any [overcap](#overcap-overcapping-capped) during the hold. The event
+  time comes from [add wave](#add-wave) or [phase](#phase).
+- **Status:** `needs checking`
+- **In this repo:** The default APL cannot pool, because it has no fight
+  timeline. Its main spender lines fire on
+  `buff.master_of_the_elements.up` or `maelstrom.deficit<15`, whatever is coming
+  next. So pooling always shows up as a [deviation](#deviation), and that
+  deviation can be the right play.
+- **Not to be confused with:** [overcap](#overcap-overcapping-capped), and with
+  holding a resource when nothing is coming, which is a
+  [mistake](#mistake).
+
+### Resource
+
+- **Meaning:** The bar a spec fills and spends to cast spells, such as Mana or
+  [Maelstrom](#maelstrom).
+- **In a log:** Points: `classResources` entries with `amount`, `max`, `type`
+  and `cost` on a [cast event](#cast-event). They are readings at each cast, so
+  nothing between casts is visible. Only Mana (type 0) has been seen.
+- **Status:** `confirmed`
+
+### Spender
+
+- **Meaning:** A spell that costs a [resource](#resource) and turns it into
+  damage.
+- **In a log:** Spender casts per minute, from a list of ability ids. `cost`
+  above 0 in `classResources` could replace the list once Maelstrom is verified.
+- **Status:** `needs checking`
+- **In this repo:** Earth Shock (60), Elemental Blast (90) and Earthquake (60).
+  These costs are approximations. Eye of the Storm takes 5 off, or 10 off
+  Elemental Blast.
+- **Not to be confused with:** [builder](#builder-generator).
+
+## Buffs, debuffs and procs
+
+### Buff (aura)
+
+- **Meaning:** A temporary helpful effect on a player. "Aura" covers both buffs
+  and [debuffs](#debuff).
+- **In a log:** Buff uptime: percent of [kill time](#kill-time) the buff was
+  active. Stack count at a given cast is a second metric. Both need buff events,
+  which have not been sampled.
+- **Status:** `needs checking`
+- **In this repo:** `buff.<name>.up`, `.stack`, `.remains`, `.react`.
+- **Not to be confused with:** [active time](#active-time-uptime-activity).
+
+### Debuff
+
+- **Meaning:** A temporary harmful effect, on an enemy or a player.
+- **In a log:** Debuff uptime: percent of the time the target was alive and
+  affected. Needs debuff events, which have not been sampled.
+- **Status:** `needs checking`
+- **In this repo:** `debuff.<name>`, such as `debuff.lightning_rod.remains`.
+
+### DoT (damage over time)
+
+- **Meaning:** A [debuff](#debuff) that damages its target in repeated ticks.
+- **In a log:** DoT uptime per target: percent of the time the target was alive.
+  Needs debuff or tick events, which have not been sampled.
+- **Status:** `needs checking`
+- **In this repo:** `dot.<name>.ticking`, `.remains`, `.refreshable`. Elemental's
+  DoT is [Flame Shock](#flame-shock-fs).
+
+### Pandemic
+
+- **Meaning:** The rule that lets you renew a [DoT](#dot-damage-over-time) a
+  little early without losing the time it had left, up to a limit.
+- **In a log:** Early refreshes: applications that landed with more than 30% of
+  the duration left, as a count per minute. Needs debuff events and a verified
+  duration.
+- **Status:** `needs checking`
+- **In this repo:** `dot.flame_shock.refreshable` is true below 30% of duration
+  (`apl_state_resolver.dart`). That is 5.4 seconds with the app's 18-second
+  Flame Shock.
+- **To check:** That the limit is still 30% in Midnight, and that it applies to
+  Flame Shock.
+
+### Proc
+
+- **Meaning:** An effect that triggers on its own, often by chance, such as
+  [Lava Surge](#lava-surge).
+- **In a log:** Procs per minute, from buff applications, and unused procs
+  (count) that ended without being spent. Compare rates rather than totals,
+  because [kill time](#kill-time) differs. Needs buff events.
+- **Status:** `needs checking`
+- **Not to be confused with:** [RNG](#rng-random-number-generator-luck). A proc
+  is the event, RNG is the luck behind it.
+
+### RNG (random number generator, luck)
+
+- **Meaning:** The random chance built into the game. "Good RNG" means more
+  [procs](#proc) or critical hits than average.
+- **Status:** `not measurable from logs`
+- **In this repo:** A log shows what happened, not what was expected. Boss
+  Evaluation should treat a small gap between single logs as possible luck, and
+  never as a [mistake](#mistake) on its own.
+- **Not to be confused with:** [proc](#proc).
+
+### Snapshot (snapshotting)
+
+- **Meaning:** A lasting effect, usually a [DoT](#dot-damage-over-time), keeping
+  the buffs and stats it had when applied, even after those buffs end.
+- **In a log:** Damage per tick of one DoT before and after a buff ends, with no
+  refresh in between. Needs tick damage events.
+- **Status:** `needs checking`
+- **To check:** Whether Flame Shock snapshots in Midnight. The APL says "Consume
+  spare MotE to buff Flame Shock", which doesn't settle it.
+- **Not to be confused with:** SimC's `snapshot_stats` action, which records
+  raid-buffed stats before combat and has nothing to do with DoTs.
+
+## Cooldowns and burst
+
+### Alignment (sync)
+
+- **Meaning:** Timing cooldowns so that their effects overlap and multiply each
+  other.
+- **In a log:** Alignment offset: seconds between the casts of two cooldowns,
+  such as Ascendance and Stormkeeper.
+- **Status:** `needs checking`
+- **In this repo:** The APL says "Ascendance on CD (always with MID2 set), unless
+  SK can be sync'd with it" and has trinkets "mimic Ascendance activation
+  conditions".
+
+### Burst window
+
+- **Meaning:** A short stretch where [cooldowns](#cooldown-cd) and buffs overlap,
+  giving much higher damage than normal.
+- **In a log:** Damage per second inside the window, and percent of total damage
+  done in it. The window comes from buff start and end times, and both measures
+  need unverified events.
+- **Status:** `needs checking`
+
+### Cooldown (CD)
+
+- **Meaning:** The wait before an ability can be used again, which some abilities
+  store as charges. "CDs" often means just the big ones.
+- **In a log:** Cast interval: seconds between `cast` events with the same
+  `abilityGameID` and `sourceID`. This shows when the ability was used, not when
+  it became ready.
+- **Status:** `confirmed`
+- **In this repo:** `cooldown.<name>.remains`, `.ready`, `.charges`,
+  `.charges_fractional`.
+- **Not to be confused with:** [GCD](#gcd-global-cooldown).
+
+### Cooldown efficiency
+
+- **Meaning:** How many uses of a [cooldown](#cooldown-cd) a player got, compared
+  with the most they could have had in that fight.
+- **In a log:** Percent: casts divided by possible casts. For a one-charge
+  ability, possible casts are about `1 + floor(kill time / cooldown)`. The
+  cooldown comes from game data, and the app's values are approximations that
+  ignore cooldown reduction.
+- **Status:** `needs checking`
+- **Not to be confused with:** a verdict. A cooldown held for an
+  [add wave](#add-wave) lowers this number and can still be correct. See
+  [deviation](#deviation).
+
+### Potion (pot)
+
+- **Meaning:** A consumable you drink for a strong short effect during a fight.
+- **In a log:** Uses per pull, and seconds into the fight of each use. Needs the
+  current season's potion ids.
+- **Status:** `needs checking`
+- **In this repo:** `potion,if=buff.bloodlust.up|cooldown.ascendance.ready|fight_remains<31`.
+  The app lists `potion` as unmodelled.
+
+### Trinket
+
+- **Meaning:** A gear slot, of which you wear two. Some trinkets have an effect
+  you press (on-use), and others work by themselves (passive).
+- **In a log:** Seconds into the fight of each on-use press. Whether presses
+  appear as cast events is unverified. The equipped trinkets may be in
+  `playerDetails`.
+- **Status:** `needs checking`
+- **In this repo:** `use_item` lines in the APL, which the app lists as
+  unmodelled. `trinket.*` identifiers are not supported.
+
+## Fight and target handling
+
+### Add
+
+- **Meaning:** An extra enemy that joins a boss fight.
+- **In a log:** Number of distinct enemy targets besides the boss. A `targetID`
+  on a cast shows that a player hit it, and `masterData` may name it.
+- **Status:** `needs checking`
+
+### Add wave
+
+- **Meaning:** A group of [adds](#add) that arrive together, often at a
+  predictable point in the fight.
+- **In a log:** Spawn time: seconds into the pull of the first record for a new
+  enemy. A player's first cast on it is a late estimate. Compare the same wave
+  across logs.
+- **Status:** `needs checking`
+
+### AoE (area of effect)
+
+- **Meaning:** Damage that hits many targets at once, or a stretch of fight with
+  many targets.
+- **In a log:** Targets hit per cast. Needs damage events.
+- **Status:** `needs checking`
+- **In this repo:** The APL moves to its `aoe` list at
+  `spell_targets.chain_lightning>=3`.
+- **Not to be confused with:** [cleave](#cleave).
+
+### Cleave
+
+- **Meaning:** Hitting a small number of extra targets alongside the main one. In
+  this project it means exactly two targets.
+- **In a log:** Percent of damage on targets other than the main one. Needs
+  damage events.
+- **Status:** `needs checking`
+- **In this repo:** The APL has no cleave list. `single_target` covers one and
+  two targets, with conditions such as `spell_targets.chain_lightning=2`.
+- **Not to be confused with:** [AoE](#aoe-area-of-effect) and
+  [padding](#padding). Cleave on adds that must die is useful damage.
+
+### Intermission
+
+- **Meaning:** A break in a boss fight, usually with different rules or a boss
+  you can't hit, after which the fight carries on.
+- **In a log:** Start and end in seconds into the pull, from `phases` if they are
+  listed there.
+- **Status:** `needs checking`
+- **Not to be confused with:** [phase](#phase). An intermission is one kind of
+  phase, and a short one.
+
+### Mechanic
+
+- **Meaning:** A boss ability the raid must respond to, for example by moving,
+  interrupting or standing in a marked place.
+- **In a log:** Enemy casts and debuffs on the player, matched to a per-boss list
+  of ability ids. Needs events that have not been sampled. Mechanics are the main
+  honest reason for a gap in casting.
+- **Status:** `needs checking`
+
+### Movement
+
+- **Meaning:** Having to move during a fight. Most non-instant spells can't be
+  cast while moving, so casters lose time.
+- **In a log:** Straight-line distance between the `x`, `y` of consecutive cast
+  events, per minute. Positions exist only at casts, so this undercounts. The
+  raw unit is unverified.
+- **Status:** `confirmed`
+- **In this repo:** `spiritwalkers_grace,moving=1,if=movement.distance>6` and the
+  `moving=1` instant lines at the end of each list.
+- **Not to be confused with:** SimC's `movement.distance`, a planned distance in
+  a simulated fight.
+
+### Opener
+
+- **Meaning:** The planned series of casts at the start of a pull.
+- **In a log:** The first casts of a fight: `cast` events for one `sourceID` in
+  one of `fightIDs`, in `timestamp` order, as a list of `abilityGameID`s. How many
+  casts count as the opener is not decided.
+- **Status:** `confirmed`
+- **Not to be confused with:** [prepull](#prepull).
+
+### Padding
+
+- **Meaning:** Damage that raises a player's numbers without helping to kill the
+  boss, such as hitting adds that don't matter. It is a criticism.
+- **In a log:** Percent of damage on targets listed as low priority for that boss.
+  The log doesn't say which targets those are, so this needs a per-boss list and
+  damage events.
+- **Status:** `needs checking`
+- **Not to be confused with:** [cleave](#cleave) and
+  [priority damage](#priority-damage).
+
+### Phase
+
+- **Meaning:** A stage of a boss fight with its own rules, often started by boss
+  health or by time.
+- **In a log:** Start and end in seconds into the pull. `phases` exists on a
+  report, but its fields are unverified.
+- **Status:** `needs checking`
+
+### Prepull
+
+- **Meaning:** The time just before a fight starts, used for buffing and for
+  casting anything that lasts into the fight.
+- **In a log:** Casts with a `timestamp` before the fight starts, and buffs
+  already active at the start. Whether `events` returns anything before the fight
+  start is unverified.
+- **Status:** `needs checking`
+- **In this repo:** `actions.precombat` casts Lightning Shield, Flametongue
+  Weapon, Thunderstrike Ward and Stormkeeper.
+- **Not to be confused with:** [opener](#opener).
+
+### Priority damage
+
+- **Meaning:** Damage on the target that matters most at that moment, usually one
+  that must die first.
+- **In a log:** Percent of damage on listed priority targets. Needs a per-boss
+  list and damage events.
+- **Status:** `needs checking`
+- **Not to be confused with:** [padding](#padding).
+
+### Pull (fight, attempt)
+
+- **Meaning:** One attempt at a boss, ending in a kill or a [wipe](#wipe). WCL
+  calls it a fight.
+- **In a log:** One entry in `fights`, chosen with `fightIDs`. A ranked entry
+  names its pull with `report {code, fightID}`. Whether `fights` also holds
+  non-boss fights is unverified.
+- **Status:** `confirmed`
+
+### Target swap
+
+- **Meaning:** Changing your target, usually to deal with an [add](#add).
+- **In a log:** Swaps per minute: changes of `targetID` between consecutive `cast`
+  events from one `sourceID`. Self-cast and ground-targeted spells may add false
+  swaps, so check a sample.
+- **Status:** `confirmed`
+
+### Wipe
+
+- **Meaning:** A [pull](#pull-fight-attempt) that ended without killing the boss,
+  usually because the raid died or gave up.
+- **In a log:** A kill or wipe marker in `fights`, unverified. Also unverified:
+  that ranked entries are only ever kills.
+- **Status:** `needs checking`
+
+## Group and external buffs
+
+### Augmentation support (Aug)
+
+- **Meaning:** The support spec Augmentation Evoker raises other players' damage
+  with buffs. Whether one buffed a player can change that player's numbers.
+- **In a log:** Buff uptime on the player, percent, with the buff's source being
+  an Augmentation player. Needs buff events and the spec of the source.
+- **Status:** `needs checking`
+- **To check:** The buffs involved in Midnight, and whether any WCL `metric`
+  moves damage from the buffed player to the support. Compare logs on one metric
+  only.
+
+### Bloodlust (lust, Heroism, Time Warp)
+
+- **Meaning:** A raid-wide [haste](#haste) buff, usually available once per pull.
+  Several classes bring it under different names.
+- **In a log:** Seconds into the pull of each use. Needs buff events, and a list
+  of every version's ability id.
+- **Status:** `needs checking`
+- **In this repo:** `buff.bloodlust.up`. The app's aura uses spell id 2825 and a
+  40-second duration. Other versions have other ids.
+
+### External buffs (externals)
+
+- **Meaning:** Buffs a player receives from someone else, such as
+  [Power Infusion](#power-infusion-pi). A player can't always control whether
+  they get them.
+- **In a log:** Buff uptime, percent, for buffs whose source is another player.
+  Needs buff events. Top logs may have more of these, so a damage gap can come
+  from the raid rather than the player.
+- **Status:** `needs checking`
+- **In this repo:** `invoke_external_buff`, listed as unmodelled.
+- **Not to be confused with:** defensive externals, a healer's damage reduction
+  on another player. Raiders often say "externals" for those.
+
+### Power Infusion (PI)
+
+- **Meaning:** A [haste](#haste) buff a Priest can put on another player.
+- **In a log:** Applications per pull, and buff uptime as a percent. Needs buff
+  events.
+- **Status:** `needs checking`
+- **In this repo:** `invoke_external_buff,name=power_infusion`, under the APL
+  comment "Use Power Infusion on Cooldown." The app lists it as unmodelled.
+- **To check:** Its effect in Midnight.
+
+## Character setup and difficulty
+
+### Hero talent (hero tree)
+
+- **Meaning:** A small extra talent tree. Each spec picks one of two, which
+  shapes how it plays.
+- **In a log:** Which tree was taken. `playerDetails` may show it, unverified.
+  A proxy is a tree-only ability appearing in the casts:
+  [Ancestral Swiftness](#ancestral-swiftness) for
+  [Farseer](#farseer), [Tempest](#tempest) for
+  [Stormbringer](#stormbringer).
+- **Status:** `needs checking`
+- **In this repo:** `heroTreeNames`: 55 Stormbringer, 56 Farseer. Totemic (54) is
+  not available to Elemental.
+
+### Heroic
+
+- **Meaning:** The raid difficulty just below [Mythic](#mythic).
+- **In a log:** The `difficulty` argument of `characterRankings`. Its values are
+  unverified. Compare logs from the same difficulty only.
+- **Status:** `confirmed`
+
+### Mythic
+
+- **Meaning:** The highest raid difficulty. Boss fights can have extra mechanics
+  there.
+- **In a log:** The `difficulty` argument of `characterRankings`. Its values are
+  unverified. Compare logs from the same difficulty only.
+- **Status:** `confirmed`
+- **Not to be confused with:** Mythic+, the dungeon mode, which is ranked
+  separately.
+
+### Talent
+
+- **Meaning:** A permanent choice in a character's talent trees that adds or
+  changes abilities. A choice node makes you pick one of two talents.
+- **In a log:** Which talents were taken. `playerDetails` may show them,
+  unverified. Differences in talents can explain a gap on their own, so note them
+  before comparing casts.
+- **Status:** `needs checking`
+- **In this repo:** `talent.<token>`. `TalentStringCodec` decodes in-game export
+  strings, but whether a log holds one is unverified. Fire Elemental and Storm
+  Elemental are not talents in Midnight: the app treats Fire Elemental as baseline
+  and hides Storm Elemental and Wind Gust, although the APL still reads them.
+
+### Tier set (set bonus)
+
+- **Meaning:** A seasonal set of gear that gives extra effects for wearing two or
+  four pieces.
+- **In a log:** Which bonus was active. Gear may be in `playerDetails`, unverified.
+  A proxy is the set's [proc](#proc) buffs appearing.
+- **Status:** `needs checking`
+- **In this repo:** `set_bonus.mid2_4pc`, with procs `buff.flowing_elements` and
+  `buff.overcharge_tier`. The 4-piece changes how the APL times Stormkeeper and
+  Ascendance, so compare like with like.
+
+## Elemental Shaman terms
+
+These describe how the terms are used in this repo. All the ids and numbers are
+the app's, and all the log measures depend on ability ids, so every entry here is
+`needs checking`.
+
+### Ancestral Swiftness
+
+- **Meaning:** A [Farseer](#farseer) talent that replaces Nature's Swiftness. It
+  is an [off-GCD](#off-gcd) button that makes your next cast instant.
+- **In a log:** [Cooldown efficiency](#cooldown-efficiency), percent.
+- **Status:** `needs checking`
+- **In this repo:** `ancestral_swiftness`, `talent.ancestral_swiftness`,
+  `buff.ancestral_swiftness.up`. Cooldown 60 seconds. The APL has no condition on
+  it, so it is used whenever ready.
+- **To check:** Whether "next cast" covers every spell.
+- **Not to be confused with:** [Call of the Ancestors](#call-of-the-ancestors).
+
+### Ascendance
+
+- **Meaning:** A talent with a long [cooldown](#cooldown-cd). The APL plans
+  Stormkeeper, Flame Shock and trinkets around it.
+- **In a log:** [Cooldown efficiency](#cooldown-efficiency) (percent) and
+  [alignment](#alignment-sync) offset with Stormkeeper (seconds).
+- **Status:** `needs checking`
+- **In this repo:** `ascendance`, `talent.ascendance`, `buff.ascendance.up`,
+  `cooldown.ascendance.remains`, `cooldown.ascendance.ready`. Cooldown 180
+  seconds, and spell id 114050.
+- **To check:** What it does while active, and for how long. The app doesn't
+  model that. Enhancement and Restoration have their own Ascendance talents, so
+  confirm the ability id.
+
+### Call of the Ancestors
+
+- **Meaning:** A [Farseer](#farseer) talent that brings Ancestors to fight
+  alongside you. The app tracks how many are active.
+- **In a log:** Percent of the fight with an Ancestor active, and stacks at each
+  [spender](#spender). Needs buff events.
+- **Status:** `needs checking`
+- **In this repo:** `talent.call_of_the_ancestors`,
+  `buff.call_of_the_ancestors.up`, `.stack` (up to 5 in the app). The APL often
+  uses the talent to mean "this is a Farseer build".
+- **To check:** What summons Ancestors and how long they stay.
+- **Not to be confused with:** `ancestral_call`, a racial action in the APL, and
+  [Ancestral Swiftness](#ancestral-swiftness).
+
+### Earth Shock
+
+- **Meaning:** A single-target [spender](#spender). It shares a choice node with
+  [Elemental Blast](#elemental-blast-eb), so a build has one or the other.
+- **In a log:** Casts per minute, and percent of casts with
+  [Master of the Elements](#master-of-the-elements-mote) up.
+- **Status:** `needs checking`
+- **In this repo:** `earth_shock`, `talent.earth_shock`. Cost 60 in the app. In
+  the APL it fires on `buff.master_of_the_elements.up|maelstrom.deficit<15`.
+- **Not to be confused with:** [Earthquake](#earthquake-eq), or Frost Shock, which
+  the APL only uses while moving.
+
+### Earthquake (EQ)
+
+- **Meaning:** An area [spender](#spender) that hits several targets.
+- **In a log:** Casts per minute, and targets hit per cast. `targetID` may not be
+  useful if the spell is ground-targeted.
+- **Status:** `needs checking`
+- **In this repo:** `earthquake`. Cost 60 in the app. In `single_target` every
+  Earthquake line needs `spell_targets.chain_lightning=2`, so the APL never casts
+  it on one target.
+- **To check:** The talent tree has a node with two entries both named
+  Earthquake, which suggests two versions of the spell. Find out how they differ
+  and whether they log under different ids. The app has only 61882, and doesn't
+  treat Earthquake as a talent.
+
+### Elemental Blast (EB)
+
+- **Meaning:** An expensive [spender](#spender). It shares a choice node with
+  [Earth Shock](#earth-shock), so a build has one or the other.
+- **In a log:** Casts per minute, and percent of casts with
+  [Master of the Elements](#master-of-the-elements-mote) up.
+- **Status:** `needs checking`
+- **In this repo:** `elemental_blast`, `talent.elemental_blast`. Cost 90 in the
+  app. The APL's `aoe` list also reads `buff.elemental_blast_critical_strike`,
+  `_haste` and `_mastery`, which the app doesn't define.
+- **To check:** What those three buffs do in Midnight.
+
+### Farseer
+
+- **Meaning:** One of Elemental's two [hero trees](#hero-talent-hero-tree), built
+  around [Call of the Ancestors](#call-of-the-ancestors).
+- **In a log:** See [hero talent](#hero-talent-hero-tree).
+- **Status:** `needs checking`
+- **In this repo:** Sub-tree 56, loadout `simc_farseer`. There is no
+  `talent.farseer`, so the APL checks `talent.call_of_the_ancestors`.
+- **Not to be confused with:** [Stormbringer](#stormbringer).
+
+### Flame Shock (FS)
+
+- **Meaning:** Elemental's [DoT](#dot-damage-over-time), kept on the target for
+  most of the fight.
+- **In a log:** DoT uptime on the boss, percent of [kill time](#kill-time), and
+  early refreshes per minute (see [pandemic](#pandemic)). Counting Flame Shock
+  casts isn't enough, because the APL also maintains it with Voltaic Blaze.
+- **Status:** `needs checking`
+- **In this repo:** `flame_shock`, `dot.flame_shock.refreshable`, `.remains`,
+  `active_dot.flame_shock`. Duration 18 seconds and cooldown 6 seconds in the app.
+  The APL's main refresh line needs `cooldown.ascendance.remains>5`.
+- **To check:** How it interacts with Lava Burst in Midnight. The app doesn't
+  model any link between them.
+
+### Lava Burst (LvB)
+
+- **Meaning:** A cast-time attack on a two-charge [cooldown](#cooldown-cd). It
+  also sets up [Master of the Elements](#master-of-the-elements-mote).
+- **In a log:** Casts per minute, and casts made at or near two charges. Charge
+  count isn't logged, so it would have to be estimated from cast times.
+- **Status:** `needs checking`
+- **In this repo:** `lava_burst`, `cooldown.lava_burst.charges_fractional`. Two
+  charges, 8-second recharge and 2-second cast in the app. The APL fires it at
+  `charges_fractional>1.8` to avoid wasting a charge.
+- **Not to be confused with:** [Lava Surge](#lava-surge).
+
+### Lava Surge
+
+- **Meaning:** A [proc](#proc) that makes your next [Lava Burst](#lava-burst-lvb)
+  instant and free.
+- **In a log:** Procs per minute, and procs that ended unused (count). A Lava
+  Burst `cast` with no `begincast` is a proxy, but
+  [Ancestral Swiftness](#ancestral-swiftness) gives the same pattern. Needs buff
+  events to be exact.
+- **Status:** `needs checking`
+- **In this repo:** `buff.lava_surge.up`. Duration 10 seconds in the app. The app
+  lets it fire Lava Burst with no charges. It is not in the talent tree, so the
+  app treats it as baseline.
+- **To check:** What triggers it, and whether it really ignores charges. Also
+  what "free" means, since the app gives Lava Burst no Maelstrom cost.
+
+### Master of the Elements (MotE)
+
+- **Meaning:** A talent where casting [Lava Burst](#lava-burst-lvb) empowers your
+  next [spender](#spender). It shares a choice node with Molten Wrath.
+- **In a log:** Percent of spenders cast with the buff up, and buffs that ended
+  unused (count). A proxy from casts alone is the share of spenders that come
+  right after a Lava Burst.
+- **Status:** `needs checking`
+- **In this repo:** `talent.master_of_the_elements`,
+  `buff.master_of_the_elements.up`.
+- **To check:** Which spells really use it. The app says "next spender", but the
+  APL also spends it on Tempest, on Lightning Bolt with Stormkeeper, and on Flame
+  Shock.
+
+### Stormbringer
+
+- **Meaning:** One of Elemental's two [hero trees](#hero-talent-hero-tree), built
+  around [Tempest](#tempest).
+- **In a log:** See [hero talent](#hero-talent-hero-tree).
+- **Status:** `needs checking`
+- **In this repo:** Sub-tree 55, loadout `simc_stormbringer`. There is no
+  `talent.stormbringer`, so the APL checks `talent.tempest`.
+- **Not to be confused with:** [Farseer](#farseer) and
+  [Stormkeeper](#stormkeeper-sk).
+
+### Stormkeeper (SK)
+
+- **Meaning:** A talent you cast to gain stacks that make Lightning Bolt and Chain
+  Lightning instant.
+- **In a log:** [Cooldown efficiency](#cooldown-efficiency) (percent), and stacks
+  that ended unused (count). Needs buff events for the stacks.
+- **Status:** `needs checking`
+- **In this repo:** `stormkeeper`, `talent.stormkeeper`, `buff.stormkeeper.up`,
+  `.stack`, `cooldown.stormkeeper.remains`. Cast 1.5 seconds, cooldown 60 seconds.
+  It is also in `actions.precombat`, so a log may show it before the fight starts.
+- **To check:** Its maximum stacks. The app says 3, but the APL's `aoe` list tests
+  `buff.stormkeeper.stack<4`. Also check whether it does more than make those
+  spells instant.
+- **Not to be confused with:** [Stormbringer](#stormbringer).
+
+### Tempest
+
+- **Meaning:** A [Stormbringer](#stormbringer) spell that replaces Lightning Bolt
+  when its buff is up. The same word names the talent, the buff and the spell.
+- **In a log:** Casts per minute, and buff stacks that ended unused (count). Spell
+  and buff have different ids, so match the right one.
+- **Status:** `needs checking`
+- **In this repo:** `tempest`, `talent.tempest`, `buff.tempest.up`, `.stack` (up
+  to 2 in the app). Spell id 452201, buff id 454015. The app gives it no Maelstrom
+  cost.
+- **To check:** What grants stacks. The APL's `buff.tempest.stack<2` before
+  spending suggests that spending does, but the app doesn't say so.
+- **Not to be confused with:** [Stormbringer](#stormbringer), which is the hero
+  tree.
+
+## SimC and APL terms
+
+### APL (action priority list)
+
+- **Meaning:** A SimulationCraft script listing what to cast, in order, each with
+  conditions. At every decision, the first line that passes and can be pressed
+  wins.
+- **Status:** `not measurable from logs`
+- **In this repo:** `assets/apl/shaman_elemental.simc`, a verbatim upstream copy.
+  It is the source of truth for priority. A log doesn't contain an APL, but one
+  can be replayed against a log. See [deviation](#deviation).
+- **Not to be confused with:** a guide. An APL is written for a simulator and has
+  no knowledge of a specific boss.
+
+### Priority list (rotation)
+
+- **Meaning:** A way to play where you always cast the highest thing available
+  rather than following a fixed order. Raiders usually call this the rotation.
+- **Status:** `not measurable from logs`
+- **In this repo:** An [APL](#apl-action-priority-list) is the written form. What
+  a player actually did is a list of [cast events](#cast-event), and that can be
+  compared with a priority list but doesn't show one.
+
+### Sim (simulation, SimC)
+
+- **Meaning:** A run of SimulationCraft, a program that plays a character through
+  a fight many times to estimate its damage.
+- **Status:** `not measurable from logs`
+- **Not to be confused with:** a log. A sim is modelled and a log is what really
+  happened. Sims assume things about the fight, often that it is
+  [Patchwerk](#patchwerk).
+
+## Deviations: mistakes and plans
+
+**A deviation from the APL is not automatically a mistake.** The APL sees only the
+current moment. The bundled file has no fight timeline: it has no `raid_event.*`
+condition, and `fight_remains` is the nearest thing to one. It can't know that adds
+spawn in 15 seconds, so a player who knows that can do better than it.
+
+Boss Evaluation must report the deviation first and judge it second, in this order:
+
+| Test | Points to a plan | Points to a mistake |
+| ---- | ---------------- | ------------------- |
+| **Event:** did a known event follow? | Yes: an [add wave](#add-wave), [phase](#phase), [intermission](#intermission) or [burst window](#burst-window) soon after | Nothing followed |
+| **Payoff:** was it used at the event? | The held resource or cooldown was spent as the event started | It stayed unspent, or was spent late |
+| **Cost:** did the hold waste anything? | Stayed below the cap, and no cooldown use was lost | [Overcapped](#overcap-overcapping-capped), lost a cooldown use, or sat idle |
+| **Repeat:** does it recur? | Same deviation at the same point across pulls, or in the top [cohort](#cohort) | One-off |
+
+- **Plan:** Event, Payoff and Cost all point to a plan. Repeat adds support.
+- **Mistake:** Cost points to a mistake, and so does Event or Payoff. Value was
+  lost, and nothing the log shows justifies it.
+- **Unclear:** anything else. Show it to the player, but don't score it.
+
+A deviation forced by a [mechanic](#mechanic) or [movement](#movement) is neither.
+A match with the top cohort is evidence, not proof, because top players make
+mistakes too. The time windows and the number of matching logs are not decided.
+Set them from real logs rather than guessing.
+
+**Example.** Just before an add wave, the APL recommends a [spender](#spender). The
+player casts [filler](#filler) instead, stays below the Maelstrom cap, and spends
+everything as the adds arrive. That is [pooling](#pooling), and a plan. The same
+hold with no adds coming, ending in an overcap, is a mistake. A hold that overcaps
+briefly but still spends everything on the adds is unclear: the idea was sound, and
+the execution cost something.
+
+### Deliberate plan (plan)
+
+- **Meaning:** A [deviation](#deviation) made on purpose for something coming later
+  in the fight. A log can't show intent, so this label comes from evidence.
+- **In a log:** The Event, Payoff and Cost tests above all pass.
+- **Status:** `needs checking`
+- **Not to be confused with:** [mistake](#mistake).
+
+### Deviation
+
+- **Meaning:** A cast that differs from what the
+  [APL](#apl-action-priority-list) would recommend at that moment. The word is
+  neutral: it doesn't say whether the cast was good or bad.
+- **In a log:** Deviations per minute. Rebuild the state at each `cast`, run
+  `AplEvaluator.recommend`, and compare with `abilityGameID`. The rebuild needs
+  buffs and Maelstrom, which are unverified, and cooldown lengths from game data.
+- **Status:** `needs checking`
+- **In this repo:** Use this word, not "error", in anything shown to a player until
+  the tests above have run.
+
+### Mistake
+
+- **Meaning:** A [deviation](#deviation) that lost value, with no reason the log can
+  show.
+- **In a log:** The Cost test above fails, and so does Event or Payoff. Cost
+  means an [overcap](#overcap-overcapping-capped), a lost cooldown use or idle
+  time.
+- **Status:** `needs checking`
+- **Not to be confused with:** [deliberate plan](#deliberate-plan-plan) or
+  [RNG](#rng-random-number-generator-luck). Poor luck is not a mistake.

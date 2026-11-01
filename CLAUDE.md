@@ -4,6 +4,11 @@ A Flutter app that turns SimulationCraft action priority lists (APLs) into a
 sandbox and quiz for World of Warcraft rotations. The first supported spec is
 **Elemental Shaman, single target** (Midnight).
 
+**Glossary:** [`docs/glossary.md`](docs/glossary.md) defines WoW raiding, WCL
+log and SimC terms. Read it before naming a raiding concept in code or UI, and
+before any Boss Evaluation or log-analysis work: each term says how to measure
+it in a log and whether that is verified.
+
 ## Setup
 
 - **Flutter stable ≥ 3.47 / Dart ≥ 3.13.5** (`pubspec.yaml` pins
