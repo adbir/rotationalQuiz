@@ -833,9 +833,26 @@ log carries and the set bonus on:
 
 | Fixture | Presses compared | Agreement | Exact deviations |
 | ------- | ---------------- | --------- | ---------------- |
-| `sszorak_window` (owner, low parse), one boss | 46 | 41% (19) | 16 of 27 |
-| `twin_fangs_window` (rank 1), enemies alive | 59 | 61% (36) | 19 of 23 |
-| `coiled_altar_window` (rank 1), hittable boss | 61 | 18% (11) | 42 of 50 |
+| `sszorak_window` (owner, low parse), one boss | 46 | 48% (22), was 41% (19) | 13 of 24, was 16 of 27 |
+| `twin_fangs_window` (rank 1), enemies alive | 59 | 63% (37), was 61% (36) | 18 of 22, was 19 of 23 |
+| `coiled_altar_window` (rank 1), hittable boss | 61 | 59% (36), was 18% (11) | 17 of 25, was 42 of 50 |
+
+Fixes of #71, in the order applied (agreements of 46 / 59 / 61):
+
+| Step | Sszorak | Twin Fangs | Coiled Altar |
+| ---- | ------- | ---------- | ------------ |
+| Before | 19 | 36 | 11 |
+| Pair each finish with the earliest unused `begincast`; a `begincast` in the finish's own millisecond is an instant | 22 | 36 | 18 |
+| An instant pressed in its predecessor's millisecond is read at that millisecond, without its own buff events | 22 | 36 | 20 |
+| Targets counted from `hitGroups`: add copies only while the player's own spells hit them, absorbed direct hits count | 22 | 37 | 36 |
+
+The research expected 23 on Sszorak after the first step and 37 on Coiled Altar
+after all three. This got 22 (one short of #71's floor of 23) and 36. Widening
+the pairing window by 500 ms changed nothing. Two instants pressed in their
+predecessor's millisecond still read wrong, such as the 36.0 s Lava Burst after
+an Elemental Blast: Overcharge! and Master of the Elements are removed and
+applied again in that millisecond, and the log's order does not say which of
+those events are the predecessor's.
 
 The Coiled Altar window read both bosses as up all fight before #65, which gave
 13% (8 of 61, 45 of 53 exact). Counting only the hittable boss moves three
@@ -905,7 +922,13 @@ What explains them:
   These count as agreement with a note, as does Stormkeeper pressed 45 s after its
   last use (Offering from Beyond shortens it). A cooldown first cast inside the
   window is taken to come off cooldown just then, which hides a late press.
-- **Timing.** An instant is read 60 ms before its own cast, and a cast with a
+- **Timing (since #71).** Each finish takes the earliest unused `begincast` of
+  its spell within its cast time, so chained casts pair correctly. A `begincast`
+  in the finish's own millisecond is an instant (a Lava Surge Lava Burst). An
+  instant pressed in the millisecond its predecessor finished is read at that
+  millisecond, with the buff events from the last removal in it left out as its
+  own (Lava Surge spent, Master of the Elements granted). Before #71:
+  An instant is read 60 ms before its own cast, and a cast with a
   `begincast` 10 ms after it, so buffs its predecessor applied are up and the ones
   it spends are not yet gone. A press within 10 ms of the previous finish is the
   one case still wrong.
@@ -1021,3 +1044,48 @@ Fangs. The ceiling of (2) is #65's: an add in reach that the player ignored read
 as absent, which hides a missed cleave. Counting enemies within Chain Lightning's
 reach of the player's target (positions as above, 1 point a page per kind; the
 radius isn't checked) would see that, and gives the same 34 here.
+
+**Implemented (#71).** `ReplayLog` pairs casts with `begincast`s as in the Timing
+bullet above. `EnemyPresence` now holds two facts, because they answer different
+questions:
+
+- **`groups` (alive):** when each enemy arrived and left, from casts, deaths and
+  damage taken, as before. This is when adds spawn, so `waveStarts`, pooling and
+  the Boss Evaluation wave findings read it, and it is unchanged.
+- **`hitGroups` (hit):** when the player's own spells were hitting each kind, bosses
+  included. Per copy (`targetInstance`), spans of hits no more than
+  `WarcraftLogsRepository.bossHitGap` (8 s) apart, from hits by the spec's spell ids
+  and the `SpecLogRules` area-damage ids (Earthquake 77478), not gear procs (Rune
+  of Lingering 1287663, Rune of Unleashed Fire 1286970). A boss never hit this way
+  keeps the whole-fight span. `EnemyPresence.targetsAt(time)` sums `hitGroups`, or is
+  `aliveAt` when there are none; `LogStateBuilder` reads `targetsAt`. The rules are
+  in `WarcraftLogsHits`. They come from the `DamageDone` page that `groups` already
+  fetches, so `loadEnemyPresence` costs what it did before.
+- **Absorbed hits.** A row is a hit when it did at least 1% of its unmitigated
+  amount, or when it is a direct hit (`tick` not set) with `absorbed` above 0, and
+  only for a kind the player also really damaged: Barbed Bulwark takes 213 absorbed
+  hits and no real one on Twin Fangs rank 1, so it is not a target. A shielded tick
+  never counts. Malacrass on Coiled Altar rank 1 is shielded through his gaps (216.9
+  to 231.3, 301.6 to 318.1, 398.0 to 409.3, 494.6 to 506.1 s): the player's hits
+  there are 58, 31, 29 and 36 direct absorbed hits (and 11, 14, 12 and 12 absorbed
+  ticks, one real hit in the last), so under the direct-only rule he is still one
+  hit stretch, 147.1 to 513.8 s, where `groups` has five (1% rule). The player
+  was hitting him through the shield.
+- **Fixtures.** Live on 2026-11-01 (about 6 points: both `loadEnemyPresence` calls
+  and one extra Coiled `DamageDone` page for the absorbed counts). `enemies` is
+  unchanged from before #71 in both. A new `hits` key holds `hitGroups`. Coiled
+  Altar: Malacrass up from before the window (-77.9 to 288.8 s) and one Soulcoiler
+  copy, 71.0 to 89.0 s (wave 3 took gear procs only; wave 4's second copy was never
+  hit). Twin Fangs: bosses up through the window, the three Spawn of Vexhul from
+  27.9 s (first hit, where `enemies` has first cast, 28.1 s), and no Broodlings (the
+  player's own spells never hit them in the window; `enemies` still has them).
+  Agreement: Twin Fangs 37 with the hit count (36 with alive).
+- **Why not 23 on Sszorak.** The first step reached 22. The remaining same-
+  millisecond instants (the 36.0 s Lava Burst after an Elemental Blast) have
+  Overcharge! and Master of the Elements removed and applied again in that
+  millisecond, and the log's order does not say which events are the
+  predecessor's. A wider pairing window changed nothing.
+- **Ceiling.** An add in reach that the player ignored reads as absent from
+  `hitGroups`, which hides a missed cleave. Counting enemies within Chain
+  Lightning's reach of the player's target (enemy positions, 1 point a page per
+  kind) would see it.

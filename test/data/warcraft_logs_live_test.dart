@@ -241,6 +241,22 @@ void main() {
         (409.3, 494.6),
         (506.1, 513.8),
       ]);
+
+      // The player's own spells hit him through his gaps, only a shield
+      // taking them (58, 31, 29 and 36 direct absorbed hits, no real ones):
+      // one stretch, where the 1% rule above has five.
+      final malacrassHits = presence.hitGroups.singleWhere(
+        (g) => g.name == 'Hex Lord Malacrass',
+      );
+      expect(malacrassHits.arrivals, hasLength(1));
+      expect(malacrassHits.arrivals.single.inSeconds, closeTo(147, 1));
+      expect(malacrassHits.departures.single!.inSeconds, closeTo(514, 1));
+      // Wave 3's Soulcoilers took gear procs only, so no hit span starts there.
+      final soulHits = presence.hitGroups.singleWhere(
+        (g) => g.name == 'Spiteful Soulcoiler',
+      );
+      expect(soulHits.aliveAt(const Duration(seconds: 250)), 0);
+      expect(soulHits.aliveAt(const Duration(seconds: 300)), 1);
     },
   );
 }

@@ -64,14 +64,15 @@ FightLog loadFixture([String name = 'sszorak_window']) {
 }
 
 /// The enemies a fixture holds, as the repository would build them: each
-/// kind's arrivals and departures in milliseconds from the fixture's start.
+/// kind's arrivals and departures in milliseconds from the fixture's start
+/// (`enemies`), and the stretches the player's own spells hit them (`hits`).
 EnemyPresence loadFixtureEnemies(String name) {
   final json = jsonDecode(
     File('test/fixtures/$name.json').readAsStringSync(),
   ) as JsonMap;
   Duration ms(Object? t) => Duration(milliseconds: (t! as num).toInt());
-  return EnemyPresence([
-    for (final e in (json['enemies'] as List).cast<JsonMap>())
+  List<EnemyGroup> groups(Object? rows) => [
+    for (final e in (rows as List? ?? const []).cast<JsonMap>())
       EnemyGroup(
         name: e['name']! as String,
         arrivals: [for (final t in e['arrivals']! as List) ms(t)],
@@ -79,7 +80,11 @@ EnemyPresence loadFixtureEnemies(String name) {
           for (final t in e['departures']! as List) t == null ? null : ms(t),
         ],
       ),
-  ]);
+  ];
+  return EnemyPresence(
+    groups(json['enemies']),
+    hitGroups: groups(json['hits']),
+  );
 }
 
 void main() {
