@@ -34,9 +34,10 @@ jobs:
       - run: flutter pub get
       - run: flutter test
       # Pages serves the site under /<repo>/, so assets need that base path.
-      - run: >-
-          flutter build web --release
-          --base-href "/${{ github.event.repository.name }}/"
+      # The title bar shows the pubspec version, the run number and the commit.
+      - run: |
+          version=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | cut -d+ -f1)
+          flutter build web --release             --base-href "/${{ github.event.repository.name }}/"             --dart-define="APP_VERSION=v$version build ${{ github.run_number }} (${GITHUB_SHA::7})"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web

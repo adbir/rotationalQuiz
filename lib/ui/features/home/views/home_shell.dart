@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../app.dart';
 import '../../../../data/repositories/apl_repository.dart';
 import '../../../../data/repositories/keybind_repository.dart';
 import '../../../../data/repositories/talent_build_repository.dart';
@@ -107,7 +108,18 @@ class _HomeShellState extends State<HomeShell> {
 
     final wide = MediaQuery.sizeOf(context).width >= 700;
     return Scaffold(
-      appBar: AppBar(title: Text('Rotational Quiz · ${_sandbox.spec.name}')),
+      appBar: AppBar(
+        title: Text('Rotational Quiz · ${_sandbox.spec.name}'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Text(
+              appVersion,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
+      ),
       body: wide
           ? Row(
               children: [
