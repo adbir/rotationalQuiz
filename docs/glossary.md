@@ -763,6 +763,43 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   comment "Use Power Infusion on Cooldown." The app lists it as unmodelled.
 - **To check:** Its effect in Midnight.
 
+### Blessing of the Bronze
+
+- **Meaning:** An Evoker buff on the whole raid before the pull. It takes 15% off
+  some cooldowns, such as Spiritwalker's Grace.
+- **In a log:** Id 381756. It has no event in the fight, because it is applied
+  before the pull. Only `table(dataType: Buffs, sourceID: <player>)` lists it,
+  at 100% uptime. See [carried-over aura](#carried-over-aura).
+- **Status:** `confirmed`
+
+### Buff `sourceID` and `targetID` (Buffs data)
+
+- **Meaning:** In `dataType: Buffs`, `sourceID` filters on the player holding the
+  buff and `targetID` on its caster, the opposite of damage and casts.
+- **In a log:** To list a player's buffs, use `sourceID`. The events' own
+  `sourceID` field is still the caster.
+- **Status:** `confirmed`, on three Sszorak logs.
+
+### Carried-over aura
+
+- **Meaning:** A buff already active when the pull starts, which the fight's
+  events never apply.
+- **In a log:** Absent from `events(dataType: Buffs)` within the fight. The buff
+  `table` reports it with its full uptime. An earlier window shows only
+  `removebuff` events from past pulls.
+- **Status:** `confirmed`
+- **In this repo:** [Blessing of the Bronze](#blessing-of-the-bronze).
+
+### Ebon Might, Prescience and Shifting Sands
+
+- **Meaning:** Buffs an Augmentation Evoker gives other players
+  ([Aug support](#augmentation-support-aug)). Ebon Might raises damage.
+  Prescience and Shifting Sands came from the same Evoker in the logs checked.
+- **In a log:** Ids 395152, 410089 and 413984. Uptime from the buff `table` with
+  `sourceID` set to the player. The caster is the `sourceID` of the events.
+- **Status:** `needs checking`
+- **To check:** Their numbers in Midnight.
+
 ### Time Spiral
 
 - **Meaning:** An Evoker spell that gives raid members one free use of a movement
