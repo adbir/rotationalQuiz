@@ -31,6 +31,7 @@ class SpecLogRules {
     this.possibleCasts = const [],
     this.upkeepAuras = const [],
     this.heldProcs = const [],
+    this.freeCastWindows = const [],
     this.readsResourceLevel = false,
     this.findings = const FindingRules([]),
   });
@@ -43,6 +44,9 @@ class SpecLogRules {
 
   /// Procs whose buff should be spent soon after it comes.
   final List<HeldProcRule> heldProcs;
+
+  /// Buffs from other players that make every cast free for a while.
+  final List<FreeCastWindowRule> freeCastWindows;
 
   /// Whether the metrics read the resource's level from cast readings: at
   /// each phase change, at the end and at its lowest.
@@ -243,6 +247,16 @@ class UpkeepAura {
 @immutable
 class HeldProcRule {
   const HeldProcRule({required this.buffId, required this.name});
+
+  final int buffId;
+  final String name;
+}
+
+/// A buff on the player, from someone else, that makes every cast free while
+/// it is up. The metrics list what was cast inside each window.
+@immutable
+class FreeCastWindowRule {
+  const FreeCastWindowRule({required this.buffId, required this.name});
 
   final int buffId;
   final String name;

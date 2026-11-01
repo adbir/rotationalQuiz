@@ -1,6 +1,7 @@
 import '../models/aura_metrics.dart';
 import '../models/boss_comparison.dart';
 import '../models/finding.dart';
+import '../models/free_cast_window.dart';
 import '../models/player_metrics.dart';
 
 /// Picks what to tell the player (decided in #28). The spec's [FindingRules]
@@ -113,6 +114,7 @@ class RankFindings {
               ?.perMinute ??
           0,
     FindingKind.resourceAtEnd => m.resourceLevels?.atEnd?.percent,
+    FindingKind.freeCastValue => _freeCast(m, rule)?.averageManaSaved,
   };
 
   String? _subject(List<PlayerMetrics> all, RankedMetric rule) {
@@ -120,6 +122,7 @@ class RankFindings {
       final name = switch (rule.kind) {
         FindingKind.castsAgainstPossible => _cooldown(m, rule)?.name,
         FindingKind.upkeep => _upkeep(m, rule)?.name,
+        FindingKind.freeCastValue => _freeCast(m, rule)?.name,
         FindingKind.procHoldTime => _proc(m, rule)?.name,
         FindingKind.abilityCastsPerMinute =>
           m.casts.byAbility
@@ -138,6 +141,9 @@ class RankFindings {
 
   AuraUptime? _upkeep(PlayerMetrics m, RankedMetric rule) =>
       m.upkeep.where((u) => u.buffId == rule.abilityId).firstOrNull;
+
+  FreeCastWindowMetrics? _freeCast(PlayerMetrics m, RankedMetric rule) =>
+      m.freeCastWindows.where((w) => w.buffId == rule.abilityId).firstOrNull;
 
   HeldProcMetrics? _proc(PlayerMetrics m, RankedMetric rule) =>
       m.heldProcs.where((p) => p.buffId == rule.abilityId).firstOrNull;

@@ -78,6 +78,8 @@ class FindingText {
       FindingKind.resourceAtEnd =>
         'You ended with ${_p(f.yours)}% $resourceLabel. '
             'Rank 1: ${_p(f.rank1)}%.',
+      FindingKind.freeCastValue =>
+        '${f.subject} saved you $you mana on average. Rank 1: $top.',
     };
   }
 
@@ -117,7 +119,9 @@ class FindingText {
         return _upkeepWhere(f.subject);
       case FindingKind.procHoldTime:
         return _procWhere(f.subject);
-      case FindingKind.abilityCastsPerMinute || FindingKind.resourceAtEnd:
+      case FindingKind.abilityCastsPerMinute ||
+          FindingKind.resourceAtEnd ||
+          FindingKind.freeCastValue:
         return 'the whole fought portion, ${comparison.fought.inSeconds} s.';
       case FindingKind.wastedResource:
         if (f.stretchIndexes.isEmpty || comparison.stretches.length == 1) {
@@ -234,6 +238,7 @@ class FindingText {
     FindingKind.procHoldTime => '$subject hold time',
     FindingKind.abilityCastsPerMinute => '$subject casts per minute',
     FindingKind.resourceAtEnd => '${resourceLabel.toLowerCase()} at the end',
+    FindingKind.freeCastValue => '$subject mana saved',
   };
 
   /// The column title for a metric's evidence rows.

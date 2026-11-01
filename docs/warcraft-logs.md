@@ -1286,3 +1286,54 @@ against 86), Nature's Swiftness (67 against 83). Earth Shield is ahead.
 `characterRankings(metric: hps, difficulty: 5, includeCombatantInfo: true)` on
 3429, which cost 2 points with combatant info (the actor lookups 1 each). The
 open question of pairing Heroic logs with Heroic rankings stays open.
+
+### Innervate use (#82)
+
+**Rule.** `FreeCastWindowRule(buffId, name)` in `SpecLogRules.freeCastWindows`
+(Restoration: Innervate 29166; Elemental: none). `PlayerMetrics.freeCastWindows`
+holds one `FreeCastWindowMetrics` per rule and one `FreeCastWindowUse` per time
+the buff was up on the player (`BuffWindows.of`): its start and length, the
+casts that began inside it, the **mana saved** (the sum of the spell table's
+`SpellDefinition.cost` for those casts; a spell the table lacks adds 0) and the
+**fill**, the share of the window spent casting. A cast belongs to the window if
+it began inside it by `isUpFor` (its `begincast` since the ability's previous
+finish, else its cast event). A GCD cast takes the longer of its cast time and
+1.5 s (the base GCD, so haste makes fill read a little high), overlaps counted
+once; off-GCD spells are listed and add no fill. Innervates received stays in
+`raidSupportIds`, never ranked.
+
+**Ranked.** `RankedMetric(FindingKind.freeCastValue, abilityId: 29166,
+higherIsBetter: true, onlyWhenSeen: true)`: the average mana saved per
+Innervate. A log with no Innervate has no value, so the finding is left out when
+any compared log received none: the owner is not behind for not getting one. The
+guide source is the owner's must-do (neither Wowhead nor Icy Veins states a
+rule); ticket #81 confirms it. What to try: "Cast Chain Heal back to back while
+Innervate is up."
+
+**Live check** (`WCL_LIVE=1 flutter test test/data/restoration_live_test.dart`,
+run once on 2026-11-01: 42.16 points for the three fights, measured by
+`rateLimitData` before and after, less the 1 the second read costs; the #78 run
+above counted 24):
+
+| Log (report / fight / source) | Innervate at | Mana saved | Fill | Casts inside |
+| --- | --- | --- | --- | --- |
+| Owner (`GaZ4Fj7VTm8YgqhQ` / 30 / 12) | none | - | - | - |
+| Rank 50 (`y93ZPmqCM7HJNLrf` / 10 / 8) | 51 s | 64,200 | 56% | Chain Heal x6 |
+| | 176 s | 69,400 | 72% | Chain Heal, Riptide x2, Chain Heal x2, Healing Stream Totem, Chain Heal, Riptide, Chain Heal |
+| | 234 s | 55,950 | 88% | Surging Totem, Chain Heal, Riptide, Chain Heal, Riptide, Chain Heal |
+| Rank 1 (`PRkbJByN4VdzpHcC` / 67 / 611) | 46 s | 63,000 | 77% | Chain Heal, Spiritwalker's Grace, Chain Heal, Riptide, Ghost Wolf, Spirit Walk, Chain Heal, Surging Totem, Riptide |
+| | 226 s | 29,000 | 68% | Riptide, Chain Heal, Chain Heal, Riptide |
+
+Rank 50 averages 63,183 mana saved per Innervate over three; rank 1 46,000 over
+two. Ghost Wolf and Spirit Walk have no cost in the spec's table, so they add 0.
+Rank 1's second Innervate is the one in the fixture's window.
+
+**Fixture.** The 75 s window of rank 1 holds that second Innervate (31.7 s into
+the window, 8.009 s): four casts, 29,000 mana, fill 68%. The unit test asserts
+it, and has hand-made rows for the window edges, two windows, none, and the
+finding being left out when one log received none.
+
+**Not yet shown.** `finding_evidence.dart` has no case for the new kind (the
+screen was being reworked in #79); the per-Innervate rows are in
+`FreeCastWindowMetrics.windows` for it to render, with rank 1's beside them.
+`finding_text.dart` has only the three arms its exhaustive switches need.

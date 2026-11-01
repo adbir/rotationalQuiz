@@ -1254,6 +1254,25 @@ Measured on three Heroic Coiled Altar logs: see "Restoration Shaman" in
   ranked.
 - **Status:** `confirmed`
 
+### Innervate use (free-cast window)
+
+- **Meaning:** Innervate (29166) makes every cast free for 8 s. What the healer
+  casts inside it is theirs to control: expensive spells back to back save the
+  most mana. How many Innervates a healer gets is raid support, never ranked.
+- **In a log:** The player's buff events for 29166 give each window; the casts
+  that began inside it are the player's cast events (`FreeCastWindowRule`, #82).
+- **Measured as:** per Innervate, the casts inside, **mana saved** (the sum of
+  the spec table's nominal `cost` for those casts; spells the table lacks add 0)
+  and **fill** (the share of the window spent casting, a GCD cast taking the
+  longer of its cast time and the 1.5 s base GCD). Ranked on the average mana
+  saved per Innervate, higher is better, left out when any compared log
+  received none.
+- **What to try (Boss Evaluation):** "Cast Chain Heal back to back while
+  Innervate is up." (generic: "Cast your most expensive spells, back to back,
+  while the buff is up.")
+- **Status:** `unconfirmed`: the owner's must-do; neither Wowhead nor Icy Veins
+  states it (validation in #81).
+
 ## Raid notes
 
 ### NSRT (Northern Sky Raid Tools) note

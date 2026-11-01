@@ -304,6 +304,10 @@ anything new the sandbox doesn't model.
     `upkeep`, `heldProcs` and `resourceLevels`. An aura on others reads
     `FightLog.appliedBuffs` (the buff table by caster), loaded only for such a
     rule.
+  - **Free-cast windows (#82):** `FreeCastWindowRule` (a buff from another
+    player that makes casts free) fills `PlayerMetrics.freeCastWindows`: per
+    window, the casts inside, mana saved and fill. Innervate is ranked on its
+    average, and its count stays in raid support.
   - **Findings:** `SpecLogRules.findings` lists the ranked metrics and what
     "behind" means for each; `RankFindings` has no spec logic. Add a metric
     there, not a branch in the use case.
