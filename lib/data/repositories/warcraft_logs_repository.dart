@@ -1,4 +1,5 @@
 import '../../domain/models/enemy_group.dart';
+import '../../domain/models/enemy_presence.dart';
 import '../../domain/models/fight_log.dart';
 import '../../domain/specs/rotation_spec.dart';
 import '../../utils/result.dart';
@@ -13,12 +14,15 @@ class WarcraftLogsRepository {
   final WarcraftLogsService _service;
 
   /// One player's data for one fight. Identify the player by [sourceId], as
-  /// a report URL does, or by [playerName], as rankings do.
+  /// a report URL does, or by [playerName], as rankings do. With
+  /// [includeTargetsHit] the player's damage is read too, to set
+  /// [LogCast.targetsHit] (a page or so more, about 2 points).
   Future<Result<FightLog>> loadFight({
     required String reportCode,
     required int fightId,
     int? sourceId,
     String? playerName,
+    bool includeTargetsHit = false,
   }) async {
     try {
       final report = await _service.report(code: reportCode, fightId: fightId);
@@ -48,6 +52,9 @@ class WarcraftLogsRepository {
       final resources = await events(WclEventType.resources);
       final buffs = await events(WclEventType.buffs);
       final info = await events(WclEventType.combatantInfo);
+      final damage = includeTargetsHit
+          ? await events(WclEventType.damageDone)
+          : const <JsonMap>[];
 
       return Result.ok(
         FightLog(
@@ -56,14 +63,20 @@ class WarcraftLogsRepository {
           playerName: actor['name'] as String? ?? '',
           playerId: id,
           abilityNames: _abilityNames(masterData),
-          casts: [
-            for (final row in casts)
-              ?WarcraftLogsMapper.cast(
-                row,
-                start,
-                aliases: spec.logRules.castAliases,
-              ),
-          ],
+          casts: WarcraftLogsMapper.withTargetsHit(
+            [
+              for (final row in casts)
+                ?WarcraftLogsMapper.cast(
+                  row,
+                  start,
+                  aliases: spec.logRules.castAliases,
+                ),
+            ],
+            damage,
+            start,
+            id,
+            spec.logRules.aoeDamage,
+          ),
           resourceGains: [
             for (final row in resources)
               ?WarcraftLogsMapper.resourceGain(row, start),
@@ -86,46 +99,120 @@ class WarcraftLogsRepository {
     required int fightId,
   }) async {
     try {
-      final report = await _service.report(code: reportCode, fightId: fightId);
-      final fight = _firstMap(report['fights']);
-      if (fight == null) {
-        throw WarcraftLogsException('Fight $fightId was not found.');
-      }
-      final masterData = report['masterData'];
-      final npcs = masterData is JsonMap ? masterData['npcs'] : null;
-      final names = {
-        if (npcs is List)
-          for (final npc in npcs.whereType<JsonMap>())
-            if (npc['id'] case final num id) id.toInt(): npc['name'],
-      };
-      final start = WarcraftLogsMapper.fightStart(fight);
-      final enemies = fight['enemyNPCs'];
-      final groups = <EnemyGroup>[];
-      for (final npc
-          in enemies is List ? enemies.whereType<JsonMap>() : <JsonMap>[]) {
-        final id = npc['id'];
-        final copies = npc['instanceCount'];
-        if (id is! num || copies is! num || copies < 2) continue;
-        final casts = await _service.events(
+      return Result.ok(await _enemyGroups(reportCode, fightId));
+    } on Exception catch (e) {
+      return Result.error(e);
+    }
+  }
+
+  /// Which enemies were up and when: each kind of add with when every copy
+  /// arrived and left, and the bosses throughout. Only adds the player
+  /// ([playerId]) damaged count. Costs what [loadEnemyGroups] does for those
+  /// kinds, one query for every enemy death, the player's damage, and one more
+  /// for each kind of add with no death in the log (see
+  /// `docs/warcraft-logs.md`, "Enemies alive").
+  Future<Result<EnemyPresence>> loadEnemyPresence({
+    required String reportCode,
+    required int fightId,
+    required int playerId,
+  }) async {
+    try {
+      return Result.ok(
+        EnemyPresence(
+          await _enemyGroups(reportCode, fightId, playerId: playerId),
+        ),
+      );
+    } on Exception catch (e) {
+      return Result.error(e);
+    }
+  }
+
+  Future<List<EnemyGroup>> _enemyGroups(
+    String reportCode,
+    int fightId, {
+    int? playerId,
+  }) async {
+    final withDepartures = playerId != null;
+    final report = await _service.report(code: reportCode, fightId: fightId);
+    final fight = _firstMap(report['fights']);
+    if (fight == null) {
+      throw WarcraftLogsException('Fight $fightId was not found.');
+    }
+    final masterData = report['masterData'];
+    final npcs = masterData is JsonMap ? masterData['npcs'] : null;
+    final names = {
+      if (npcs is List)
+        for (final npc in npcs.whereType<JsonMap>())
+          if (npc['id'] case final num id) id.toInt(): npc['name'],
+    };
+    final start = WarcraftLogsMapper.fightStart(fight);
+    Future<List<JsonMap>> enemyEvents(WclEventType type, [int? source]) =>
+        _service.events(
           code: reportCode,
           fightId: fightId,
-          sourceId: id.toInt(),
-          type: WclEventType.casts,
+          sourceId: source,
+          type: type,
           start: start,
           end: WarcraftLogsMapper.fightEnd(fight),
           enemy: true,
         );
-        groups.add(
-          EnemyGroup(
-            name: names[id.toInt()] as String? ?? 'Enemy ${id.toInt()}',
-            arrivals: WarcraftLogsMapper.enemyArrivals(casts, start),
-          ),
-        );
+
+    final deaths = withDepartures
+        ? await enemyEvents(WclEventType.deaths)
+        : const <JsonMap>[];
+    // ponytail: an add counts only if the player damaged it, which drops
+    // Barbed Bulwark (crowd controlled, not killed). A kind the player simply
+    // ignored drops out too; the ceiling is a fight with a real add left alone.
+    final damaged = playerId == null
+        ? null
+        : WarcraftLogsMapper.damagedTargets(
+            await _service.events(
+              code: reportCode,
+              fightId: fightId,
+              sourceId: playerId,
+              type: WclEventType.damageDone,
+              start: start,
+              end: WarcraftLogsMapper.fightEnd(fight),
+            ),
+            playerId,
+          );
+    final enemies = fight['enemyNPCs'];
+    final groups = <EnemyGroup>[];
+    for (final npc
+        in enemies is List ? enemies.whereType<JsonMap>() : <JsonMap>[]) {
+      final id = npc['id'];
+      final copies = npc['instanceCount'];
+      if (id is! num || copies is! num || copies < 1) continue;
+      final name = names[id.toInt()] as String? ?? 'Enemy ${id.toInt()}';
+      if (copies == 1) {
+        if (withDepartures) {
+          groups.add(EnemyGroup(name: name, arrivals: const [Duration.zero]));
+        }
+        continue;
       }
-      return Result.ok(groups);
-    } on Exception catch (e) {
-      return Result.error(e);
+      if (damaged != null && !damaged.contains(id.toInt())) continue;
+      final casts = await enemyEvents(WclEventType.casts, id.toInt());
+      var ends = [
+        for (final death in deaths)
+          if (death['targetID'] == id) death,
+      ];
+      // Some adds die without a death event. The last damage they took stands
+      // in for it.
+      final noDeaths = withDepartures && ends.isEmpty;
+      if (noDeaths) {
+        ends = await enemyEvents(WclEventType.damageTaken, id.toInt());
+      }
+      groups.add(
+        WarcraftLogsMapper.enemyGroup(
+          name,
+          casts,
+          start,
+          endEvents: ends,
+          unseenGoneAtArrival: noDeaths,
+        ),
+      );
     }
+    return groups;
   }
 
   /// Up to [count] ranked logs for this spec on a boss, best first. Rows with

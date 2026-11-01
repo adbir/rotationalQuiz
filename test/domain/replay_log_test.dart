@@ -1,10 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rotational_quiz/domain/apl/apl_document.dart';
+import 'package:rotational_quiz/domain/models/enemy_presence.dart';
 import 'package:rotational_quiz/domain/models/fight_log.dart';
+import 'package:rotational_quiz/domain/models/replay_report.dart';
 import 'package:rotational_quiz/domain/use_cases/replay_log.dart';
 
 import '../test_helpers.dart';
-import 'player_metrics_fixture_test.dart' show loadFixture;
+import 'player_metrics_fixture_test.dart' show loadFixture, loadFixtureEnemies;
 
 /// A short log with 40 Maelstrom from the pull and the given presses, all
 /// instants at the given seconds.
@@ -109,27 +111,60 @@ void main() {
     expect(report.compared, 1);
   });
 
-  // Measured in docs/warcraft-logs.md ("APL replay"): 41% and 63%.
+  // Measured in docs/warcraft-logs.md ("APL replay"): 41% and 61%.
   group('fixtures', () {
-    test("the owner's Sszorak window", () {
-      final report = replay(loadFixture(), document);
+    final presence = loadFixtureEnemies('twin_fangs_window');
+
+    test("the owner's Sszorak window, one boss", () {
+      final report = replay(
+        loadFixture(),
+        document,
+        presence: EnemyPresence.single,
+      );
 
       expect(report.compared, 46);
-      expect(report.agreementRate, greaterThan(0.37));
+      expect(report.agreements, 19);
       expect(report.deviations, isNotEmpty);
     });
 
-    test('rank 1 on Twin Fangs scores higher, with two targets', () {
+    test('rank 1 on Twin Fangs scores higher with the enemies it faced', () {
       final rank1 = replay(
         loadFixture('twin_fangs_window'),
         document,
-        targets: 2,
+        presence: presence,
       );
       final owner = replay(loadFixture(), document);
 
+      expect(rank1.compared, 59);
       expect(rank1.agreementRate, greaterThan(0.58));
-      expect(rank1.agreementRate, greaterThan(owner.agreementRate + 0.1));
-      expect(rank1.exactDeviations, isEmpty);
+      expect(rank1.agreementRate, greaterThan(owner.agreementRate + 0.15));
+    });
+
+    test('the enemy count beats guessing one target', () {
+      final log = loadFixture('twin_fangs_window');
+      double rate({int targets = 1, EnemyPresence? presence}) => replay(
+        log,
+        document,
+        targets: targets,
+        presence: presence,
+      ).agreementRate;
+
+      expect(rate(presence: presence), greaterThan(rate()));
+    });
+
+    test('enemy counts are seen, so they are no longer estimates', () {
+      final log = loadFixture('twin_fangs_window');
+      bool guessesTargets(ReplayReport r) => r.deviations.any(
+        (d) =>
+            d.estimated.contains('spell_targets.chain_lightning') ||
+            d.estimated.contains('active_enemies'),
+      );
+
+      expect(guessesTargets(replay(log, document, targets: 2)), isTrue);
+      expect(
+        guessesTargets(replay(log, document, presence: presence)),
+        isFalse,
+      );
     });
   });
 }

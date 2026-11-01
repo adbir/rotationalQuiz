@@ -61,6 +61,15 @@ const elementalLogRules = SpecLogRules(
     'ascendance': {1219480},
     'call_of_the_ancestors': {447244, 445624},
   },
+  // Chain Lightning hits everything in the same millisecond. Earthquake's
+  // damage is 77478, ticking every second from about 1 s after the cast.
+  aoeDamage: {
+    _chainLightning: AoeDamage(
+      _chainLightning,
+      within: Duration(milliseconds: 150),
+    ),
+    462620: AoeDamage(77478, within: Duration(milliseconds: 1100)),
+  },
   // Pets, the shield (up all fight) and anything on the target.
   unobservableAuras: {
     'fire_elemental',

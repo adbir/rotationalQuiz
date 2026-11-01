@@ -1,4 +1,6 @@
+import '../../domain/models/enemy_group.dart';
 import '../../domain/models/fight_log.dart';
+import '../../domain/models/log_rules.dart';
 import '../services/warcraft_logs_service.dart';
 
 /// Turns raw Warcraft Logs JSON into domain models. Malformed rows are
@@ -99,9 +101,19 @@ abstract final class WarcraftLogsMapper {
     );
   }
 
-  /// When each enemy in [casts] first acted. [casts] are one enemy NPC's cast
-  /// events, and `sourceInstance` tells its copies apart.
-  static List<Duration> enemyArrivals(List<JsonMap> casts, num start) {
+  /// One kind of enemy, with when each copy first acted and when it was gone.
+  /// [casts] are the NPC's cast events, and `sourceInstance` tells its copies
+  /// apart. [endEvents] are events on the copies (`targetInstance`): their deaths, or
+  /// the damage they took. A copy is gone at its last one; a copy with none is
+  /// gone as it arrives when [unseenGoneAtArrival], else up until the fight
+  /// ends.
+  static EnemyGroup enemyGroup(
+    String name,
+    List<JsonMap> casts,
+    num start, {
+    List<JsonMap> endEvents = const [],
+    bool unseenGoneAtArrival = false,
+  }) {
     final first = <int, num>{};
     for (final cast in casts) {
       final time = cast['timestamp'];
@@ -109,7 +121,93 @@ abstract final class WarcraftLogsMapper {
         first.putIfAbsent(_int(cast['sourceInstance']) ?? 0, () => time);
       }
     }
-    return [for (final time in first.values) _since(time, start)]..sort();
+    final last = <int, num>{};
+    for (final event in endEvents) {
+      final time = event['timestamp'];
+      final instance = _int(event['targetInstance']) ?? 0;
+      if (time is num && (last[instance] ?? time) <= time) {
+        last[instance] = time;
+      }
+    }
+    final instances = first.keys.toList()
+      ..sort((a, b) => first[a]!.compareTo(first[b]!));
+    return EnemyGroup(
+      name: name,
+      arrivals: [for (final i in instances) _since(first[i]!, start)],
+      departures: [
+        for (final i in instances)
+          if (last[i] case final num end)
+            _since(end > first[i]! ? end : first[i]!, start)
+          else if (unseenGoneAtArrival)
+            _since(first[i]!, start)
+          else
+            null,
+      ],
+    );
+  }
+
+  /// The enemy NPCs the player really damaged: some hit for at least 1% of
+  /// what it would have done. Hits on an immune or absorbing enemy land for 0,
+  /// or for 1 from a tick, and don't count.
+  static Set<int> damagedTargets(List<JsonMap> damage, int playerId) {
+    final targets = <int>{};
+    for (final row in damage) {
+      final target = _int(row['targetID']);
+      final amount = row['amount'];
+      final raw = row['unmitigatedAmount'];
+      if (target != null &&
+          _int(row['sourceID']) == playerId &&
+          amount is num &&
+          amount > 0 &&
+          (raw is! num || amount * 100 >= raw)) {
+        targets.add(target);
+      }
+    }
+    return targets;
+  }
+
+  /// Sets [LogCast.targetsHit] on each finished cast of an area ability in
+  /// [rules]: the distinct enemies the player's [damage] events hit within the
+  /// rule's time after the cast. A cast with no hit at all gets 0.
+  static List<LogCast> withTargetsHit(
+    List<LogCast> casts,
+    List<JsonMap> damage,
+    num start,
+    int playerId,
+    Map<int, AoeDamage> rules,
+  ) {
+    final hits = <int, List<(Duration, (int, int))>>{};
+    for (final row in damage) {
+      final time = row['timestamp'];
+      final ability = _int(row['abilityGameID']);
+      final target = _int(row['targetID']);
+      if (time is! num ||
+          ability == null ||
+          target == null ||
+          _int(row['sourceID']) != playerId) {
+        continue;
+      }
+      hits.putIfAbsent(ability, () => []).add((
+        _since(time, start),
+        (target, _int(row['targetInstance']) ?? 0),
+      ));
+    }
+    const before = Duration(milliseconds: 50);
+    return [
+      for (final cast in casts)
+        switch (cast.isBegin ? null : rules[cast.abilityId]) {
+          null => cast,
+          final rule => cast.withTargetsHit(
+            {
+              for (final (time, target)
+                  in hits[rule.damageId] ?? <(Duration, (int, int))>[])
+                if (time >= cast.time - before &&
+                    time <= cast.time + rule.within)
+                  target,
+            }.length,
+          ),
+        },
+    ];
   }
 
   /// A rankings row, or `null` when it has no public report behind it.

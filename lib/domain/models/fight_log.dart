@@ -56,6 +56,7 @@ class LogCast {
     required this.targetId,
     required this.isBegin,
     this.resources = const [],
+    this.targetsHit,
   });
 
   /// Measured from the pull.
@@ -66,6 +67,19 @@ class LogCast {
   /// True for a cast starting, false for one finishing.
   final bool isBegin;
   final List<LogResourceReading> resources;
+
+  /// Enemies this cast's damage hit, for an area ability whose damage was
+  /// loaded. `null` when unknown.
+  final int? targetsHit;
+
+  LogCast withTargetsHit(int targets) => LogCast(
+    time: time,
+    abilityId: abilityId,
+    targetId: targetId,
+    isBegin: isBegin,
+    resources: resources,
+    targetsHit: targets,
+  );
 }
 
 /// A resource gain, with how much of it was lost to the cap.

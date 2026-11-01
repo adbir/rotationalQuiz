@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rotational_quiz/data/repositories/warcraft_logs_mapper.dart';
 import 'package:rotational_quiz/data/services/warcraft_logs_service.dart';
+import 'package:rotational_quiz/domain/models/enemy_group.dart';
+import 'package:rotational_quiz/domain/models/enemy_presence.dart';
 import 'package:rotational_quiz/domain/models/fight_log.dart';
 import 'package:rotational_quiz/domain/models/player_metrics.dart';
 import 'package:rotational_quiz/domain/use_cases/compute_player_metrics.dart';
@@ -30,10 +32,20 @@ FightLog loadFixture([String name = 'sszorak_window']) {
       for (final ability in rows('abilities'))
         ability['gameID'] as int: ability['name'] as String,
     },
-    casts: [
-      for (final r in rows('casts'))
-        ?WarcraftLogsMapper.cast(r, start, aliases: spec.logRules.castAliases),
-    ],
+    casts: WarcraftLogsMapper.withTargetsHit(
+      [
+        for (final r in rows('casts'))
+          ?WarcraftLogsMapper.cast(
+            r,
+            start,
+            aliases: spec.logRules.castAliases,
+          ),
+      ],
+      json.containsKey('damage') ? rows('damage').toList() : const [],
+      start,
+      json['playerId'] as int,
+      spec.logRules.aoeDamage,
+    ),
     resourceGains: [
       for (final r in rows('resources'))
         ?WarcraftLogsMapper.resourceGain(r, start),
@@ -43,6 +55,25 @@ FightLog loadFixture([String name = 'sszorak_window']) {
     ],
     talents: {...(json['talents'] as List).cast<String>()},
   );
+}
+
+/// The enemies a fixture holds, as the repository would build them: each
+/// kind's arrivals and departures in milliseconds from the fixture's start.
+EnemyPresence loadFixtureEnemies(String name) {
+  final json = jsonDecode(
+    File('test/fixtures/$name.json').readAsStringSync(),
+  ) as JsonMap;
+  Duration ms(Object? t) => Duration(milliseconds: (t! as num).toInt());
+  return EnemyPresence([
+    for (final e in (json['enemies'] as List).cast<JsonMap>())
+      EnemyGroup(
+        name: e['name']! as String,
+        arrivals: [for (final t in e['arrivals']! as List) ms(t)],
+        departures: [
+          for (final t in e['departures']! as List) t == null ? null : ms(t),
+        ],
+      ),
+  ]);
 }
 
 void main() {

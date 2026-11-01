@@ -23,6 +23,7 @@ class SpecLogRules {
     this.chanceProcs = const [],
     this.auraLogIds = const {},
     this.unobservableAuras = const {},
+    this.aoeDamage = const {},
   });
 
   /// Warcraft Logs' number for the spec's primary resource.
@@ -77,6 +78,22 @@ class SpecLogRules {
 
   /// Auras a fight's events never show, so a replay can only guess them.
   final Set<String> unobservableAuras;
+
+  /// Where an area cast's hits show up, by the cast's id.
+  final Map<int, AoeDamage> aoeDamage;
+}
+
+/// The damage events that show who an area cast hit.
+@immutable
+class AoeDamage {
+  const AoeDamage(this.damageId, {required this.within});
+
+  /// The ability id on the damage events.
+  final int damageId;
+
+  /// How long after the cast its first hits land. A ticking effect lands its
+  /// first tick this late, and later ticks are left out.
+  final Duration within;
 }
 
 /// A cast that belongs before the buff [windowBuffId], because casting it
