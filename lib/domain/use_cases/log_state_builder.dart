@@ -70,7 +70,7 @@ class LogStateBuilder {
       maxResource: max,
       fightRemains: _seconds(log.fight.duration - q + tail),
       talents: talents,
-      targets: presence?.aliveAt(q) ?? targets,
+      targets: presence?.targetsAt(q) ?? targets,
       setBonuses: {for (final bonus in spec.setBonuses) bonus.id},
       buffs: _buffs(q, _ownEffectsFrom(pressAt)),
       dots: {'flame_shock': _flameShock(q)},

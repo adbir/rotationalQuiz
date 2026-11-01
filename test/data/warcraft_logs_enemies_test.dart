@@ -18,9 +18,13 @@ const _start = 1000000;
 
 Duration _s(double seconds) => Duration(milliseconds: (seconds * 1000).round());
 
-/// A fight with a boss (30) and three kinds of add: 31 is hit by the player's
-/// Lightning Bolt (188196) in two stretches on its first copy and one on its
-/// second, 32 only by a gear proc (1287663), and 33 only barely or by a shield.
+Map<String, Object?> _row(double seconds, int instance, String key) => {
+  'timestamp': _start + (seconds * 1000).round(),
+  key: instance,
+};
+
+/// A fight with a boss (30) and two kinds of add: 31 has a death event for its
+/// first copy only, and 32 has none, so its end is the last damage it took.
 http.Response _answer(http.Request request) {
   final body = jsonDecode(request.body) as Map<String, Object?>;
   final vars = body['variables']! as Map<String, Object?>;
@@ -59,32 +63,40 @@ http.Response _answer(http.Request request) {
     );
   }
   final rows = switch ((vars['type'], vars['source'])) {
+    ('Deaths', null) => [
+      {..._row(9, 1, 'targetInstance'), 'targetID': 31},
+    ],
     ('DamageDone', 7) => [
-      // Adder copy 1: 4 to 5 s, and again 30 to 31 s. Copy 2: 5 to 9 s, its last hit
-      // fully taken by a shield.
-      for (final (target, instance, seconds, amount, absorbed) in [
-        (31, 1, 4.0, 900, 0),
-        (31, 1, 5.0, 900, 0),
-        (31, 1, 30.0, 900, 0),
-        (31, 1, 31.0, 900, 0),
-        (31, 2, 5.0, 900, 0),
-        (31, 2, 9.0, 0, 500),
-        // Imp: gear procs only.
-        (32, 1, 4.0, 800, 0),
-        (32, 2, 4.0, 800, 0),
-        // Wall: a hit for 1 of 5000, a hit for 0, and a shield taking one.
-        (33, 1, 4.0, 1, 0),
-        (33, 1, 4.0, 0, 0),
-        (33, 2, 4.0, 0, 700),
+      for (final (target, amount) in [(31, 900), (32, 800), (33, 1), (33, 0)])
+        {
+          'timestamp': _start + 4000,
+          'sourceID': 7,
+          'targetID': target,
+          'amount': amount,
+          'unmitigatedAmount': 5000,
+        },
+      // Own-spell hits (Lightning Bolt 188196) on Adder: copy 1 at 4 to 5 s
+      // and 30 to 31 s, copy 2 at 5 s then a direct hit a shield took fully at
+      // 9 s and a shielded tick at 20 s (ticks never count). Imp: a gear proc.
+      for (final (target, instance, seconds, ability, amount, tick) in [
+        (31, 1, 4.0, 188196, 900, false),
+        (31, 1, 5.0, 188196, 900, false),
+        (31, 1, 30.0, 188196, 900, false),
+        (31, 1, 31.0, 188196, 900, false),
+        (31, 2, 5.0, 188196, 900, false),
+        (31, 2, 9.0, 188196, 0, false),
+        (31, 2, 20.0, 188389, 0, true),
+        (32, 1, 4.0, 1287663, 800, false),
       ])
         {
           'timestamp': _start + (seconds * 1000).round(),
           'sourceID': 7,
           'targetID': target,
           'targetInstance': instance,
-          'abilityGameID': target == 31 ? 188196 : 1287663,
+          'abilityGameID': ability,
           'amount': amount,
-          'absorbed': absorbed,
+          'absorbed': amount == 0 ? 500 : 0,
+          'tick': tick,
           'unmitigatedAmount': 5000,
         },
       // The boss is hit to 5.8 s, is immune at 12 s (a hit for 0), then is hit
@@ -102,6 +114,18 @@ http.Response _answer(http.Request request) {
           'amount': amount,
           'unmitigatedAmount': 5000,
         },
+    ],
+    ('Casts', 31) => [
+      _row(4, 1, 'sourceInstance'),
+      _row(5, 2, 'sourceInstance'),
+    ],
+    ('Casts', 32) => [
+      _row(6, 1, 'sourceInstance'),
+      _row(7, 2, 'sourceInstance'),
+    ],
+    ('DamageTaken', 32) => [
+      _row(8, 1, 'targetInstance'),
+      _row(8.5, 1, 'targetInstance'),
     ],
     _ => throw StateError('unexpected query $vars'),
   };
@@ -144,30 +168,38 @@ void main() {
       presence = (result as Ok<EnemyPresence>).value;
     });
 
-    test('counts an add copy while the player hits it', () {
+    test('counts the boss throughout and each add from arrival to death', () {
       expect(presence.aliveAt(_s(3)), 1);
-      expect(presence.aliveByKindAt(_s(4.5)), {'Boss': 1, 'Adder': 1});
-      // Copy 1 is gone at its last hit of the stretch (5 s), copy 2 is up from
-      // 5 s to 9 s.
-      expect(presence.aliveByKindAt(_s(6))['Adder'], 1);
-      expect(presence.aliveByKindAt(_s(9.5)).containsKey('Adder'), isFalse);
+      expect(presence.aliveByKindAt(_s(5.5)), {'Boss': 1, 'Adder': 2});
+      // The first Adder dies at 9 s; the second has no death and stays up.
+      expect(presence.aliveByKindAt(_s(8.9))['Adder'], 2);
+      expect(presence.aliveByKindAt(_s(9.5))['Adder'], 1);
+      expect(presence.aliveAt(_s(59)), 2);
     });
 
-    test('a copy with two hit stretches is up in each', () {
-      final adder = presence.groups.singleWhere((g) => g.name == 'Adder');
+    test('ends an add with no death at the last damage it took', () {
+      // Imp 1 acts at 6 s and last takes damage at 8.5 s; imp 2 takes none, so
+      // it is gone as it arrives at 7 s.
+      expect(presence.aliveByKindAt(_s(6.5))['Imp'], 1);
+      expect(presence.aliveByKindAt(_s(7.5))['Imp'], 1);
+      expect(presence.aliveByKindAt(_s(8.6)).containsKey('Imp'), isFalse);
+    });
+
+    test('hitGroups hold an add copy only while the player hits it', () {
+      final adder = presence.hitGroups.singleWhere((g) => g.name == 'Adder');
+      // Copy 1 twice (two spans, more than 8 s apart); copy 2 to 9 s, where a
+      // direct hit a shield took still counts; the shielded tick at 20 s not.
       expect(adder.arrivals, [_s(4), _s(5), _s(30)]);
       expect(adder.departures, [_s(5), _s(9), _s(31)]);
-      // Between the stretches it is out of reach, as a boss is.
       expect(adder.aliveAt(_s(20)), 0);
-      expect(adder.aliveAt(_s(30.5)), 1);
     });
 
-    test('a shield that took a hit counts for a kind really damaged', () {
-      // Copy 2's hit at 9 s did 0 and was absorbed: it still ends the stretch
-      // there, not at its last real hit (5 s).
-      final adder = presence.groups.singleWhere((g) => g.name == 'Adder');
-      expect(adder.departures[1], _s(9));
-      expect(adder.aliveAt(_s(8)), 1);
+    test('hitGroups leave out gear procs and a kind only ever absorbing', () {
+      expect(presence.hitGroups.map((g) => g.name), ['Boss', 'Adder']);
+      expect(presence.targetsAt(_s(5.5)), 2);
+      expect(presence.targetsAt(_s(20)), 1);
+      // Without hit groups the count is everything alive.
+      expect(EnemyPresence(presence.groups).targetsAt(_s(5.5)), 3);
     });
 
     test('holds a boss only while the player hits it', () {
@@ -180,18 +212,25 @@ void main() {
       expect(boss.aliveAt(_s(30)), 1);
     });
 
-    test('leaves out a kind hit only by gear procs, barely or by a shield', () {
-      // Imp took gear procs, Wall hits for 1 and 0 of 5000 and a shield.
-      expect(presence.groups.map((g) => g.name), ['Boss', 'Adder']);
+    test('leaves out an add the player never really damaged', () {
+      // Wall took hits for 1 and 0 of 5000: crowd controlled, not killed.
+      expect(presence.groups.map((g) => g.name), ['Boss', 'Adder', 'Imp']);
     });
 
-    test('asks only for the player damage', () {
+    test('asks for deaths once and damage only for the kind with none', () {
       final types = [
         for (final r in requests)
           if ((r['variables']! as Map)['type'] case final String type)
             '$type ${(r['variables']! as Map)['source']}',
       ];
-      expect(types, ['DamageDone 7']);
+      expect(types, [
+        'Deaths null',
+        'DamageDone 7',
+        'Casts 31',
+        'Casts 32',
+        'DamageTaken 32',
+      ]);
+      expect((requests[1]['variables']! as Map)['hostility'], 'Enemies');
     });
   });
 

@@ -19,9 +19,9 @@ void main() {
     expect(timeline.meanAbsDrift, lessThan(2));
   });
 
-  test('finds the add wave from the first hit on an add', () {
+  test('finds the add wave from the first enemy actions', () {
     final adds = enemies.singleWhere((e) => e.name == 'Spawn of Vexhul');
-    expect(adds.waveStarts().single.inMilliseconds, closeTo(27900, 100));
+    expect(adds.waveStarts().single.inMilliseconds, closeTo(28100, 100));
   });
 
   test('top player holds a spender for the add wave', () {

@@ -129,10 +129,19 @@ abstract final class WarcraftLogsMapper {
     ];
   }
 
-  /// One kind of enemy, with when each copy first acted. [casts] are the
-  /// NPC's cast events, and `sourceInstance` tells its copies apart. Every
-  /// copy is up until the fight ends.
-  static EnemyGroup enemyGroup(String name, List<JsonMap> casts, num start) {
+  /// One kind of enemy, with when each copy first acted and when it was gone.
+  /// [casts] are the NPC's cast events, and `sourceInstance` tells its copies
+  /// apart. [endEvents] are events on the copies (`targetInstance`): their deaths, or
+  /// the damage they took. A copy is gone at its last one; a copy with none is
+  /// gone as it arrives when [unseenGoneAtArrival], else up until the fight
+  /// ends.
+  static EnemyGroup enemyGroup(
+    String name,
+    List<JsonMap> casts,
+    num start, {
+    List<JsonMap> endEvents = const [],
+    bool unseenGoneAtArrival = false,
+  }) {
     final first = <int, num>{};
     for (final cast in casts) {
       final time = cast['timestamp'];
@@ -140,12 +149,80 @@ abstract final class WarcraftLogsMapper {
         first.putIfAbsent(_int(cast['sourceInstance']) ?? 0, () => time);
       }
     }
+    final last = <int, num>{};
+    for (final event in endEvents) {
+      final time = event['timestamp'];
+      final instance = _int(event['targetInstance']) ?? 0;
+      if (time is num && (last[instance] ?? time) <= time) {
+        last[instance] = time;
+      }
+    }
     final instances = first.keys.toList()
       ..sort((a, b) => first[a]!.compareTo(first[b]!));
     return EnemyGroup(
       name: name,
       arrivals: [for (final i in instances) _since(first[i]!, start)],
+      departures: [
+        for (final i in instances)
+          if (last[i] case final num end)
+            _since(end > first[i]! ? end : first[i]!, start)
+          else if (unseenGoneAtArrival)
+            _since(first[i]!, start)
+          else
+            null,
+      ],
     );
+  }
+
+  /// The enemy NPCs the player really damaged: some hit for at least 1% of
+  /// what it would have done. Hits on an immune or absorbing enemy land for 0,
+  /// or for 1 from a tick, and don't count.
+  static Set<int> damagedTargets(List<JsonMap> damage, int playerId) =>
+      reallyDamaged(damage, playerId).keys.toSet();
+
+  /// The times (log milliseconds) of the player's real hits, per enemy NPC.
+  /// "Real" is the [damagedTargets] test.
+  static Map<int, List<num>> reallyDamaged(List<JsonMap> damage, int playerId) {
+    final times = <int, List<num>>{};
+    for (final row in damage) {
+      final target = _int(row['targetID']);
+      final time = row['timestamp'];
+      final amount = row['amount'];
+      final raw = row['unmitigatedAmount'];
+      if (target != null &&
+          time is num &&
+          _int(row['sourceID']) == playerId &&
+          amount is num &&
+          amount > 0 &&
+          (raw is! num || amount * 100 >= raw)) {
+        times.putIfAbsent(target, () => []).add(time);
+      }
+    }
+    return times;
+  }
+
+  /// The stretches a single enemy was hittable, from the [hits] on it (log
+  /// milliseconds): a stretch ends at the last hit before a silence longer
+  /// than [gap]. One arrival and departure per stretch, from the pull. Null
+  /// when there are no hits, so the caller can keep the whole-fight span.
+  static EnemyGroup? hittableSpans(
+    String name,
+    List<num> hits,
+    num start,
+    Duration gap,
+  ) {
+    if (hits.isEmpty) return null;
+    final times = [...hits]..sort();
+    final arrivals = <Duration>[_since(times.first, start)];
+    final departures = <Duration>[];
+    for (var i = 1; i < times.length; i++) {
+      if (times[i] - times[i - 1] > gap.inMilliseconds) {
+        departures.add(_since(times[i - 1], start));
+        arrivals.add(_since(times[i], start));
+      }
+    }
+    departures.add(_since(times.last, start));
+    return EnemyGroup(name: name, arrivals: arrivals, departures: departures);
   }
 
   /// Sets [LogCast.targetsHit] on each finished cast of an area ability in
