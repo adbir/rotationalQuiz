@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../view_models/boss_evaluation_view_model.dart';
 import 'widgets/log_header_table.dart';
 import 'widgets/metrics_table.dart';
+import 'widgets/nsrt_note_bar.dart';
 import 'widgets/pooling_table.dart';
 import 'widgets/stretch_table.dart';
 
@@ -109,6 +110,7 @@ class _BossEvaluationScreenState extends State<BossEvaluationScreen> {
                     comparison: comparison,
                     resourceLabel: vm.resourceLabel,
                   ),
+                  NsrtNoteBar(viewModel: vm),
                 ],
               ],
             ),

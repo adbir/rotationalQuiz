@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../data/repositories/warcraft_logs_repository.dart';
 import '../../../../data/services/pkce_access_token_source.dart';
@@ -6,7 +7,9 @@ import '../../../../domain/models/boss_comparison.dart';
 import '../../../../domain/models/enemy_group.dart';
 import '../../../../domain/models/fight_log.dart';
 import '../../../../domain/models/report_reference.dart';
+import '../../../../domain/use_cases/build_reminders.dart';
 import '../../../../domain/use_cases/compare_fights.dart';
+import '../../../../domain/use_cases/format_nsrt_note.dart';
 import '../../../../domain/use_cases/pick_comparison_logs.dart';
 import '../../../../utils/result.dart';
 
@@ -35,6 +38,46 @@ class BossEvaluationViewModel extends ChangeNotifier {
 
   /// The boss the result is for.
   String bossName = '';
+
+  /// Whether the NSRT note also covers waves the top log did not hold for.
+  bool get allWaves => _allWaves;
+  set allWaves(bool value) {
+    _allWaves = value;
+    notifyListeners();
+  }
+
+  var _allWaves = false;
+  FightLog? _topLog;
+  var _groups = const <EnemyGroup>[];
+
+  /// The NSRT note for the result: rank 1's pooling, spender and Stormkeeper
+  /// timings. Empty when there is no result.
+  String get nsrtNote {
+    final c = comparison;
+    final top = _topLog;
+    if (c == null || top == null) return '';
+    final reminders = BuildReminders(_repository.spec)(
+      reports: c.pooling.isEmpty ? const [] : c.pooling.last,
+      casts: top.casts,
+      groups: _groups,
+      allWaves: _allWaves,
+    );
+    return formatNsrtNote(
+      encounterId: top.fight.encounterId,
+      difficulty: switch (top.fight.difficulty) {
+        5 => 'Mythic',
+        4 => 'Heroic',
+        3 => 'Normal',
+        _ => 'LFR',
+      },
+      boss: bossName,
+      reminders: reminders,
+    );
+  }
+
+  /// Puts [nsrtNote] on the clipboard.
+  Future<void> copyNsrtNote() =>
+      Clipboard.setData(ClipboardData(text: nsrtNote));
 
   String get resourceLabel => _repository.spec.resourceLabel;
 
@@ -113,6 +156,8 @@ class BossEvaluationViewModel extends ChangeNotifier {
 
       comparison = CompareFights(_repository.spec)(fights, groups);
       bossName = fight.name;
+      _topLog = fights.last.log;
+      _groups = groups;
       status = BossEvaluationStatus.loaded;
       notifyListeners();
     } on Exception catch (e) {
