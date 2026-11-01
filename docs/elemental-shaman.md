@@ -84,9 +84,11 @@ Frost spell (tooltip). The aim is to always make that a spender (owner).
 
 - **Flame Shock consumes it.** Its damage is Volcanic in the tooltip. In three
   logs the buff never survived a Flame Shock cast, and SimC consumes it on 188389.
-- **That's deliberate with a spare one.** On two targets, spending spare ones on
-  Flame Shock is worth about 1.2%, instead of wasting them on an unbuffed Lightning
-  Bolt or Chain Lightning (Shaman Discord FAQ). The APL has the same line.
+- **That's deliberate with a spare one.** On two targets, a Farseer gains about
+  1.2% by spending spare ones on Flame Shock, instead of wasting them on an
+  unbuffed Lightning Bolt or Chain Lightning (Shaman Discord FAQ). The APL has the
+  same line. For Stormbringer without Voltaic Blaze, the FAQ says Flame Shock on a
+  second target isn't worth it.
 - **Tier buffs come first.** With Flowing Elements and Overcharge! both up, cast
   the spender without waiting for this buff (APL, FAQ). Waiting can gain a second
   Overcharge! while holding one, which loses a free spender.
@@ -173,6 +175,18 @@ by line in a review, with no real rotation conflict. Its text uses emoji for spe
 names, which copying can strip, so ask for the original when a line reads oddly.
 It doesn't replace the APL, but it explains the reasons behind many lines.
 
+Most players are Farseer (owner), so check that path first.
+
+- **Farseer:** the FAQ's one-target list puts a Stormkeeper-buffed Lightning Bolt
+  above Voltaic Blaze with Crackling Fury. The APL has no such line for Farseer,
+  so with that talent it casts Voltaic Blaze first. Neither reference build takes
+  Crackling Fury, so the app gives the same answer either way.
+- **Stormbringer:** the FAQ's lists for one target, two targets and AoE follow the
+  APL's order, from reading them line by line. One exception: for M+ builds without
+  Master of the Elements, the FAQ allows Lava Burst only with Lava Surge or Flowing
+  Elements, and the APL also allows it with Molten Wrath or Purging Flames. These
+  lists aren't the whole of Stormbringer (owner).
+
 ## Open questions
 
 - Expected Ancestors run 1.4 to 2.8 below actual in three logs. Ascendance's rolls
@@ -180,4 +194,4 @@ It doesn't replace the APL, but it explains the reasons behind many lines.
 - The talent tree has two Earthquake entries in one node. Do they log under
   different ids?
 - What do the three Elemental Blast stat buffs in the APL's `aoe` list do in
-  Midnight?
+  Midnight? The FAQ says to cast it when none are up, at any target count.
