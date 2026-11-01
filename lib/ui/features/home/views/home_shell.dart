@@ -28,23 +28,15 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
-  late final SandboxViewModel _sandbox;
-  late final QuizViewModel _quiz;
-  late final AplViewerViewModel _aplViewer;
+  // The sandbox, quiz and APL viewer exist only for a spec with an APL.
+  SandboxViewModel? _sandbox;
+  QuizViewModel? _quiz;
+  AplViewerViewModel? _aplViewer;
   late final SetupViewModel _setup;
   late final BossEvaluationViewModel _bossEvaluation;
+  late final String _specName;
   var _index = 0;
-
-  static const _quizTab = 1;
-  static const _setupTab = 3;
-
-  static const _destinations = [
-    (icon: Icons.science_outlined, selected: Icons.science, label: 'Sandbox'),
-    (icon: Icons.quiz_outlined, selected: Icons.quiz, label: 'Quiz'),
-    (icon: Icons.list_alt_outlined, selected: Icons.list_alt, label: 'APL'),
-    (icon: Icons.tune_outlined, selected: Icons.tune, label: 'Setup'),
-    (icon: Icons.insights_outlined, selected: Icons.insights, label: 'Boss'),
-  ];
+  var _labels = const <String>[];
 
   @override
   void initState() {
@@ -52,16 +44,19 @@ class _HomeShellState extends State<HomeShell> {
     final repository = context.read<AplRepository>();
     final talentBuilds = context.read<TalentBuildRepository>();
     final keybinds = context.read<KeybindRepository>();
-    _sandbox = SandboxViewModel(
-      repository: repository,
-      talentBuilds: talentBuilds,
-    );
-    _quiz = QuizViewModel(
-      aplRepository: repository,
-      talentBuilds: talentBuilds,
-      keybinds: keybinds,
-    );
-    _aplViewer = AplViewerViewModel(repository: repository);
+    _specName = talentBuilds.spec.name;
+    if (talentBuilds.spec.hasApl) {
+      _sandbox = SandboxViewModel(
+        repository: repository,
+        talentBuilds: talentBuilds,
+      );
+      _quiz = QuizViewModel(
+        aplRepository: repository,
+        talentBuilds: talentBuilds,
+        keybinds: keybinds,
+      );
+      _aplViewer = AplViewerViewModel(repository: repository);
+    }
     _setup = SetupViewModel(
       talentBuilds: talentBuilds,
       keybinds: keybinds,
@@ -76,42 +71,77 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   void dispose() {
-    _sandbox.dispose();
-    _quiz.dispose();
-    _aplViewer.dispose();
+    _sandbox?.dispose();
+    _quiz?.dispose();
+    _aplViewer?.dispose();
     _setup.dispose();
     _bossEvaluation.dispose();
     super.dispose();
   }
 
+  bool _tabIs(String label) => _labels.indexOf(label) == _index;
+
+  void _open(String label) => setState(() => _index = _labels.indexOf(label));
+
   @override
   Widget build(BuildContext context) {
-    final body = IndexedStack(
-      index: _index,
-      children: [
-        SandboxScreen(viewModel: _sandbox),
-        QuizScreen(
-          viewModel: _quiz,
-          isActive: _index == _quizTab,
-          onOpenInSandbox: (state) {
-            _sandbox.loadState(state);
-            setState(() => _index = 0);
-          },
-          onOpenSetup: () => setState(() => _index = _setupTab),
+    final sandbox = _sandbox;
+    final quiz = _quiz;
+    final aplViewer = _aplViewer;
+    final tabs = [
+      if (sandbox != null && quiz != null && aplViewer != null) ...[
+        (
+          icon: Icons.science_outlined,
+          selected: Icons.science,
+          label: 'Sandbox',
+          screen: SandboxScreen(viewModel: sandbox),
         ),
-        AplViewerScreen(viewModel: _aplViewer),
-        SetupScreen(viewModel: _setup),
-        BossEvaluationScreen(
-          viewModel: _bossEvaluation,
-          onOpenSetup: () => setState(() => _index = _setupTab),
+        (
+          icon: Icons.quiz_outlined,
+          selected: Icons.quiz,
+          label: 'Quiz',
+          screen: QuizScreen(
+            viewModel: quiz,
+            isActive: _tabIs('Quiz'),
+            onOpenInSandbox: (state) {
+              sandbox.loadState(state);
+              _open('Sandbox');
+            },
+            onOpenSetup: () => _open('Setup'),
+          ),
+        ),
+        (
+          icon: Icons.list_alt_outlined,
+          selected: Icons.list_alt,
+          label: 'APL',
+          screen: AplViewerScreen(viewModel: aplViewer),
         ),
       ],
+      (
+        icon: Icons.tune_outlined,
+        selected: Icons.tune,
+        label: 'Setup',
+        screen: SetupScreen(viewModel: _setup),
+      ),
+      (
+        icon: Icons.insights_outlined,
+        selected: Icons.insights,
+        label: 'Boss',
+        screen: BossEvaluationScreen(
+          viewModel: _bossEvaluation,
+          onOpenSetup: () => _open('Setup'),
+        ),
+      ),
+    ];
+    _labels = [for (final t in tabs) t.label];
+    final body = IndexedStack(
+      index: _index,
+      children: [for (final t in tabs) t.screen],
     );
-
     final wide = MediaQuery.sizeOf(context).width >= 700;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Rotational Quiz · ${_sandbox.spec.name}'),
+        title: Text('Rotational Quiz · $_specName'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -130,7 +160,7 @@ class _HomeShellState extends State<HomeShell> {
                   labelType: NavigationRailLabelType.all,
                   onDestinationSelected: (i) => setState(() => _index = i),
                   destinations: [
-                    for (final d in _destinations)
+                    for (final d in tabs)
                       NavigationRailDestination(
                         icon: Icon(d.icon),
                         selectedIcon: Icon(d.selected),
@@ -149,7 +179,7 @@ class _HomeShellState extends State<HomeShell> {
               selectedIndex: _index,
               onDestinationSelected: (i) => setState(() => _index = i),
               destinations: [
-                for (final d in _destinations)
+                for (final d in tabs)
                   NavigationDestination(
                     icon: Icon(d.icon),
                     selectedIcon: Icon(d.selected),

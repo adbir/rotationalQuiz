@@ -23,13 +23,17 @@ class AplRepository extends ChangeNotifier {
 
   AplDocument? _document;
 
+  late final _noApl = FormatException('${spec.name} has no APL.');
+
   /// The APL in use, or `null` until [loadBundled] completes.
   AplDocument? get document => _document;
 
   Future<Result<AplDocument>> loadBundled() async {
     try {
-      final source = await _assetService.load(spec.aplAssetPath);
-      return Result.ok(_use(source, 'Bundled (${spec.aplAssetPath})'));
+      final path = spec.aplAssetPath;
+      if (path == null) return Result.error(_noApl);
+      final source = await _assetService.load(path);
+      return Result.ok(_use(source, 'Bundled ($path)'));
     } on Exception catch (e) {
       return Result.error(e);
     }
@@ -37,8 +41,10 @@ class AplRepository extends ChangeNotifier {
 
   Future<Result<AplDocument>> refreshFromSimc() async {
     try {
-      final source = await _remoteService.fetch(spec.remoteAplUrl);
-      return Result.ok(_use(source, spec.remoteAplUrl.toString()));
+      final url = spec.remoteAplUrl;
+      if (url == null) return Result.error(_noApl);
+      final source = await _remoteService.fetch(url);
+      return Result.ok(_use(source, url.toString()));
     } on Exception catch (e) {
       return Result.error(e);
     }
