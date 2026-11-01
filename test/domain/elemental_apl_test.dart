@@ -62,6 +62,24 @@ void main() {
     });
   });
 
+  group('maximum Maelstrom', () {
+    const capacity = ElementalTalents.primordialCapacity;
+    const swelling = ElementalTalents.swellingMaelstrom;
+
+    test('talents add to the base of 100', () {
+      expect(spec.maxResource(const {}), 100);
+      expect(spec.maxResource(const {capacity}), 125);
+      expect(spec.maxResource(const {swelling}), 150);
+      expect(spec.maxResource(const {capacity, swelling}), 175);
+    });
+
+    test('reference builds get the cap their talents give', () {
+      expect(farseer.talents, contains(capacity));
+      expect(spec.defaultState(farseer).maxResource, 125);
+      expect(spec.defaultState(stormbringer).maxResource, 150);
+    });
+  });
+
   group('single-target recommendations', () {
     String? pick(CombatState state) =>
         evaluator.recommend(document, state).selectedSpellId;
@@ -94,6 +112,12 @@ void main() {
       expect(pick(base().copyWith(resource: 80)), 'lightning_bolt');
       expect(pick(base().copyWith(resource: 84)), 'lava_burst');
       expect(pick(earthShockBuild().copyWith(resource: 55)), 'lava_burst');
+    });
+
+    test('the Lava Burst window follows the Maelstrom cap', () {
+      // Farseer's cap is 125, so the deficit stays above 15 up to 109.
+      expect(pick(base().copyWith(resource: 105)), 'lava_burst');
+      expect(pick(base().copyWith(resource: 110)), 'lightning_bolt');
     });
 
     test('Elemental Blast with Master of the Elements up', () {

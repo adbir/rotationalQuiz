@@ -74,11 +74,13 @@ class ElementalShaman extends RotationSpec {
   @override
   Set<String> get unmodelledActions => elementalUnmodelledActions;
 
-  /// Swelling Maelstrom adds 50 (in-game tooltip; SimC reads it from spell
-  /// data).
+  /// Swelling Maelstrom adds 50 and Primordial Capacity adds 25 (in-game
+  /// tooltips; a rank-1 Farseer log shows a cap of 125).
   @override
   double maxResource(Set<String> talents) =>
-      talents.contains(ElementalTalents.swellingMaelstrom) ? 150 : 100;
+      100 +
+      (talents.contains(ElementalTalents.swellingMaelstrom) ? 50 : 0) +
+      (talents.contains(ElementalTalents.primordialCapacity) ? 25 : 0);
 
   @override
   CombatState defaultState(TalentLoadout loadout) {

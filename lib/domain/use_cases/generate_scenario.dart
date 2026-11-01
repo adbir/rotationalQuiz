@@ -18,11 +18,12 @@ class GenerateScenario {
     Set<String> setBonuses = const {},
     double movingChance = 0.08,
   }) {
+    final steps = spec.maxResource(loadout.talents) ~/ 5;
     final state = spec
         .defaultState(loadout)
         .copyWith(
           setBonuses: setBonuses,
-          resource: (_random.nextInt(21) * 5).toDouble(),
+          resource: (_random.nextInt(steps + 1) * 5).toDouble(),
           moving: _random.nextDouble() < movingChance,
           fightRemains: 30 + _random.nextInt(270).toDouble(),
         );
