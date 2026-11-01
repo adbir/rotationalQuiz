@@ -130,12 +130,11 @@ class WarcraftLogsRepository {
     }
   }
 
-  /// Which enemies were up and when: each kind of add with when every copy
-  /// arrived and left, and the bosses throughout. Only adds the player
-  /// ([playerId]) damaged count. Costs what [loadEnemyGroups] does for those
-  /// kinds, one query for every enemy death, the player's damage, and one more
-  /// for each kind of add with no death in the log (see
-  /// `docs/warcraft-logs.md`, "Enemies alive").
+  /// Which enemies were up and when, from the player's ([playerId]) hits: a
+  /// boss or a copy of an add is up in the stretches its hits are no more than
+  /// [bossHitGap] apart. Adds count only for hits by the spec's own spells.
+  /// Costs the report and one query for the player's damage (see
+  /// `docs/warcraft-logs.md`, "Enemies alive" and "Implemented (#71)").
   Future<Result<EnemyPresence>> loadEnemyPresence({
     required String reportCode,
     required int fightId,

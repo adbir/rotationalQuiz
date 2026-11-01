@@ -327,7 +327,9 @@ add: crowd control or a stun removes it. It takes no real damage (the player's h
 on it do 0, apart from two Flame Shock ticks for 1 of about 6,000), and no death
 event exists for it. So an add kind counts toward enemies alive only if the player
 damaged it: some hit for at least 1% of its unmitigated amount
-(`damagedTargets`, from the same `DamageDone` page as the targets hit). That is
+(`WarcraftLogsHits`, from the same `DamageDone` page as the targets hit; since #71
+a copy counts only while the player's own spells hit it, see "Implemented (#71)"
+under the Coiled Altar section). That is
 data, not a name check, and it drops the Bulwark in all three logs. A kind the
 player simply ignored would drop out too; Bulwark is the case it is for. Bosses
 always count.
@@ -833,9 +835,26 @@ log carries and the set bonus on:
 
 | Fixture | Presses compared | Agreement | Exact deviations |
 | ------- | ---------------- | --------- | ---------------- |
-| `sszorak_window` (owner, low parse), one boss | 46 | 41% (19) | 16 of 27 |
-| `twin_fangs_window` (rank 1), enemies alive | 59 | 61% (36) | 19 of 23 |
-| `coiled_altar_window` (rank 1), hittable boss | 61 | 18% (11) | 42 of 50 |
+| `sszorak_window` (owner, low parse), one boss | 46 | 48% (22), was 41% (19) | 13 of 24, was 16 of 27 |
+| `twin_fangs_window` (rank 1), enemies alive | 59 | 63% (37), was 61% (36) | 18 of 22, was 19 of 23 |
+| `coiled_altar_window` (rank 1), hittable boss | 61 | 59% (36), was 18% (11) | 17 of 25, was 42 of 50 |
+
+Fixes of #71, in the order applied (agreements of 46 / 59 / 61):
+
+| Step | Sszorak | Twin Fangs | Coiled Altar |
+| ---- | ------- | ---------- | ------------ |
+| Before | 19 | 36 | 11 |
+| Pair each finish with the earliest unused `begincast`; a `begincast` in the finish's own millisecond is an instant | 22 | 36 | 18 |
+| An instant pressed in its predecessor's millisecond is read at that millisecond, without its own buff events | 22 | 36 | 20 |
+| Add copies counted only while the player's own spells hit them (spans split at `bossHitGap`), absorbed hits count | 22 | 37 | 36 |
+
+The research expected 23 on Sszorak after the first step and 37 on Coiled Altar
+after all three. This got 22 (one short of #71's floor of 23) and 36. Widening
+the pairing window by 500 ms changed nothing. Two instants pressed in their
+predecessor's millisecond still read wrong, such as the 36.0 s Lava Burst after
+an Elemental Blast: Overcharge! and Master of the Elements are removed and
+applied again in that millisecond, and the log's order does not say which of
+those events are the predecessor's.
 
 The Coiled Altar window read both bosses as up all fight before #65, which gave
 13% (8 of 61, 45 of 53 exact). Counting only the hittable boss moves three
@@ -905,7 +924,13 @@ What explains them:
   These count as agreement with a note, as does Stormkeeper pressed 45 s after its
   last use (Offering from Beyond shortens it). A cooldown first cast inside the
   window is taken to come off cooldown just then, which hides a late press.
-- **Timing.** An instant is read 60 ms before its own cast, and a cast with a
+- **Timing (since #71).** Each finish takes the earliest unused `begincast` of
+  its spell within its cast time, so chained casts pair correctly. A `begincast`
+  in the finish's own millisecond is an instant (a Lava Surge Lava Burst). An
+  instant pressed in the millisecond its predecessor finished is read at that
+  millisecond, with the buff events from the last removal in it left out as its
+  own (Lava Surge spent, Master of the Elements granted). Before #71:
+  An instant is read 60 ms before its own cast, and a cast with a
   `begincast` 10 ms after it, so buffs its predecessor applied are up and the ones
   it spends are not yet gone. A press within 10 ms of the previous finish is the
   one case still wrong.
@@ -1021,3 +1046,35 @@ Fangs. The ceiling of (2) is #65's: an add in reach that the player ignored read
 as absent, which hides a missed cleave. Counting enemies within Chain Lightning's
 reach of the player's target (positions as above, 1 point a page per kind; the
 radius isn't checked) would see that, and gives the same 34 here.
+
+**Implemented (#71).** `ReplayLog` pairs casts with `begincast`s as in the Timing
+bullet above. `loadEnemyPresence` builds an add kind from the player's hits
+only, per copy (`targetInstance`): a copy is up in spans of hits no more than
+`WarcraftLogsRepository.bossHitGap` (8 s) apart, from hits by the spec's spell
+ids and the `SpecLogRules` area-damage ids (Earthquake 77478), not gear procs
+(Rune of Lingering 1287663, Rune of Unleashed Fire 1286970). It no longer reads
+the add's casts, deaths or damage taken, so it costs one `DamageDone` query and the
+report: 2 queries, not one per kind. Bosses are unchanged (#65).
+
+- **Absorbed hits count.** A `DamageDone` row is a hit when it did at least 1% of
+  its unmitigated amount, or when `absorbed` is above 0. The absorbed rule applies
+  only to an enemy kind the player also really damaged: Barbed Bulwark takes
+  213 absorbed hits and no real one on Twin Fangs rank 1, and counting them gave
+  it dozens of one-hit spans, so a kind that only ever absorbs is not a target.
+  Consequence: Malacrass's shield takes hits through his untargetable gaps, so on
+  Coiled Altar rank 1 he is one stretch (147.1 to 513.8 s) where #65 had five.
+- **Fixtures regenerated.** Live on 2026-11-01, `loadEnemyPresence` on
+  `n4jBN71KbyRkt28X` / 36 / player 68 and `CGjdNa8RBfcQtAWg` / 33 / player 25, each
+  fetched once, plus one extra `DamageDone` page on Twin Fangs to see why the
+  Bulwark counted: about 8 points. Coiled Altar `enemies`: the Soulcoilers are one
+  copy (70.975 to 88.976 s), where four arrived at 24.5 and 57.5 s (wave 3 was hit
+  only by gear procs, and wave 4's second copy not at all); Malacrass is up from
+  before the window (his shielded first 6.3 s count). The old Soulcoiler arrivals
+  are kept under the fixture's `waves` key for the wave and pooling tests. Twin
+  Fangs `enemies`: bosses are #65's spans (up through the window), the Spawn of
+  Vexhul arrive at 27.9 s (their first hit, not first cast), and the ten
+  Broodlings of Ithraz are gone: the player's own spells never hit them in the
+  window. The rate still rose from 36 to 37.
+- **Ceiling.** An add in reach that the player ignored reads as absent, which
+  hides a missed cleave. Counting enemies within Chain Lightning's reach of the
+  player's target (enemy positions, 1 point a page per kind) would see it.
