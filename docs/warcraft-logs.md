@@ -1161,6 +1161,18 @@ in the Debuffs table: Unnerving Fixation 105.7 to 130.8 s and 261.6 to 313.8 s,
 and Dreadmarch (mind control) at 137.4 s. Rank 50's mana rises into P4 with
 Innervate.
 
+### Fixture (#76)
+
+`test/fixtures/coiled_altar_heroic_resto_window.json` is 75 s of rank 1's
+Heroic kill (`PRkbJByN4VdzpHcC` / 67, source 611), 195 s to 270 s of the pull,
+with the same keys as the other fixtures: casts with mana `classResources`,
+resource changes, the player's buff events (Healing Rain, Stormstream, Tidal
+Waves, Ascendance), the window's buff table as `receivedBuffs`, 74 talent
+tokens, and no damage, debuffs or enemies. Other players' ids are renumbered
+and nothing names a player. 64 KB. Cost about 10 points: report 3, casts for
+the whole fight 1, then four window event queries and the buff table (7 with
+the report again). The window holds Ascendance 0.8 s after a Surging Totem.
+
 ### Recommended metrics
 
 Rank on what the healer controls whatever the intake, and show the rest for
