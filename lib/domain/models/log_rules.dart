@@ -17,6 +17,7 @@ class SpecLogRules {
     this.freeSpenderSourceIds = const {},
     this.movementFormId,
     this.graceId,
+    this.castsBeforeWindow = const [],
     this.raidFreeCasts = const [],
     this.raidCooldownSupport = const {},
     this.chanceProcs = const [],
@@ -58,6 +59,9 @@ class SpecLogRules {
   /// this id, and its cooldown comes from the spec's spell table.
   final int? graceId;
 
+  /// Casts that belong before a buff window, not inside it.
+  final List<CastBeforeWindow> castsBeforeWindow;
+
   /// Buffs from other players that pay for a cast.
   final List<RaidFreeCast> raidFreeCasts;
 
@@ -73,6 +77,23 @@ class SpecLogRules {
 
   /// Auras a fight's events never show, so a replay can only guess them.
   final Set<String> unobservableAuras;
+}
+
+/// A cast that belongs before the buff [windowBuffId], because casting it
+/// inside the window spends the window's time.
+@immutable
+class CastBeforeWindow {
+  const CastBeforeWindow({
+    required this.castId,
+    required this.windowBuffId,
+    required this.name,
+  });
+
+  final int castId;
+  final int windowBuffId;
+
+  /// What the finding calls it, such as "Stormkeeper during Ascendance".
+  final String name;
 }
 
 /// A buff from another player that pays for one of [castIds].

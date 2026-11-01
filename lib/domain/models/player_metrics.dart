@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'gap_detail.dart';
+import 'window_cast.dart';
 
 /// What one player did in one pull, in numbers two fights can be compared on.
 /// A metric says what happened, never why. Effects that depend on the raid are
@@ -20,6 +21,7 @@ class PlayerMetrics {
     required this.cooldowns,
     required this.raidFreeCasts,
     required this.chanceProcs,
+    this.windowCasts = const [],
   });
 
   final Duration fightLength;
@@ -30,6 +32,9 @@ class PlayerMetrics {
   final List<CooldownMetrics> cooldowns;
   final List<RaidFreeCastMetrics> raidFreeCasts;
   final List<ChanceProcMetrics> chanceProcs;
+
+  /// Casts made inside a window they belonged before, per spec rule.
+  final List<WindowCastMetrics> windowCasts;
 }
 
 /// Finished casts, counting each press once.

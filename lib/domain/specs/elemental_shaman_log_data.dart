@@ -35,6 +35,15 @@ const elementalLogRules = SpecLogRules(
   freeSpenderSourceIds: {_stormkeeper, _ascendance},
   movementFormId: _ghostWolf,
   graceId: _spiritwalkersGrace,
+  // Stormkeeper's cast time burns Ascendance's window (the APL pre-spends its
+  // charges). The buff is 1219480, the cast 114050.
+  castsBeforeWindow: [
+    CastBeforeWindow(
+      castId: _stormkeeper,
+      windowBuffId: 1219480,
+      name: 'Stormkeeper during Ascendance',
+    ),
+  ],
   raidFreeCasts: [
     RaidFreeCast(
       name: 'Time Spiral',
