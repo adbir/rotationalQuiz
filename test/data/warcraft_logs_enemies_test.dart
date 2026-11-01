@@ -75,6 +75,30 @@ http.Response _answer(http.Request request) {
           'amount': amount,
           'unmitigatedAmount': 5000,
         },
+      // Own-spell hits (Lightning Bolt 188196) on Adder: copy 1 at 4 to 5 s
+      // and 30 to 31 s, copy 2 at 5 s then a direct hit a shield took fully at
+      // 9 s and a shielded tick at 20 s (ticks never count). Imp: a gear proc.
+      for (final (target, instance, seconds, ability, amount, tick) in [
+        (31, 1, 4.0, 188196, 900, false),
+        (31, 1, 5.0, 188196, 900, false),
+        (31, 1, 30.0, 188196, 900, false),
+        (31, 1, 31.0, 188196, 900, false),
+        (31, 2, 5.0, 188196, 900, false),
+        (31, 2, 9.0, 188196, 0, false),
+        (31, 2, 20.0, 188389, 0, true),
+        (32, 1, 4.0, 1287663, 800, false),
+      ])
+        {
+          'timestamp': _start + (seconds * 1000).round(),
+          'sourceID': 7,
+          'targetID': target,
+          'targetInstance': instance,
+          'abilityGameID': ability,
+          'amount': amount,
+          'absorbed': amount == 0 ? 500 : 0,
+          'tick': tick,
+          'unmitigatedAmount': 5000,
+        },
       // The boss is hit to 5.8 s, is immune at 12 s (a hit for 0), then is hit
       // from 20 s: two stretches, more than 8 s apart.
       for (final (seconds, amount) in [
@@ -159,6 +183,23 @@ void main() {
       expect(presence.aliveByKindAt(_s(6.5))['Imp'], 1);
       expect(presence.aliveByKindAt(_s(7.5))['Imp'], 1);
       expect(presence.aliveByKindAt(_s(8.6)).containsKey('Imp'), isFalse);
+    });
+
+    test('hitGroups hold an add copy only while the player hits it', () {
+      final adder = presence.hitGroups.singleWhere((g) => g.name == 'Adder');
+      // Copy 1 twice (two spans, more than 8 s apart); copy 2 to 9 s, where a
+      // direct hit a shield took still counts; the shielded tick at 20 s not.
+      expect(adder.arrivals, [_s(4), _s(5), _s(30)]);
+      expect(adder.departures, [_s(5), _s(9), _s(31)]);
+      expect(adder.aliveAt(_s(20)), 0);
+    });
+
+    test('hitGroups leave out gear procs and a kind only ever absorbing', () {
+      expect(presence.hitGroups.map((g) => g.name), ['Boss', 'Adder']);
+      expect(presence.targetsAt(_s(5.5)), 2);
+      expect(presence.targetsAt(_s(20)), 1);
+      // Without hit groups the count is everything alive.
+      expect(EnemyPresence(presence.groups).targetsAt(_s(5.5)), 3);
     });
 
     test('holds a boss only while the player hits it', () {

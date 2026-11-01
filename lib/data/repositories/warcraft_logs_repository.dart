@@ -5,6 +5,7 @@ import '../../domain/models/spec_definition.dart';
 import '../../domain/specs/rotation_spec.dart';
 import '../../utils/result.dart';
 import '../services/warcraft_logs_service.dart';
+import 'warcraft_logs_hits.dart';
 import 'warcraft_logs_mapper.dart';
 
 /// Fetches fights and rankings from Warcraft Logs as domain models.
@@ -123,7 +124,7 @@ class WarcraftLogsRepository {
     required int fightId,
   }) async {
     try {
-      return Result.ok(await _enemyGroups(reportCode, fightId));
+      return Result.ok((await _enemyGroups(reportCode, fightId)).$1);
     } on Exception catch (e) {
       return Result.error(e);
     }
@@ -134,24 +135,36 @@ class WarcraftLogsRepository {
   /// ([playerId]) damaged count. Costs what [loadEnemyGroups] does for those
   /// kinds, one query for every enemy death, the player's damage, and one more
   /// for each kind of add with no death in the log (see
-  /// `docs/warcraft-logs.md`, "Enemies alive").
+  /// `docs/warcraft-logs.md`, "Enemies alive"). `hitGroups` come from the same
+  /// damage page, at no cost.
   Future<Result<EnemyPresence>> loadEnemyPresence({
     required String reportCode,
     required int fightId,
     required int playerId,
   }) async {
     try {
-      return Result.ok(
-        EnemyPresence(
-          await _enemyGroups(reportCode, fightId, playerId: playerId),
-        ),
+      final (groups, hitGroups) = await _enemyGroups(
+        reportCode,
+        fightId,
+        playerId: playerId,
       );
+      return Result.ok(EnemyPresence(groups, hitGroups: hitGroups));
     } on Exception catch (e) {
       return Result.error(e);
     }
   }
 
-  Future<List<EnemyGroup>> _enemyGroups(
+  /// The ability ids of the player's own spells on damage events: the spell
+  /// table's, and the damage ids of the area abilities in the log rules. Gear
+  /// procs are not among them.
+  Set<int> get _damageIds => {
+    for (final spell in spec.spells.values) ?spell.spellId,
+    for (final aoe in spec.logRules.aoeDamage.values) aoe.damageId,
+  };
+
+  /// The enemies alive (casts, deaths) and, with a [playerId], the stretches
+  /// the player's own spells hit each kind, from the same damage page.
+  Future<(List<EnemyGroup>, List<EnemyGroup>)> _enemyGroups(
     String reportCode,
     int fightId, {
     int? playerId,
@@ -187,19 +200,21 @@ class WarcraftLogsRepository {
     // ponytail: an add counts only if the player damaged it, which drops
     // Barbed Bulwark (crowd controlled, not killed). A kind the player simply
     // ignored drops out too; the ceiling is a fight with a real add left alone.
-    final hits = playerId == null
+    final damage = playerId == null
         ? null
-        : WarcraftLogsMapper.reallyDamaged(
-            await _service.events(
-              code: reportCode,
-              fightId: fightId,
-              sourceId: playerId,
-              type: WclEventType.damageDone,
-              start: start,
-              end: WarcraftLogsMapper.fightEnd(fight),
-            ),
-            playerId,
+        : await _service.events(
+            code: reportCode,
+            fightId: fightId,
+            sourceId: playerId,
+            type: WclEventType.damageDone,
+            start: start,
+            end: WarcraftLogsMapper.fightEnd(fight),
           );
+    final hits = damage == null
+        ? null
+        : WarcraftLogsMapper.reallyDamaged(damage, playerId!);
+    final hitGroups = <EnemyGroup>[];
+    final hitRows = damage == null ? null : WarcraftLogsHits(damage, playerId!);
     final enemies = fight['enemyNPCs'];
     final groups = <EnemyGroup>[];
     for (final npc
@@ -208,6 +223,25 @@ class WarcraftLogsRepository {
       final copies = npc['instanceCount'];
       if (id is! num || copies is! num || copies < 1) continue;
       final name = names[id.toInt()] as String? ?? 'Enemy ${id.toInt()}';
+      if (hitRows != null) {
+        // ponytail: a copy is up while the player's own spells keep hitting
+        // it (gear procs and pets don't), in stretches split at bossHitGap. The
+        // ceiling is a copy in reach that the player ignored: it reads as
+        // absent. A boss never hit this way keeps the whole-fight span.
+        final spans = WarcraftLogsHits.spansOfCopies(
+          name,
+          hitRows.timesByCopy(id.toInt(), _damageIds).values,
+          start,
+          bossHitGap,
+        );
+        if (spans != null) {
+          hitGroups.add(spans);
+        } else if (copies == 1) {
+          hitGroups.add(
+            EnemyGroup(name: name, arrivals: const [Duration.zero]),
+          );
+        }
+      }
       if (copies == 1) {
         if (withDepartures) {
           // ponytail: a boss is hittable while the player keeps hitting it; a
@@ -248,7 +282,7 @@ class WarcraftLogsRepository {
         ),
       );
     }
-    return groups;
+    return (groups, hitGroups);
   }
 
   /// Up to [count] ranked logs for this spec on a boss, best first. Rows with

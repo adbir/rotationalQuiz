@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../view_models/setup_view_model.dart';
 import 'widgets/keybind_section.dart';
+import 'widgets/spec_picker.dart';
 import 'widgets/talent_build_section.dart';
 import 'widgets/warcraft_logs_section.dart';
 
@@ -25,6 +26,9 @@ class SetupScreen extends StatelessWidget {
         }
         return LayoutBuilder(
           builder: (context, constraints) {
+            const picker = SpecPicker();
+            // Keybinds drive the quiz, so a spec without an APL has none.
+            final hasApl = viewModel.spec.hasApl;
             final talents = TalentBuildSection(viewModel: viewModel);
             final keybinds = KeybindSection(viewModel: viewModel);
             final logs = WarcraftLogsSection(viewModel: viewModel);
@@ -35,27 +39,36 @@ class SetupScreen extends StatelessWidget {
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.all(16),
-                      children: [talents, const SizedBox(height: 24), logs],
+                      children: [
+                        picker,
+                        const SizedBox(height: 24),
+                        talents,
+                        const SizedBox(height: 24),
+                        logs,
+                      ],
                     ),
                   ),
-                  const VerticalDivider(width: 1),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [keybinds],
+                  if (hasApl) ...[
+                    const VerticalDivider(width: 1),
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [keybinds],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               );
             }
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                picker,
+                const SizedBox(height: 24),
                 talents,
                 const SizedBox(height: 24),
                 logs,
-                const SizedBox(height: 24),
-                keybinds,
+                if (hasApl) ...[const SizedBox(height: 24), keybinds],
               ],
             );
           },

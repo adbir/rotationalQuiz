@@ -63,6 +63,7 @@ class ReplayLog {
         if (spell.spellId != null) spell.spellId!: spell,
     };
 
+    final begins = _pairBegins(events, finished, spellsById);
     var compared = 0;
     var agreements = 0;
     var skippedPresses = 0;
@@ -79,8 +80,13 @@ class ReplayLog {
       }
       if (spell.offGcd) continue;
 
-      final (pressTime, q) = _stateMoment(events, finished, i, spell);
-      final state = builder.at(q);
+      final (pressTime, q) = _stateMoment(begins[i], finished, i);
+      final state = builder.at(
+        q,
+        pressAt: i > 0 && begins[i] == null && finished[i - 1].time == cast.time
+            ? cast.time
+            : null,
+      );
       final result = AplEvaluator(spec).recommend(document, state);
       compared++;
 
@@ -148,34 +154,61 @@ class ReplayLog {
     );
   }
 
-  /// When press [i] happened, and the moment to rebuild its state at. A cast
-  /// with a `begincast` is pressed there, and what its predecessor did is
-  /// logged within a few milliseconds of it. An instant is read just before
-  /// itself, so that a buff it spends is still up, but not before its
-  /// predecessor.
-  // ponytail: an instant pressed within 10 ms of its predecessor finishing is
-  // read at that finish; if it also spends a buff logged just after, the buff
-  // reads as spent.
-  (Duration, Duration) _stateMoment(
+  /// The `begincast` each finished cast belongs to, by index into [finished]
+  /// (null for an instant). A finish takes the earliest unused `begincast` of
+  /// its spell within the spell's cast time, so a chained cast's finish does
+  /// not take the next cast's start. A `begincast` in the finish's own
+  /// millisecond is an instant (a Lava Surge Lava Burst) and is used up
+  /// without being a press time.
+  static List<LogCast?> _pairBegins(
     List<LogCast> events,
     List<LogCast> finished,
+    Map<int, SpellDefinition> spellsById,
+  ) {
+    final used = <LogCast>{};
+    return [
+      for (final cast in finished)
+        () {
+          final spell = spellsById[cast.abilityId];
+          if (spell == null || spell.offGcd) return null;
+          final window = Duration(
+            milliseconds: (spell.castTime * 1000).round(),
+          );
+          final begin = events
+              .where(
+                (c) =>
+                    c.isBegin &&
+                    c.abilityId == cast.abilityId &&
+                    !used.contains(c) &&
+                    c.time <= cast.time &&
+                    cast.time - c.time <= window,
+              )
+              .firstOrNull;
+          if (begin == null) return null;
+          used.add(begin);
+          return begin.time == cast.time ? null : begin;
+        }(),
+    ];
+  }
+
+  /// When press [i] happened, and the moment to rebuild its state at. A cast
+  /// with a [begin] is pressed there, and what its predecessor did is logged
+  /// within a few milliseconds of it. An instant is read just before itself,
+  /// so that a buff it spends is still up, but not before its predecessor. One
+  /// pressed in the millisecond its predecessor finished is read at that
+  /// millisecond, with the buffs removed in it (its own spend) still up.
+  (Duration, Duration) _stateMoment(
+    LogCast? begin,
+    List<LogCast> finished,
     int i,
-    SpellDefinition spell,
   ) {
     final cast = finished[i];
-    final begin = events
-        .where(
-          (c) =>
-              c.isBegin &&
-              c.abilityId == cast.abilityId &&
-              c.time <= cast.time &&
-              cast.time - c.time <=
-                  Duration(milliseconds: (spell.castTime * 1000).round()),
-        )
-        .lastOrNull;
     if (begin != null) return (begin.time, begin.time + _stateLag);
     final earliest = i == 0 ? Duration.zero : finished[i - 1].time + _stateLag;
     final q = cast.time - logMoment;
+    if (i > 0 && finished[i - 1].time == cast.time) {
+      return (cast.time, cast.time);
+    }
     final latest = cast.time - const Duration(milliseconds: 1);
     final at = q > earliest ? q : earliest;
     return (cast.time, at > latest ? latest : at);
