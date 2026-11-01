@@ -423,8 +423,10 @@ at the first Axegrinder arrival (15 s), the only enemy event in that time:
 The owner and rank 50 open with more casts than rank 1 and equal it at 15 to
 30 s. The owner then drops to 36 and 14, three casts in the last 13 s (the log
 doesn't say why; deaths were not read). Rank 50 has 27.7 in 45 to 58 s, which
-holds its longest gap of 8.0 s. The Maelstrom rebuild over each whole log: rank 1 has 109 readings with a worst drift of 34 and a
-mean of 1.1, rank 50 has 126 with 8 and 0.8, and rank 28 has 116 with 89 and
+holds its longest gap of 8.0 s.
+
+The Maelstrom rebuild over each whole log: rank 1 has 109 readings with a worst
+drift of 34 and a mean of 1.1, rank 50 has 126 with 8 and 0.8, and rank 28 has 116 with 89 and
 2.6 (the same-millisecond case under "Reading a fight"). The owner's 15 readings
 have a worst drift of 8 and a mean of 1.7.
 
@@ -453,8 +455,8 @@ Phase 2 starts 139 to 143 s into the Mythic kills (it is not on a timer), and
 phase 3 is 38.1, 38.3 and 38.4 s long.
 
 The add waves are the Spiteful Soulcoilers: two arrive together (their first
-casts) and die in 20 to 36 s on Mythic (12 to 15 s in the Heroic kill). Their waves are timed from the phases, not from the
-pull:
+casts) and die in 20 to 36 s on Mythic (12 to 15 s in the Heroic kill). Their
+waves are timed from the phases, not from the pull:
 
 | Wave | Rank 1 | Rank 28 | Rank 50 | Heroic kill | From |
 | --- | --- | --- | --- | --- | --- |
@@ -500,12 +502,12 @@ The owner's wipe damaged only Zul'jan, from 2.8 s, and its report has no Malacra
 So in phases 1 and 2 only one boss is hit at a time, but the alive count says 2
 (4 in a Soulcoiler wave, where 3 can be hit). In the owner's wipe it reads 1
 (no Malacrass in that report), so the same phase reads 2 for rank 1 and 1 for
-the owner. The replay compares the
-alive count with the APL's `spell_targets` thresholds of 2 and 3, so the 2 is
-enough to ask for an area spell where a single target is hit. I did not change
-`loadEnemyPresence`: `EnemyGroup` holds one arrival and one departure per
-copy, and the boss's real spans are several, so a fix is a model change and not
-a small rule. The owner should decide whether it is wanted.
+the owner. The replay compares the alive count with the APL's `spell_targets`
+thresholds of 2 and 3, so the 2 is enough to ask for an area spell where a
+single target is hit. `loadEnemyPresence` is unchanged: `EnemyGroup` holds one
+arrival and one departure per copy, and the boss's real spans are several, so a
+fix is a model change, not a small rule. Whether it is wanted is an open
+decision on the map (#25).
 
 Queries and cost, in points, measured on rank 1 by the change in `rateLimitData`
 across each call (minus the 1 of the query itself): `loadEnemyPresence` 5,
