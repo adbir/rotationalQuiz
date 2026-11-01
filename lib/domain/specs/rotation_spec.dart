@@ -1,4 +1,5 @@
 import '../models/combat_state.dart';
+import '../models/log_rules.dart';
 import '../models/spec_definition.dart';
 import '../talents/talent_tree.dart';
 
@@ -70,10 +71,18 @@ abstract class RotationSpec {
   /// potions...). They are shown as skipped in the trace.
   Set<String> get unmodelledActions;
 
+  /// How this spec appears in Warcraft Logs fights.
+  SpecLogRules get logRules;
+
   /// Maximum charges of [cooldown] with [talents], or `null` if it doesn't
   /// use charges. Override when talents add charges.
   int? maxCharges(CooldownDefinition cooldown, Set<String> talents) =>
       cooldown.maxCharges;
+
+  /// Length of [cooldown] in seconds with [talents]. Override when talents
+  /// change it.
+  double cooldownDuration(CooldownDefinition cooldown, Set<String> talents) =>
+      cooldown.duration;
 
   /// Maximum primary resource with [talents].
   double maxResource(Set<String> talents);

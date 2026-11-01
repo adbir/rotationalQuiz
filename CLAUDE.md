@@ -82,12 +82,15 @@ lib/
 │   │   ├── apl_document.dart     # `actions.<list>+=/...` line parser
 │   │   ├── apl_evaluator.dart    # Walks lists like SimC; produces a trace
 │   │   └── apl_state_resolver.dart  # buff./cooldown./talent./… → numbers
-│   ├── models/             # CombatState (scenario), Keybind, FightLog, spec metadata
-│   ├── specs/              # RotationSpec + per spec: <spec>.dart (behaviour)
-│   │                       #   and <spec>_data.dart (spell/aura/talent tables)
+│   ├── models/             # CombatState (scenario), Keybind, FightLog, PlayerMetrics,
+│   │                       #   BuffWindows, SpecLogRules, spec metadata
+│   ├── specs/              # RotationSpec + per spec: <spec>.dart (behaviour),
+│   │                       #   <spec>_data.dart (spell/aura/talent tables) and
+│   │                       #   <spec>_log_data.dart (how it appears in logs)
 │   ├── talents/            # Talent tree types + in-game export string decoder
 │   │   └── generated/      # *.g.dart from tool/generate_talent_tree.py
-│   └── use_cases/          # GenerateScenario (quiz states), PickAnswerOptions
+│   └── use_cases/          # GenerateScenario (quiz states), PickAnswerOptions,
+│                           #   ComputePlayerMetrics (+ cooldown and proc parts)
 ├── data/
 │   ├── services/           # Asset loading, SimC + Warcraft Logs APIs, LocalStore
 │   └── repositories/       # Apl, TalentBuild, Keybind, SpellIcon, WarcraftLogs…
@@ -199,6 +202,9 @@ data is already keyed by `spec.id`.
      the defaults are real builds.
    - `maxResource`, `defaultState`, `availability`, `resolveScalar`,
      `applyOffGcd`.
+   - `logRules`, in `<spec>_log_data.dart`: log ids and rules for player
+     metrics. Check them against real logs, since buff ids can differ from
+     cast ids.
 4. Copy `test/domain/elemental_apl_test.dart` and
    `test/domain/apl_coverage_test.dart`, and add a codec test with a real
    build string.
@@ -269,6 +275,16 @@ anything new the sandbox doesn't model.
     `WCL_LIVE=1 flutter test test/data/warcraft_logs_live_test.dart`.
   - **Time:** domain models measure time from the pull, not from the start of
     the report.
+- **Player metrics** (`ComputePlayerMetrics`): turns one `FightLog` into
+  `PlayerMetrics`, so two fights can be compared. No screen yet; #13 adds one.
+  - **Rules:** ids and rules come from `RotationSpec.logRules`, spell ids and
+    costs from the spec's tables. No spec checks in the use cases. A metric says
+    what happened, never why.
+  - **Timing:** events from one action land milliseconds apart, in either order.
+    Use `isSameMoment` and `BuffWindows.isUpFor`, not exact comparisons.
+  - **Raid support:** `RaidFreeCastMetrics` and
+    `CooldownMetrics.raidDependsOn` name it. Don't blend it into a score.
+  - **Left out:** damage share, DPS and deaths, because `FightLog` lacks them.
 - **Persistence:** `LocalStore`, backed by `shared_preferences`
   (localStorage on the web). Keys are `keybinds.<spec>`,
   `talent_builds.<spec>`, `active_talent_build.<spec>` and `spell_icons`. Imported builds
@@ -282,8 +298,9 @@ test/
 │                       # TestRepositories (APL + builds + keybinds on InMemoryStore)
 ├── code_organisation_test.dart  # file-size limit, domain/ import rules
 ├── domain/             # parser, evaluator, real-APL behaviour, coverage,
-│                       # codec, scenario generator, answer options
+│                       # codec, scenario generator, answer options, player metrics
 ├── data/               # repository persistence, Warcraft Logs (mocked + opt-in live)
+├── fixtures/           # real log data, trimmed, with player details removed
 ├── ui/                 # view models, quiz key handling, app navigation
 └── screenshots/        # opt-in PNG renders (see above)
 ```
