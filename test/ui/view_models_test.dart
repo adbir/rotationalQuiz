@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rotational_quiz/domain/models/keybind.dart';
-import 'package:rotational_quiz/domain/specs/elemental_shaman.dart';
+import 'package:rotational_quiz/domain/specs/elemental_shaman_data.dart';
 import 'package:rotational_quiz/ui/features/quiz/view_models/quiz_view_model.dart';
 import 'package:rotational_quiz/ui/features/sandbox/view_models/sandbox_view_model.dart';
 
@@ -43,18 +43,18 @@ void main() {
     test('choice-node talents are mutually exclusive', () {
       final vm = sandbox();
       final tempest = vm.spec.talents.firstWhere(
-        (t) => t.id == ElementalShaman.tempestTalent,
+        (t) => t.id == ElementalTalents.tempestTalent,
       );
       vm.setTalent(tempest, true);
-      expect(vm.state.hasTalent(ElementalShaman.tempestTalent), isTrue);
-      expect(vm.state.hasTalent(ElementalShaman.callOfTheAncestors), isFalse);
+      expect(vm.state.hasTalent(ElementalTalents.tempestTalent), isTrue);
+      expect(vm.state.hasTalent(ElementalTalents.callOfTheAncestors), isFalse);
       expect(vm.talentsEdited, isTrue);
     });
 
     test('follows the active talent build', () async {
       final vm = sandbox();
       await repos.talentBuilds.setActive(repos.talentBuilds.loadouts[1]);
-      expect(vm.state.hasTalent(ElementalShaman.tempestTalent), isTrue);
+      expect(vm.state.hasTalent(ElementalTalents.tempestTalent), isTrue);
       // Stormbringer takes Swelling Maelstrom.
       expect(vm.state.maxResource, 150);
     });
@@ -62,7 +62,7 @@ void main() {
     test('saving edited talents creates and activates a build', () async {
       final vm = sandbox();
       final eotS = vm.spec.talents.firstWhere(
-        (t) => t.id == ElementalShaman.eyeOfTheStorm,
+        (t) => t.id == ElementalTalents.eyeOfTheStorm,
       );
       vm.setTalent(eotS, true);
       await vm.saveTalentsAs('With EotS');
