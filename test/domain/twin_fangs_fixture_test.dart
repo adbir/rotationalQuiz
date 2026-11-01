@@ -42,16 +42,24 @@ void main() {
     expect(adds.waveStarts().single.inMilliseconds, closeTo(28100, 100));
   });
 
-  test('top player does not pool before the add wave', () {
+  test('top player holds a spender for the add wave', () {
     final wave = enemies
         .singleWhere((e) => e.name == 'Spawn of Vexhul')
         .waveStarts();
     final report = const DetectPooling(spec)(log, timeline, wave).single;
 
-    // Spenders came after the wave, but the level before it was no higher
-    // than the window's average.
-    expect(report.spendersAfter, greaterThan(0));
-    expect(report.meanBefore, lessThan(report.normalLevel + 15));
+    // No spender for 15 s, (over 10 s; the whole fight's median is 5 s, the window's 10 s), then an
+    // Earthquake 2 s after the spawn. The 10 s mean (71) is no higher than
+    // the window's average plus the margin, so the mean test misses it.
+    expect(report.isHeld, isTrue);
+    expect(
+      report.gapSinceLastSpender,
+      greaterThan(const Duration(seconds: 10)),
+    );
+    expect(report.spendersBefore, 0);
+    expect(report.firstSpenderAfterName, 'Earthquake');
+    expect(report.firstSpenderAfter, lessThan(const Duration(seconds: 3)));
+    expect(report.lowestBefore, lessThan(report.levelAtEvent));
     expect(report.isPooled, isFalse);
   });
 }
