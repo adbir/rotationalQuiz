@@ -9,7 +9,7 @@ import 'package:rotational_quiz/ui/features/boss_evaluation/view_models/finding_
 import '../fake_warcraft_logs_repository.dart';
 import '../test_helpers.dart';
 import 'player_metrics_fixture_test.dart' show loadFixture;
-import 'rank_findings_test.dart' show compare;
+import 'rank_findings_test.dart' show compare, wasting;
 
 Duration s(num seconds) => Duration(milliseconds: (seconds * 1000).round());
 
@@ -118,6 +118,34 @@ void main() {
       'at 12 s after Stormkeeper faded, at 33 s after Ascendance faded, '
       'at 50 s after Ascendance faded',
     );
+  });
+
+  test('wasted resource names the worst stretch', () {
+    final c = CompareFights(spec)([
+      FightToCompare(label: 'You', log: wasting({10: 5, 40: 34})),
+      FightToCompare(label: 'Rank 1', log: wasting({10: 1, 40: 2})),
+    ], const []);
+    final text = FindingText(comparison: c, resourceLabel: 'Maelstrom');
+    final f = const RankFindings()(c).findings
+        .firstWhere((f) => f.kind == FindingKind.wastedResource);
+    expect(text.where(f), 'mostly at 30-60 s (34 vs 2 for rank 1).');
+  });
+
+  test('wasted resource on one stretch is the whole fought portion', () {
+    final c = CompareFights(spec)([
+      FightToCompare(label: 'You', log: loadFixture('twin_fangs_window')),
+      FightToCompare(label: 'Rank 1', log: loadFixture()),
+    ], const []);
+    final text = FindingText(comparison: c, resourceLabel: 'Maelstrom');
+    final f = Finding(
+      kind: FindingKind.wastedResource,
+      yours: 9,
+      rank1: 1,
+      share: 8,
+      behind: 8,
+      valuesByLog: const [9, 1],
+    );
+    expect(text.where(f), startsWith('the whole fought portion'));
   });
 
   test('names the add instead of saying waves', () async {

@@ -1,5 +1,6 @@
 import '../../../../domain/models/boss_comparison.dart';
 import '../../../../domain/models/finding.dart';
+import '../../../../domain/models/window_cast.dart';
 
 /// The words for a result: facts and numbers, no adjectives. Lines stay short
 /// so they read as one column.
@@ -41,6 +42,10 @@ class FindingText {
       FindingKind.lostFreeSpenders =>
         'You lost $you free spenders by refreshing the buff that gives '
             'them. Rank 1 lost $top.',
+      FindingKind.castBeforeWindow =>
+        'You cast Stormkeeper during Ascendance $you '
+            '${f.yours == 1 ? 'time' : 'times'}, losing about '
+            '${_s(_windowLost())} s of it. Rank 1: $top.',
       FindingKind.heldSpenders =>
         'Rank 1 held a spender before ${_events(f.rank1.round())} and cast '
             'one within 5 s. You held before $you.',
@@ -70,11 +75,31 @@ class FindingText {
                 ? 'at ${l.time.inSeconds} s'
                 : 'at ${l.time.inSeconds} s after ${l.sourceName} faded',
         ].join(', ');
+      case FindingKind.castBeforeWindow:
+        return [
+          for (final d in _windowDetails())
+            'at ${d.time.inSeconds} s, ${_s(d.remaining)} s of it left',
+        ].join(', ');
       case FindingKind.wastedResource:
-        // ponytail: the metrics have no times, so this is the whole fight.
-        return 'the whole fought portion, ${comparison.fought.inSeconds} s.';
+        if (f.stretchIndexes.isEmpty || comparison.stretches.length == 1) {
+          return 'the whole fought portion, ${comparison.fought.inSeconds} s.';
+        }
+        final worst = f.stretchIndexes.first;
+        final s = comparison.stretches[worst];
+        return 'mostly at ${s.start.inSeconds}-${s.end.inSeconds} s '
+            '(${comparison.wastedResource.first[worst]} vs '
+            '${comparison.wastedResource.last[worst]} for rank 1).';
     }
   }
+
+  // ponytail: the headline names Stormkeeper and Ascendance; a second spec
+  // would take the names from its log rules.
+  List<WindowCastDetail> _windowDetails() => [
+    for (final w in comparison.logs.first.metrics.windowCasts) ...w.details,
+  ];
+
+  Duration _windowLost() =>
+      _windowDetails().fold(Duration.zero, (sum, d) => sum + d.lost);
 
   // ponytail: names the Elemental Shaman's Ghost Wolf and Spiritwalker's Grace
   // here; a second spec would take the names from its log rules.
@@ -113,6 +138,7 @@ class FindingText {
     FindingKind.wastedResource => 'wasted ${resourceLabel.toLowerCase()}',
     FindingKind.lostFreeSpenders => 'free spenders',
     FindingKind.heldSpenders => 'held spenders',
+    FindingKind.castBeforeWindow => 'Stormkeeper during Ascendance',
   };
 
   /// The column title for a metric's evidence rows.

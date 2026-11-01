@@ -25,6 +25,10 @@ class RankFindings {
     }
     final all = [for (final log in logs) log.metrics];
 
+    final windowCasts = [
+      for (final m in all)
+        m.windowCasts.fold(0, (n, w) => n + w.count).toDouble(),
+    ];
     final casts = _shortfalls(comparison);
     final candidates = <Finding>[
       _finding(
@@ -36,12 +40,19 @@ class RankFindings {
             if (casts[i] >= sameShare) i,
         ],
       ),
-      _finding(FindingKind.wastedResource, [
-        for (final m in all) m.resource.wasted.toDouble(),
-      ]),
+      _finding(
+        FindingKind.wastedResource,
+        [for (final m in all) m.resource.wasted.toDouble()],
+        stretchIndexes: [
+          for (final i in _worstFirst(_excessWaste(comparison)))
+            if (_excessWaste(comparison)[i] > 0) i,
+        ],
+      ),
       _finding(FindingKind.lostFreeSpenders, [
         for (final m in all) m.spenders.lostFree.toDouble(),
       ]),
+      if (windowCasts.any((n) => n > 0))
+        _finding(FindingKind.castBeforeWindow, windowCasts),
       if (comparison.pooling.isNotEmpty) _held(comparison),
     ];
 
@@ -110,6 +121,13 @@ class RankFindings {
         top[i] <= 0 ? 0 : ((top[i] - mine[i]) / top[i]).clamp(0, 1).toDouble(),
     ];
   }
+
+  /// Per stretch: how much more the player wasted than rank 1. Negative when
+  /// the player wasted less.
+  List<double> _excessWaste(BossComparison c) => [
+    for (var i = 0; i < c.stretches.length; i++)
+      (c.wastedResource.first[i] - c.wastedResource.last[i]).toDouble(),
+  ];
 
   List<int> _worstFirst(List<double> shortfalls) =>
       List.generate(shortfalls.length, (i) => i)
