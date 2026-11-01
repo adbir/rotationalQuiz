@@ -73,20 +73,22 @@ query ($code: String!, $fight: Int!) {
       masterData {
         actors(type: "Player") { id name subType }
         abilities { gameID name }
+        npcs: actors(type: "NPC") { id name }
       }
       fights(fightIDs: [$fight]) {
         id name encounterID kill startTime endTime difficulty size
         phaseTransitions { id startTime }
+        enemyNPCs { id instanceCount }
       }
     }
   }
 }''';
 
   static const _eventsQuery = r'''
-query ($code: String!, $fight: Int!, $source: Int!, $type: EventDataType!, $start: Float!, $end: Float!, $resources: Boolean!) {
+query ($code: String!, $fight: Int!, $source: Int!, $type: EventDataType!, $start: Float!, $end: Float!, $resources: Boolean!, $hostility: HostilityType!) {
   reportData {
     report(code: $code) {
-      events(fightIDs: [$fight], sourceID: $source, dataType: $type, startTime: $start, endTime: $end, limit: 5000, includeResources: $resources) {
+      events(fightIDs: [$fight], sourceID: $source, dataType: $type, startTime: $start, endTime: $end, limit: 5000, includeResources: $resources, hostilityType: $hostility) {
         nextPageTimestamp
         data
       }
@@ -131,8 +133,9 @@ query ($code: String!, $fight: Int!, $source: Int!, $type: EventDataType!, $star
     return report;
   }
 
-  /// Every event of [type] for one player, across all pages. [start] and
-  /// [end] are the fight's times from [report].
+  /// Every event of [type] for one source, across all pages. [start] and
+  /// [end] are the fight's times from [report]. [enemy] reads an enemy NPC's
+  /// events (its id from `enemyNPCs`) instead of a player's.
   Future<List<JsonMap>> events({
     required String code,
     required int fightId,
@@ -141,6 +144,7 @@ query ($code: String!, $fight: Int!, $source: Int!, $type: EventDataType!, $star
     required num start,
     required num end,
     bool includeResources = false,
+    bool enemy = false,
   }) async {
     final events = <JsonMap>[];
     num? cursor = start;
@@ -156,6 +160,7 @@ query ($code: String!, $fight: Int!, $source: Int!, $type: EventDataType!, $star
         'start': cursor,
         'end': end,
         'resources': includeResources,
+        'hostility': enemy ? 'Enemies' : 'Friendlies',
       });
       final report = _map(_map(data['reportData'])?['report']);
       final result = _map(report?['events']);

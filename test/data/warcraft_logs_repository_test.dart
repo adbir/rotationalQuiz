@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:rotational_quiz/data/repositories/warcraft_logs_repository.dart';
 import 'package:rotational_quiz/data/services/warcraft_logs_service.dart';
+import 'package:rotational_quiz/domain/models/enemy_group.dart';
 import 'package:rotational_quiz/domain/models/fight_log.dart';
 import 'package:rotational_quiz/utils/result.dart';
 
@@ -21,6 +22,10 @@ Map<String, Object?> get _report => {
     'abilities': [
       {'gameID': 51505, 'name': 'Lava Burst'},
     ],
+    'npcs': [
+      {'id': 30, 'name': 'Boss'},
+      {'id': 31, 'name': 'Add'},
+    ],
   },
   'fights': [
     {
@@ -32,6 +37,10 @@ Map<String, Object?> get _report => {
       'endTime': _start + 371000,
       'difficulty': 5,
       'size': 20,
+      'enemyNPCs': [
+        {'id': 30, 'instanceCount': 1},
+        {'id': 31, 'instanceCount': 4},
+      ],
       'phaseTransitions': [
         {'id': 1, 'startTime': _start},
         {'id': 2, 'startTime': _start + 100000},
@@ -70,6 +79,20 @@ class FakeApi {
       return _ok({
         'reportData': {'report': _report},
       });
+    }
+    if (vars['hostility'] == 'Enemies') {
+      // Two copies of the add act, and the first acts twice.
+      return _ok(
+        _events([
+          for (final (time, copy) in [(5000, 1), (6000, 1), (4000, 2)])
+            {
+              'timestamp': _start + time,
+              'type': 'cast',
+              'sourceInstance': copy,
+              'abilityGameID': 5,
+            },
+        ]),
+      );
     }
     return _ok(switch (vars['type']) {
       'Casts' =>
@@ -267,6 +290,37 @@ void main() {
         MockClient((_) async => throw http.ClientException('offline')),
       ).loadFight(reportCode: 'ycBr', fightId: 58, sourceId: 7);
       expect(result, isA<Error<FightLog>>());
+    });
+  });
+
+  group('loadEnemyGroups', () {
+    test('lists the adds with when each first acted', () async {
+      final result = await repo.loadEnemyGroups(reportCode: 'abc', fightId: 58);
+
+      final groups = (result as Ok<List<EnemyGroup>>).value;
+      expect(groups.single.name, 'Add');
+      expect(groups.single.arrivals, const [
+        Duration(seconds: 4),
+        Duration(seconds: 5),
+      ]);
+      expect(api.variables(1)['hostility'], 'Enemies');
+      expect(api.variables(1)['source'], 31);
+    });
+  });
+
+  group('EnemyGroup', () {
+    test('starts a wave after a gap with no arrivals', () {
+      final group = EnemyGroup(
+        name: 'Add',
+        arrivals: [
+          for (final s in [37, 38, 39, 98, 99]) Duration(seconds: s),
+        ],
+      );
+
+      expect(group.waveStarts(), const [
+        Duration(seconds: 37),
+        Duration(seconds: 98),
+      ]);
     });
   });
 

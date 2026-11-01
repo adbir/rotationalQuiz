@@ -92,4 +92,33 @@ void main() {
       expect(log.abilityNames[51505], 'Lava Burst');
     },
   );
+
+  test(
+    'finds the Twin Fangs add waves in a top log',
+    skip: env['WCL_LIVE'] == null,
+    timeout: const Timeout(Duration(minutes: 3)),
+    () async {
+      final token = await _clientToken();
+      final repo = WarcraftLogsRepository(
+        spec: spec,
+        service: WarcraftLogsService(accessToken: () async => token),
+      );
+      final top = await repo.topLogs(
+        encounterId: 3421,
+        difficulty: 5,
+        count: 1,
+      );
+      final log = (top as Ok<List<RankedLog>>).value.single;
+      final result = await repo.loadEnemyGroups(
+        reportCode: log.reportCode,
+        fightId: log.fightId,
+      );
+      final groups = switch (result) {
+        Ok(:final value) => value,
+        Error(:final error) => fail('$error'),
+      };
+      final adds = groups.singleWhere((g) => g.name == 'Spawn of Vexhul');
+      expect(adds.waveStarts().length, greaterThanOrEqualTo(5));
+    },
+  );
 }

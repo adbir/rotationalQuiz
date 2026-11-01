@@ -1,3 +1,4 @@
+import '../../domain/models/enemy_group.dart';
 import '../../domain/models/fight_log.dart';
 import '../../domain/specs/rotation_spec.dart';
 import '../../utils/result.dart';
@@ -68,6 +69,55 @@ class WarcraftLogsRepository {
           talents: _talentTokens(info),
         ),
       );
+    } on Exception catch (e) {
+      return Result.error(e);
+    }
+  }
+
+  /// The extra enemies of a fight (adds): enemy NPCs with more than one copy,
+  /// since the boss has one. Costs one query per kind.
+  Future<Result<List<EnemyGroup>>> loadEnemyGroups({
+    required String reportCode,
+    required int fightId,
+  }) async {
+    try {
+      final report = await _service.report(code: reportCode, fightId: fightId);
+      final fight = _firstMap(report['fights']);
+      if (fight == null) {
+        throw WarcraftLogsException('Fight $fightId was not found.');
+      }
+      final masterData = report['masterData'];
+      final npcs = masterData is JsonMap ? masterData['npcs'] : null;
+      final names = {
+        if (npcs is List)
+          for (final npc in npcs.whereType<JsonMap>())
+            if (npc['id'] case final num id) id.toInt(): npc['name'],
+      };
+      final start = WarcraftLogsMapper.fightStart(fight);
+      final enemies = fight['enemyNPCs'];
+      final groups = <EnemyGroup>[];
+      for (final npc
+          in enemies is List ? enemies.whereType<JsonMap>() : <JsonMap>[]) {
+        final id = npc['id'];
+        final copies = npc['instanceCount'];
+        if (id is! num || copies is! num || copies < 2) continue;
+        final casts = await _service.events(
+          code: reportCode,
+          fightId: fightId,
+          sourceId: id.toInt(),
+          type: WclEventType.casts,
+          start: start,
+          end: WarcraftLogsMapper.fightEnd(fight),
+          enemy: true,
+        );
+        groups.add(
+          EnemyGroup(
+            name: names[id.toInt()] as String? ?? 'Enemy ${id.toInt()}',
+            arrivals: WarcraftLogsMapper.enemyArrivals(casts, start),
+          ),
+        );
+      }
+      return Result.ok(groups);
     } on Exception catch (e) {
       return Result.error(e);
     }

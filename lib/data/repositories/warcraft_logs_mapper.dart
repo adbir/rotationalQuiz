@@ -95,6 +95,19 @@ abstract final class WarcraftLogsMapper {
     );
   }
 
+  /// When each enemy in [casts] first acted. [casts] are one enemy NPC's cast
+  /// events, and `sourceInstance` tells its copies apart.
+  static List<Duration> enemyArrivals(List<JsonMap> casts, num start) {
+    final first = <int, num>{};
+    for (final cast in casts) {
+      final time = cast['timestamp'];
+      if (time is num) {
+        first.putIfAbsent(_int(cast['sourceInstance']) ?? 0, () => time);
+      }
+    }
+    return [for (final time in first.values) _since(time, start)]..sort();
+  }
+
   /// A rankings row, or `null` when it has no public report behind it.
   static RankedLog? rankedLog(JsonMap json, int rank) {
     final report = json['report'];

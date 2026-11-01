@@ -110,7 +110,7 @@ const elementalSpells = <String, SpellDefinition>{
   ),
   'earthquake': SpellDefinition(
     id: 'earthquake',
-    spellId: 61882,
+    spellId: 462620,
     name: 'Earthquake',
     abbreviation: 'EQ',
     school: SpellSchool.earth,

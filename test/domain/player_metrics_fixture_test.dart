@@ -10,12 +10,12 @@ import 'package:rotational_quiz/domain/use_cases/compute_player_metrics.dart';
 
 import '../test_helpers.dart';
 
-/// 75 seconds of a real Mythic Sszorak kill, as raw Warcraft Logs events with
+/// 75 seconds of a real Mythic Sszorak kill (the default fixture), as raw Warcraft Logs events with
 /// the player's details removed. The window runs from 225 s to 300 s of the
 /// pull, so it starts with buffs already up. Times below are from its start.
-FightLog loadFixture() {
+FightLog loadFixture([String name = 'sszorak_window']) {
   final json = jsonDecode(
-    File('test/fixtures/sszorak_window.json').readAsStringSync(),
+    File('test/fixtures/$name.json').readAsStringSync(),
   ) as JsonMap;
   final fight = json['fight'] as JsonMap;
   final start = WarcraftLogsMapper.fightStart(fight);

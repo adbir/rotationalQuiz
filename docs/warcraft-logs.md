@@ -87,6 +87,17 @@ needs: `reports/<code>?fight=58&source=278`.
   - Drift against readings: 0 for 15 of 19, worst 8 (one Lava Burst gain),
     mean about 1.
   - The first reading sets the starting amount when the log starts mid-pull.
+- **Enemy first-seen times** (adds). `fights.enemyNPCs {id, gameID,
+  instanceCount, groupCount}` lists each kind of enemy, the boss included, with
+  no times. `masterData.actors(type: "NPC") {id name}` names them. Times come
+  from `events(dataType: Casts, hostilityType: Enemies, sourceID: <npc id>)`:
+  each copy has its own `sourceInstance`, and its first cast is when it
+  arrived, a second or so after it spawned. `DamageTaken` and `Summons` by
+  `targetID` returned nothing for these adds. `loadEnemyGroups` does this for
+  every NPC with more than one copy, one query each.
+- **Two readings in one millisecond** can come in the wrong order: one before
+  a spend and one after. That shows as one large drift in a rebuild (81 in the
+  rank 53 log) and nowhere else.
 - **Buff ids can differ from cast ids:** Ascendance casts as 114050, and its buff
   is 1219480.
 - **Some ids are echoes.** Flame Shock 470411 fires with every 188389 cast, so
@@ -158,3 +169,87 @@ ready to the `begincast`, because a cast time isn't delay.
 
 This is one comparison log, and it doesn't show how much DPS each difference is
 worth.
+
+## Worked example: Mythic Twin Fangs
+
+Encounter 3421. Three Farseers (all have Call of the Ancestors), with the
+owner's wipe first. Rank 1 and rank 53 are from the top 100 on 2026-11-01.
+
+| | Owner, 1% wipe | Rank 53 | Rank 1 |
+| --- | --- | --- | --- |
+| Report / fight | `dvpkyx8D4YnAHGJK` / 18 | `pDkwjXv3Z2Q8mBVc` / 2 | `CGjdNa8RBfcQtAWg` / 33 |
+| Fought length | 394 s (wipe) | 415 s (kill) | 420 s (kill) |
+| DPS | 227,344 | 302,100 | 336,697 |
+| Item level | 333 | 333 | 337 |
+| Casts per minute | 41.0 | 52.0 | 55.0 |
+| Gaps over 1.8 s | 20 | 2 | 2 |
+| Maelstrom per minute | 318 | 407 | 452 |
+| Maelstrom wasted | 111 | 136 | 208 |
+| Spenders with Master of the Elements | 34 of 41 | 34 of 55 | 39 of 59 |
+| Free spenders | 17 of 41 | 24 of 55 | 24 of 59 |
+| Overcharge! lost by refreshing | 3 | 0 | 0 |
+| Ancestors, actual / expected | 43 / 41.6 | 59 / 53.0 | 60 / 56.3 |
+| Stormkeeper median press delay | 2.87 s | 3.00 s | 6.73 s |
+| Spiritwalker's Grace, normal + Time Spiral | 2 + 0 | 4 + 2 | 4 + 3 |
+
+Spenders here are Elemental Blast and Earthquake together. Compare fought
+portions, not totals: the owner's pull ended at 394 s. Casts per minute by
+stretch, for the 394 s all three fought (the stretches start at each add wave):
+
+| Stretch (s) | 0-37 | 37-98 | 98-192 | 192-253 | 253-347 | 347-394 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Owner | 76.2 | 39.3 | 42.1 | 37.4 | 38.3 | 23.0 |
+| Rank 53 | 73.0 | 47.2 | 50.4 | 54.1 | 44.7 | 57.4 |
+| Rank 1 | 76.2 | 47.2 | 50.4 | 55.1 | 52.3 | 62.6 |
+
+All three open the same, then the owner drops about 8 casts per minute behind
+in every stretch and ends at 23 against 57 and 63. The owner wasted 110 of the
+111 Maelstrom between 192 s and 253 s, sitting at the cap.
+
+### Add waves
+
+Wave times come from `loadEnemyGroups`. Six waves of Spawn of Vexhul (3 each)
+and Broodling of Ithraz (10 each) arrive at 37, 98, 192, 253, 347 and 408 s, and
+six of Barbed Bulwark (15 each) at 11, 72, 166, 227, 321 and 382 s. They repeat
+to within 0.2 s in all three logs, so they are on a timer, like Sszorak's
+phases. The owner reached the first five Vexhul waves and all six Bulwark waves.
+Rank 53 killed at 415 s: its 408 s Broodlings came, its Vexhul spawns did not
+log. There are no phase changes in the log.
+
+Mean Maelstrom in the 8 s before each Vexhul wave, then spenders cast in the 8
+s after (fight mean in brackets):
+
+| Wave (s) | 37 | 98 | 192 | 253 | 347 | 408 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Owner (81) | 38 / 2 | 21 / 1 | 89 / 3 | 115 / 3 | 76 / 0 | not reached |
+| Rank 53 (67) | 76 / 1 | 75 / 3 | 53 / 2 | 79 / 1 | 68 / 2 | not reached |
+| Rank 1 (65) | 54 / 2 | 80 / 3 | 66 / 2 | 71 / 2 | 52 / 3 | 90 / 0 |
+
+Do top players pool? Not as a plan. Averaged over the waves, rank 1 holds 69
+before them and rank 53 holds 70, against fight means of 65 and 67, and they
+cast 2.0 and 1.8 spenders after. Spenders after a wave are the AoE
+Earthquakes the APL's `aoe` list calls for, not a hoard. Only the owner's 253 s
+wave reads as pooled (mean 115, none cast in the 8 s before, three after), and
+the owner was also at the cap there for the stretch before it.
+
+`DetectPooling` at its defaults (8 s, 8 s, 15 points) flags 2 of the 16 waves
+(rank 1 at 98 s, the owner at 253 s), and 1 of 6 Bulwark waves in each top log,
+but it also flags 4 of 31 (rank 1) and 8 of 33 (rank 53) moments chosen away
+from any wave. Over leads of 4 to 12 s, follows of 6 to 10 s and margins of 0 to
+20, no setting flagged waves more often than other moments. No thresholds were tuned, and the
+defaults stay guesses. A pooling score for this boss needs a reason beyond this check, such as the owner
+holding Maelstrom for the Bulwark waves.
+
+### Rebuild check
+
+The rebuild matched all 109 logged readings of rank 1 exactly once Earthquake's
+cast id was right (462620, not 61882; see
+[elemental-shaman.md](elemental-shaman.md)). Before that fix the rebuild sat at
+the cap through every Earthquake and drifted up to 88. The owner's log drifts a
+mean of 3.3 (worst 8) over its readings. Rank 53's mean is 2.1 and its worst 81 is
+the same-millisecond case above.
+
+The committed fixture is `test/fixtures/twin_fangs_window.json`: rank 1 from
+225 s to 300 s, which holds the 253 s Vexhul wave and the 227 s Bulwark wave. It
+rebuilds with no drift over 17 readings, and the player is not pooled (mean 71
+against a window mean of 65, two spenders after). The owner's log is not in it.
