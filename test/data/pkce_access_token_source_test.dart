@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:rotational_quiz/data/services/local_store.dart';
 import 'package:rotational_quiz/data/services/pkce_access_token_source.dart';
-import 'package:rotational_quiz/data/services/sha256.dart';
 
 import '../test_helpers.dart';
 
@@ -37,21 +36,6 @@ void main() {
     reply = () => http.Response(
       '{"access_token":"tok","token_type":"Bearer","expires_in":3600}',
       200,
-    );
-  });
-
-  test('sha256 matches the known test vectors', () {
-    String hex(String text) =>
-        sha256(utf8.encode(text))
-            .map((b) => b.toRadixString(16).padLeft(2, '0'))
-            .join();
-    expect(
-      hex('abc'),
-      'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
-    );
-    expect(
-      hex('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq'),
-      '248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1',
     );
   });
 

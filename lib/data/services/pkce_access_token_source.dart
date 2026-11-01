@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'browser_navigation.dart';
 import 'local_store.dart';
-import 'sha256.dart';
 
 /// The app's public client on Warcraft Logs. It is public by design (PKCE
 /// needs no secret); never put a client secret in the app.
@@ -92,7 +92,8 @@ class PkceAccessTokenSource extends ChangeNotifier {
 
   /// The S256 challenge: base64url (no padding) of SHA-256 of the verifier.
   static String challengeFor(String verifier) =>
-      base64UrlEncode(sha256(ascii.encode(verifier))).replaceAll('=', '');
+      base64UrlEncode(sha256.convert(ascii.encode(verifier)).bytes)
+          .replaceAll('=', '');
 
   /// Call once on startup. If the page has a `?code=` return, trades it for a
   /// token and removes the query from the address bar.
