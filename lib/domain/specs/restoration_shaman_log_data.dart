@@ -9,8 +9,9 @@ const restorationLogRules = SpecLogRules(
   rankingMetric: 'hps',
   // Earth Shield is 974 on others and 383648 on the Shaman.
   castAliases: {383648: 974},
-  // Source of Magic's id is in no checked source yet.
-  raidSupportIds: {29166: 'Innervate'},
+  // Source of Magic lands on the Shaman as 372571 (the fixture's abilities
+  // table); the Evoker's cast is 369459 on Wowhead.
+  raidSupportIds: {29166: 'Innervate', 372571: 'Source of Magic'},
   auraLogIds: {
     'healing_rain': {1307888},
     'earth_shield': {974},

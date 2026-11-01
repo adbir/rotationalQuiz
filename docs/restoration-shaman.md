@@ -136,7 +136,7 @@ ids, costs and cooldowns from the Spells table above, with these additions:
 | Tidal Waves 53390 | 2 stacks | tooltip |
 | Earthliving 382024 | 6 s HoT | tooltip |
 | Earth Shield durations | 600 s, not checked | placeholder for the editor only |
-| Innervate 29166 | raid support | fixture's received-buffs table. Source of Magic's id: not checked |
+| Innervate 29166, Source of Magic 372571 | raid support | fixture's received-buffs and abilities tables. Source of Magic's cast id on the Evoker is 369459 (tooltip); the buff on the Shaman logs as 372571 |
 | Riptide, Healing Stream Totem charges | 2 each | Spells table; Echo of the Elements and the second node are in the build |
 
 Ranking metric: `SpecLogRules.rankingMetric` is `hps` here and `dps` for
