@@ -74,6 +74,7 @@ class FakeWarcraftLogsRepository implements WarcraftLogsRepository {
           duration: log.fight.duration,
           difficulty: log.fight.difficulty,
           size: log.fight.size,
+          bossActorId: log.fight.bossActorId,
         ),
         playerName: playerName ?? '',
         playerId: log.playerId,
@@ -85,6 +86,7 @@ class FakeWarcraftLogsRepository implements WarcraftLogsRepository {
         resourceGains: log.resourceGains,
         buffEvents: log.buffEvents,
         talents: log.talents,
+        debuffEvents: log.debuffEvents,
       ),
     );
   }
