@@ -30,7 +30,7 @@ Status describes the measure, not the meaning. It has three values:
 | Status | What it means |
 | ------ | ------------- |
 | `confirmed` | Every API name the measure needs is on the [verified list](#verified-wcl-api-facts). Raw units and argument values are not covered: see [not yet verified](#not-yet-verified). |
-| `needs checking` | The measure depends on something unverified: a log field, an ability id or a game number. Every Maelstrom-based metric is here. |
+| `needs checking` | The measure depends on something unverified: a log field, an ability id or a game number. |
 | `not measurable from logs` | A log cannot show this. |
 
 An entry with one confirmed route and one unverified route takes its status
@@ -55,20 +55,41 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   `report {code, fightID}`, `guild`, `server` and `bracketData`.
 - A report also has `fights`, `masterData`, `playerDetails`, `rankings`,
   `table`, `graph` and `phases`.
+- `timestamp` and `duration` are in milliseconds. `timestamp`, like a fight's
+  `startTime` and `endTime`, is measured from the start of the report.
+- With `metric: dps`, `amount` is damage per second. For one kill it matched
+  the `table(dataType: DamageDone)` total divided by fight length.
+- `bracketData` on a ranked entry is the item level.
+- `difficulty`: 5 Mythic, 4 Heroic, 3 Normal, 1 LFR.
+- `fights` has `id`, `name`, `encounterID`, `kill`, `startTime`, `endTime`,
+  `difficulty`, `size`, `enemyNPCs` and `phaseTransitions {id, startTime}`.
+- `masterData` has `actors(type: "Player") {id, name, subType}` and
+  `abilities {gameID, name, type}`.
+- `dataType: Resources` returns `resourcechange` events with `abilityGameID`,
+  `resourceChange`, `resourceChangeType`, `maxResourceAmount` and `waste`. Every
+  Maelstrom gain is there, with `resourceChangeType` 11.
+- Maelstrom is `type` 11 in `classResources`, on about a quarter of casts. Most
+  other casts show Mana, `type` 0. `cost` is 90 on Elemental Blast.
+- `dataType: Buffs` returns `applybuff` and `removebuff` events. Buff ids can
+  differ from cast ids: Ascendance is cast as 114050 but its buff is 1219480.
+- `dataType: CombatantInfo` has `talentTree: [{id, rank, nodeID}]`, whose ids
+  match `TalentEntry.id` in the generated tree (80 of 80), plus `specID`, `gear`
+  and stats such as `hasteSpell` and `intellect`.
+- `table` works with `dataType` `DamageDone`, `Buffs` and `Deaths`. `Buffs`
+  returns `auras` with `name`, `guid`, `totalUptime` and `totalUses`.
+  `viewBy: Target` splits damage by target.
 
 ### Not yet verified
 
-- Whether Maelstrom appears in `classResources`. The only sample seen showed
-  Mana, type 0.
-- The raw units of `timestamp`, `duration`, `amount`, `x` and `y`.
-- What `amount` holds for each `metric`.
-- The accepted values of `dataType`, `metric` and `difficulty`.
-- The fields inside `fights`, `masterData`, `playerDetails`, `rankings`,
-  `table`, `graph`, `phases` and `bracketData`.
-- Any event that is not a cast: damage, healing, buffs, debuffs, resource gains
-  and deaths. Their field names are unknown, so this file doesn't name any.
+- The raw units of `x` and `y`.
+- What `amount` holds for any `metric` other than `dps`.
+- The fields inside `playerDetails`, `graph` and `phases`.
+- Damage, healing and debuff events, and buff stack events. Their field names
+  are unknown, so this file doesn't name any.
+- A way to measure enemy debuff uptime. `table(dataType: Debuffs,
+  hostilityType: Enemies)` with a `sourceID` returned no auras.
 - Whether `includeResources` is what adds `classResources`, `x` and `y` to cast
-  events.
+  events. Requests with it return them; none has been tried without it.
 - Whose hit points and item level `hitPoints` and `itemLevel` report.
 - Whether `abilityGameID` matches the app's `spellId` for every ability. Some
   abilities have two ids in the app's tables, one for the cast and one for the
@@ -97,10 +118,10 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 
 - **Meaning:** Damage done divided by fight length. It is the main measure for
   a damage dealer.
-- **In a log:** Damage per second. Probably `amount` on a ranked entry when
-  `metric` selects damage. For a player's own log the likely routes are
-  `rankings` or `table` on the report, which are also unverified.
-- **Status:** `needs checking`
+- **In a log:** Damage per second: `amount` on a ranked entry with
+  `metric: dps`. For a player's own log, the `table(dataType: DamageDone)` total
+  divided by fight length gives the same number.
+- **Status:** `confirmed`
 - **Not to be confused with:** [HPS](#hps-healing-per-second). Also, WCL may
   rank on a metric that moves support damage between players, so a DPS number
   can depend on the metric. See
@@ -128,10 +149,9 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - **Meaning:** A ranking that groups players by item level, the number that
   sums up how strong their gear is. It compares a player with others in similar
   gear rather than with everyone.
-- **In a log:** Item level. `bracketData` on a ranked entry is the likely source,
-  but its contents are unverified. `itemLevel` on cast events is a second
-  candidate.
-- **Status:** `needs checking`
+- **In a log:** Item level: `bracketData` on a ranked entry. `itemLevel` on cast
+  events is a second candidate, not yet compared with it.
+- **Status:** `confirmed`
 - **Not to be confused with:** [parse percentile](#parse-percentile-percentile),
   which may be measured against all players or only a bracket. Always say which.
 
@@ -140,8 +160,8 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - **Meaning:** How long a successful [pull](#pull-fight-attempt) lasted, from
   the start of the fight to the boss's death. It changes how many
   [cooldown](#cooldown-cd) uses fit into a fight, so it affects any comparison.
-- **In a log:** `duration` on a ranked entry, shown in seconds. A log outside
-  the ranked list would need `fights`, whose fields are unverified.
+- **In a log:** Seconds: `duration` on a ranked entry, divided by 1,000. For any
+  other log, `endTime` minus `startTime` from `fights`.
 - **Status:** `confirmed`
 
 ### Parse
@@ -221,13 +241,12 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 
 - **Meaning:** A spell that gives you more of a [resource](#resource) to spend
   later.
-- **In a log:** Maelstrom gained per cast, from the change in `classResources`
-  across the cast.
-- **Status:** `needs checking`
+- **In a log:** Maelstrom gained per cast: `resourceChange` on `resourcechange`
+  events with `resourceChangeType` 11, grouped by `abilityGameID`.
+- **Status:** `confirmed`
 - **In this repo:** The APL uses the word in a comment ("next builder").
-  It stops Lava Burst near the cap with `maelstrom.deficit>15`.
-- **To check:** How much Maelstrom each spell gives. The app's tables hold costs
-  but no gains.
+  It stops Lava Burst near the cap with `maelstrom.deficit>15`. The app's tables
+  hold costs but no gains.
 - **Not to be confused with:** [spender](#spender).
 
 ### Cast time
@@ -291,11 +310,14 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 ### Maelstrom
 
 - **Meaning:** The [resource](#resource) Elemental Shaman builds and spends.
-- **In a log:** Points, from `classResources` if Maelstrom is there at all.
-- **Status:** `needs checking`
+- **In a log:** Points. Gains and waste come from `resourcechange` events with
+  `resourceChangeType` 11. Exact readings come from `classResources` entries with
+  `type` 11, on about a quarter of casts. `max` or `maxResourceAmount` gives the
+  player's cap.
+- **Status:** `confirmed`
 - **In this repo:** `maelstrom`, `maelstrom.deficit` (points below the cap),
-  `maelstrom.max` and `maelstrom.pct`. The cap is 100, or 150 with the Swelling
-  Maelstrom talent (in-game tooltip).
+  `maelstrom.max` and `maelstrom.pct`. The cap is 100, +50 with Swelling Maelstrom
+  and +25 with Primordial Capacity (in-game tooltips; a Farseer log shows 125).
 
 ### Off-GCD
 
@@ -315,11 +337,10 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 
 - **Meaning:** Gaining a [resource](#resource) while already at the maximum, so
   the gain is lost. The same word is used for charges and proc stacks.
-- **In a log:** Maelstrom gained while at max, as wasted Maelstrom per minute.
-  `amount` equal to `max` at a cast shows being capped at that moment, but not
-  how much was lost. Exact waste needs a stream of resource gains, and no such
-  `dataType` is verified.
-- **Status:** `needs checking`
+- **In a log:** Wasted Maelstrom per minute: the sum of `waste` on
+  `resourcechange` events with `resourceChangeType` 11, divided by
+  [kill time](#kill-time) in minutes.
+- **Status:** `confirmed`
 - **Not to be confused with:** [pooling](#pooling), which stays below the cap.
 
 ### Pooling
@@ -330,7 +351,9 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 - **In a log:** Around each event: Maelstrom at the moment the event starts
   (points), [spender](#spender) casts per minute in the seconds before and after
   it, and any [overcap](#overcap-overcapping-capped) during the hold. The event
-  time comes from [add wave](#add-wave) or [phase](#phase).
+  time comes from [add wave](#add-wave) or [phase](#phase). Maelstrom at a given
+  moment has to be rebuilt from gains and spender costs, checked against
+  `classResources` readings. That rebuild is not done yet (issue #11).
 - **Status:** `needs checking`
 - **In this repo:** The default APL cannot pool, because it has no fight
   timeline. Its main spender lines fire on
@@ -347,19 +370,20 @@ Checked against the real v2 GraphQL API on 2026-11-01:
   [Maelstrom](#maelstrom).
 - **In a log:** Points: `classResources` entries with `amount`, `max`, `type`
   and `cost` on a [cast event](#cast-event). They are readings at each cast, so
-  nothing between casts is visible. Only Mana (type 0) has been seen.
+  nothing between casts is visible. Mana is `type` 0 and Maelstrom is `type` 11.
+  For Maelstrom, `resourcechange` events show every gain between casts.
 - **Status:** `confirmed`
 
 ### Spender
 
 - **Meaning:** A spell that costs a [resource](#resource) and turns it into
   damage.
-- **In a log:** Spender casts per minute, from a list of ability ids. `cost`
-  above 0 in `classResources` could replace the list once Maelstrom is verified.
-- **Status:** `needs checking`
-- **In this repo:** Earth Shock (60), Elemental Blast (90) and Earthquake (60).
-  These costs are approximations. Eye of the Storm takes 5 off, or 10 off
-  Elemental Blast.
+- **In a log:** Spender casts per minute, from a list of ability ids. A `cost`
+  on a `classResources` entry with `type` 11 can confirm the list.
+- **Status:** `confirmed`
+- **In this repo:** Earth Shock (60), Elemental Blast (90, confirmed in a log) and
+  Earthquake (60). The others are approximations. Eye of the Storm takes 5 off, or
+  10 off Elemental Blast.
 - **Not to be confused with:** [builder](#builder-generator).
 
 ## Buffs, debuffs and procs
@@ -734,12 +758,12 @@ Checked against the real v2 GraphQL API on 2026-11-01:
 
 - **Meaning:** A permanent choice in a character's talent trees that adds or
   changes abilities. A choice node makes you pick one of two talents.
-- **In a log:** Which talents were taken. `playerDetails` may show them,
-  unverified. Differences in talents can explain a gap on their own, so note them
-  before comparing casts.
-- **Status:** `needs checking`
+- **In a log:** Which talents were taken: `talentTree` on the `CombatantInfo`
+  event, whose ids map to tokens through `TalentEntry.id`. Differences in talents
+  can explain a gap on their own, so note them before comparing casts.
+- **Status:** `confirmed`
 - **In this repo:** `talent.<token>`. `TalentStringCodec` decodes in-game export
-  strings, but whether a log holds one is unverified. Fire Elemental and Storm
+  strings, a separate route to the same tokens. Fire Elemental and Storm
   Elemental are not talents in Midnight: the app treats Fire Elemental as baseline
   and hides Storm Elemental and Wind Gust, although the APL still reads them.
 
@@ -831,10 +855,10 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 - **Meaning:** An expensive [spender](#spender). It shares a choice node with
   [Earth Shock](#earth-shock), so a build has one or the other.
 - **In a log:** Casts per minute, and percent of casts with
-  [Master of the Elements](#master-of-the-elements-mote) up.
-- **Status:** `needs checking`
-- **In this repo:** `elemental_blast`, `talent.elemental_blast`. Cost 90 in the
-  app. The APL's `aoe` list also reads `buff.elemental_blast_critical_strike`,
+  [Master of the Elements](#master-of-the-elements-mote) up. Ability id 117014.
+- **Status:** `confirmed`
+- **In this repo:** `elemental_blast`, `talent.elemental_blast`. Cost 90, confirmed
+  in a log. The APL's `aoe` list also reads `buff.elemental_blast_critical_strike`,
   `_haste` and `_mastery`, which the app doesn't define.
 - **To check:** What those three buffs do in Midnight.
 
@@ -876,32 +900,32 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 
 ### Lava Surge
 
-- **Meaning:** A [proc](#proc) that makes your next [Lava Burst](#lava-burst-lvb)
-  instant and free.
+- **Meaning:** A [proc](#proc) that resets [Lava Burst](#lava-burst-lvb)'s cooldown
+  and makes it instant. It is not free in any other sense: Lava Burst has no
+  Maelstrom cost to begin with.
 - **In a log:** Procs per minute, and procs that ended unused (count). A Lava
   Burst `cast` with no `begincast` is a proxy, but
   [Ancestral Swiftness](#ancestral-swiftness) gives the same pattern. Needs buff
   events to be exact.
 - **Status:** `needs checking`
 - **In this repo:** `buff.lava_surge.up`. Duration 10 seconds in the app. The app
-  lets it fire Lava Burst with no charges. It is not in the talent tree, so the
-  app treats it as baseline.
-- **To check:** What triggers it, and whether it really ignores charges. Also
-  what "free" means, since the app gives Lava Burst no Maelstrom cost.
+  lets it fire Lava Burst with no charges, which matches the reset. It is not in
+  the talent tree, so the app treats it as baseline.
+- **To check:** What triggers it.
 
 ### Master of the Elements (MotE)
 
-- **Meaning:** A talent where casting [Lava Burst](#lava-burst-lvb) empowers your
-  next [spender](#spender). It shares a choice node with Molten Wrath.
-- **In a log:** Percent of spenders cast with the buff up, and buffs that ended
-  unused (count). A proxy from casts alone is the share of spenders that come
-  right after a Lava Burst.
-- **Status:** `needs checking`
+- **Meaning:** A talent where casting [Lava Burst](#lava-burst-lvb) buffs your
+  next Nature, Physical or Frost spell. The aim is to always make that spell a
+  [spender](#spender). It shares a choice node with Molten Wrath.
+- **In a log:** Percent of spenders cast with the buff up, from `applybuff` and
+  `removebuff` events for buff id 260734.
+- **Status:** `confirmed`
 - **In this repo:** `talent.master_of_the_elements`,
-  `buff.master_of_the_elements.up`.
-- **To check:** Which spells really use it. The app says "next spender", but the
-  APL also spends it on Tempest, on Lightning Bolt with Stormkeeper, and on Flame
-  Shock.
+  `buff.master_of_the_elements.up`. The APL also spends it on Tempest and on
+  Lightning Bolt with Stormkeeper.
+- **To check:** The APL has a line to "buff Flame Shock" with it, but Flame Shock
+  is a Fire spell, which this buff doesn't cover.
 
 ### Stormbringer
 
@@ -924,9 +948,8 @@ the app's, and all the log measures depend on ability ids, so every entry here i
 - **In this repo:** `stormkeeper`, `talent.stormkeeper`, `buff.stormkeeper.up`,
   `.stack`, `cooldown.stormkeeper.remains`. Cast 1.5 seconds, cooldown 60 seconds.
   It is also in `actions.precombat`, so a log may show it before the fight starts.
-- **To check:** Its maximum stacks. The app says 3, but the APL's `aoe` list tests
-  `buff.stormkeeper.stack<4`. Also check whether it does more than make those
-  spells instant.
+- **To check:** Whether it does more than make those spells instant. The maximum
+  is 3 stacks, so the APL's `buff.stormkeeper.stack<4` passes at any stack count.
 - **Not to be confused with:** [Stormbringer](#stormbringer).
 
 ### Tempest
